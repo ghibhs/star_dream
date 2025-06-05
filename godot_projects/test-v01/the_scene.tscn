@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://bq51iltat45eg"]
+
+[sub_resource type="TileSet" id="TileSet_i1ouo"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dht3m"]
+size = Vector2(64, 64)
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_5swiu"]
+
+[node name="the_scene" type="Node2D"]
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+tile_set = SubResource("TileSet_i1ouo")
+
+[node name="prota" type="CharacterBody2D" parent="."]
+
+[node name="sprite_prota" type="Sprite2D" parent="prota"]
+
+[node name="shape_prota" type="CollisionShape2D" parent="prota"]
+position = Vector2(19.4211, 39.0705)
+shape = SubResource("RectangleShape2D_dht3m")
+
+[node name="coin" type="AnimatableBody2D" parent="."]
+
+[node name="shape_coin" type="CollisionShape2D" parent="coin"]
+position = Vector2(216, 58)
+shape = SubResource("CapsuleShape2D_5swiu")
