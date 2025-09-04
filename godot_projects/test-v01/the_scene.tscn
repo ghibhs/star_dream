@@ -1,10 +1,9 @@
-[gd_scene load_steps=12 format=4 uid="uid://bq51iltat45eg"]
+[gd_scene load_steps=11 format=4 uid="uid://bq51iltat45eg"]
 
 [ext_resource type="Texture2D" uid="uid://cd12d7uhj2347" path="res://art/chao_jogo1.png" id="1_37c5f"]
 [ext_resource type="Texture2D" uid="uid://d1vomg61bi3h7" path="res://art/moeda_game1.png" id="1_dht3m"]
 [ext_resource type="Texture2D" uid="uid://c0nsevoy2a0dm" path="res://art/Liron.png" id="2_0nr2p"]
 [ext_resource type="Script" uid="uid://dj3xts5dlq2sk" path="res://prota.gd" id="2_rtios"]
-[ext_resource type="PackedScene" uid="uid://loe4db4bypkq" path="res://projectile.tscn" id="3_37c5f"]
 [ext_resource type="Texture2D" uid="uid://ckwgaetkwr0pp" path="res://art/mesa.png" id="5_rtios"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_k7dws"]
@@ -34,7 +33,6 @@ tile_set = SubResource("TileSet_rnqm3")
 
 [node name="prota" type="CharacterBody2D" parent="."]
 script = ExtResource("2_rtios")
-projectile_scene = ExtResource("3_37c5f")
 
 [node name="shape_prota" type="CollisionShape2D" parent="prota"]
 position = Vector2(65, -4)
