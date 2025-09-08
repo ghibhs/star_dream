@@ -10,69 +10,88 @@ var can_dash: bool = true
 var is_dashing: bool = false
 var dash_timer: float = 0.0
 var cooldown_timer: float = 0.0
+var current_speed = speed
 
-func _physics_process(delta: float) -> void:
-	# Pega o input de movimento
-	var input_direction = Vector2.ZERO
+@onready var animated_sprite = $AnimatedSprite2D
+
+var current_direction: Vector2 = Vector2.ZERO
+var last_direction: Vector2 = Vector2(1, 0)
+
+func _physics_process(delta):
+	# Captura input de movimento em 8 direções
+	var input_vector = get_8_direction_input()
 	
-	# Movimento horizontal
-	if Input.is_action_pressed("ui_right"):
-		input_direction.x += 1
-	if Input.is_action_pressed("ui_left"):
-		input_direction.x -= 1
+	# Aplica velocidade
+	if input_vector != Vector2.ZERO:
+		velocity = input_vector * speed
+		update_sprite_direction(input_vector, true)
+	else:
+		velocity = Vector2.ZERO
+		update_sprite_direction(Vector2.ZERO, false)
 	
-	# Movimento vertical
-	if Input.is_action_pressed("ui_down"):
-		input_direction.y += 1
-	if Input.is_action_pressed("ui_up"):
-		input_direction.y -= 1
-	
-	if input_direction.length() > 0:
-		input_direction = input_direction.normalized()
-	
-	# Verifica se está correndo (você precisa configurar a ação "sprint" no Project Settings)
-	var current_speed = speed
+	# Move o personagem
 	if Input.is_action_pressed("sprint"):
 		current_speed *= sprint_multiplier
 		
-	
-	
 	# Aplica o movimento
-	velocity = input_direction * current_speed
+	velocity = input_vector * current_speed
 	move_and_slide()
 	
-	update_animation(input_direction)
-
-func update_animation(direction: Vector2) -> void:
-	if not direction:
-		# Personagem parado
-		play_animation("idle")
-		return
+func update_sprite_direction(direction_vector: Vector2, is_moving: bool = false):
+	var new_direction = get_8_direction_input()
 	
-	# Determina a direção da animação
-	var angle = direction.angle()
-	
-	# Converte o ângulo em direções de animação
-	if angle < -2.748: # Entre -157.5° e 180°
-		play_animation("left")
-	elif angle < -1.963: # Entre -157.5° e -112.5°
-		play_animation("up_left")
-	elif angle < -1.178: # Entre -112.5° e -67.5°
-		play_animation("up")
-	elif angle < -0.393: # Entre -67.5° e -22.5°
-		play_animation("up_right")
-	elif angle < 0.393: # Entre -22.5° e 22.5°
-		play_animation("right")
-	elif angle < 1.178: # Entre 22.5° e 67.5°
-		play_animation("down_right")
-	elif angle < 1.963: # Entre 67.5° e 112.5°
-		play_animation("down")
-	elif angle < 2.748: # Entre 112.5° e 157.5°
-		play_animation("down_left")
-	else: # Entre 157.5° e 180°
-		play_animation("left")
-
-func play_animation(anim_name: String) -> void:
-	if $AnimatedSprite2D:  # Se você tiver um AnimatedSprite2D
-		$AnimatedSprite2D.play(anim_name)
+	# Só atualiza se a direção mudou
+	if new_direction != current_direction:
+		current_direction = new_direction
 		
+		if is_moving:
+			last_direction = new_direction
+			play_walk_animation(new_direction)
+
+func get_8_direction_input() -> Vector2:
+	# Captura input das teclas direcionais
+	var left = Input.is_action_pressed("ui_left")
+	var right = Input.is_action_pressed("ui_right") 
+	var up = Input.is_action_pressed("ui_up")
+	var down = Input.is_action_pressed("ui_down")
+	
+	# Determina vetor de movimento baseado nas combinações de teclas
+	var direction = Vector2.ZERO
+	
+	# Movimento nas 8 direções
+	if up and right:
+		direction = Vector2(0.707, -0.707)  # Diagonal superior direita
+	elif down and right:
+		direction = Vector2(0.707, 0.707)   # Diagonal inferior direita
+	elif down and left:
+		direction = Vector2(-0.707, 0.707)  # Diagonal inferior esquerda
+	elif up and left:
+		direction = Vector2(-0.707, -0.707) # Diagonal superior esquerda
+	elif right:
+		direction = Vector2(1, 0)           # Direita
+	elif left:
+		direction = Vector2(-1, 0)          # Esquerda
+	elif up:
+		direction = Vector2(0, -1)          # Cima
+	elif down:
+		direction = Vector2(0, 1)           # Baixo
+	
+	return direction
+
+func play_walk_animation(direction: Vector2):
+	var animation_name = vector_to_animation_name(direction)
+	
+	if animation_name != "":
+		animated_sprite.play(animation_name)
+	else:
+		print("Nenhuma animação de walk encontrada para a direção: ", direction)
+		
+func vector_to_animation_name(direction: Vector2) -> String:
+	var vector_string = str(direction)
+	vector_string = vector_string.replace("(", "").replace(")", "").replace(", ", "_")
+	
+	if animated_sprite.sprite_frames.has_animation(vector_string):
+		return vector_string
+	else:
+		print("Animação não encontrada: " + vector_string)
+		return ""
