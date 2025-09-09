@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3 uid="uid://ciw5xwfgk02oa"]
+
+[ext_resource type="Script" uid="uid://bmd2xrxpa3iba" path="res://bow.gd" id="1_2l2of"]
+[ext_resource type="Texture2D" uid="uid://d2145chr1ulf3" path="res://art/arco1.png" id="2_2of8d"]
+
+[node name="bow" type="Node2D"]
+script = ExtResource("1_2l2of")
+icon = ExtResource("2_2of8d")
