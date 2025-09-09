@@ -129,7 +129,7 @@ sprint_multiplier = 1.5
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="prota"]
 position = Vector2(65, -4)
 sprite_frames = SubResource("SpriteFrames_2bgqt")
-animation = &"0.707_0.707"
+animation = &"-0.707_-0.707"
 
 [node name="shape_prota" type="CollisionShape2D" parent="prota"]
 position = Vector2(65, -4)
