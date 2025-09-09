@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 @export var speed: float = 300.0  # Velocidade base do personagem
-@export var sprint_multiplier: float = 1.5
+@export var sprint_multiplier: float = 2.0  # Multiplicador para sprint
 @export var dash_speed: float = 1000.0
 @export var dash_duration: float = 0.2
 @export var dash_cooldown: float = 1.0
@@ -10,7 +10,6 @@ var can_dash: bool = true
 var is_dashing: bool = false
 var dash_timer: float = 0.0
 var cooldown_timer: float = 0.0
-var current_speed = speed
 
 @onready var animated_sprite = $AnimatedSprite2D
 
@@ -21,32 +20,39 @@ func _physics_process(delta):
 	# Captura input de movimento em 8 direções
 	var input_vector = get_8_direction_input()
 	
+	# Determina a velocidade base
+	var current_speed = speed
+	
+	# Aplica multiplicador de sprint se a ação estiver pressionada
+	if Input.is_action_pressed("sprint"):
+		current_speed = speed * sprint_multiplier
+	
 	# Aplica velocidade
 	if input_vector != Vector2.ZERO:
-		velocity = input_vector * speed
-		update_sprite_direction(input_vector, true)
+		velocity = input_vector * current_speed
+		last_direction = input_vector  # Salva a última direção válida
 	else:
 		velocity = Vector2.ZERO
-		update_sprite_direction(Vector2.ZERO, false)
+	
+	# Atualiza sprite e animação
+	update_sprite_direction()
 	
 	# Move o personagem
-	if Input.is_action_pressed("sprint"):
-		current_speed *= sprint_multiplier
-		
-	# Aplica o movimento
-	velocity = input_vector * current_speed
 	move_and_slide()
-	
-func update_sprite_direction(direction_vector: Vector2, is_moving: bool = false):
+
+func update_sprite_direction():
 	var new_direction = get_8_direction_input()
 	
 	# Só atualiza se a direção mudou
 	if new_direction != current_direction:
 		current_direction = new_direction
 		
-		if is_moving:
-			last_direction = new_direction
+		# Se há input, toca animação de caminhada
+		if new_direction != Vector2.ZERO:
 			play_walk_animation(new_direction)
+		else:
+			# Para animação idle se necessário
+			animated_sprite.stop()
 
 func get_8_direction_input() -> Vector2:
 	# Captura input das teclas direcionais
@@ -89,6 +95,9 @@ func play_walk_animation(direction: Vector2):
 func vector_to_animation_name(direction: Vector2) -> String:
 	var vector_string = str(direction)
 	vector_string = vector_string.replace("(", "").replace(")", "").replace(", ", "_")
+	
+	# Debug: mostra o nome da animação que está sendo procurada
+	print("Procurando animação: ", vector_string)
 	
 	if animated_sprite.sprite_frames.has_animation(vector_string):
 		return vector_string
