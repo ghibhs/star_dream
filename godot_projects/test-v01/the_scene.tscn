@@ -1,6 +1,7 @@
 [gd_scene load_steps=16 format=4 uid="uid://bq51iltat45eg"]
 
 [ext_resource type="Texture2D" uid="uid://cd12d7uhj2347" path="res://art/chao_jogo1.png" id="1_37c5f"]
+[ext_resource type="Script" uid="uid://dj3xts5dlq2sk" path="res://prota.gd" id="2_b4ggb"]
 [ext_resource type="Texture2D" uid="uid://2vkhcyjmi6mx" path="res://art/Sprite-0001-Sheet.png" id="3_b4ggb"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_k7dws"]
@@ -11,10 +12,6 @@ texture_region_size = Vector2i(12, 12)
 [sub_resource type="TileSet" id="TileSet_rnqm3"]
 tile_size = Vector2i(12, 12)
 sources/0 = SubResource("TileSetAtlasSource_k7dws")
-
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_k7dws"]
-radius = 23.0
-height = 82.0
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rtios"]
 atlas = ExtResource("3_b4ggb")
@@ -85,49 +82,9 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="GDScript" id="GDScript_5swiu"]
-script/source = "extends AnimatedSprite2D
-
-@onready var animated_sprite = $AnimatedSprite2D
-
-func update_sprite_direction(direction: Vector2):
-	if abs(direction.x) > abs(direction.y):
-		if direction.x > 0:
-			animated_sprite.play(\"walk_right\")
-		else:
-			animated_sprite.play(\"walk_left\")
-	else:
-		if direction.y > 0:
-			animated_sprite.play(\"walk_down\")
-		else:
-			animated_sprite.play(\"walk_up\")
-			
-func get_8_direction(direction: Vector2) -> String:
-	var angle = direction.angle()
-	var degrees = rad_to_deg(angle)
-	
-	# Normaliza para 0-360
-	if degrees < 0:
-		degrees += 360
-	
-	# Divide em 8 direções (45 graus cada)
-	if degrees >= 337.5 or degrees < 22.5:
-		return \"right\"
-	elif degrees >= 22.5 and degrees < 67.5:
-		return \"down_right\"
-	elif degrees >= 67.5 and degrees < 112.5:
-		return \"down\"
-	elif degrees >= 112.5 and degrees < 157.5:
-		return \"down_left\"
-	elif degrees >= 157.5 and degrees < 202.5:
-		return \"left\"
-	elif degrees >= 202.5 and degrees < 247.5:
-		return \"up_left\"
-	elif degrees >= 247.5 and degrees < 292.5:
-		return \"up\"
-	else:  # 292.5 - 337.5
-		return \"up_right\"
-"
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_k7dws"]
+radius = 23.0
+height = 82.0
 
 [node name="the_scene" type="Node2D"]
 
@@ -136,13 +93,14 @@ tile_map_data = PackedByteArray("AAD+//7/AAAAAAAAAAD+////AAAAAAAAAAD+/wAAAAAAAAA
 tile_set = SubResource("TileSet_rnqm3")
 
 [node name="prota" type="CharacterBody2D" parent="."]
+script = ExtResource("2_b4ggb")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="prota"]
+position = Vector2(65, -4)
+sprite_frames = SubResource("SpriteFrames_2bgqt")
 
 [node name="shape_prota" type="CollisionShape2D" parent="prota"]
 position = Vector2(65, -4)
 shape = SubResource("CapsuleShape2D_k7dws")
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="prota/shape_prota"]
-sprite_frames = SubResource("SpriteFrames_2bgqt")
-script = SubResource("GDScript_5swiu")
 
 [node name="Camera2D" type="Camera2D" parent="prota"]
