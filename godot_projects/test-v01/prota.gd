@@ -16,7 +16,7 @@ var cooldown_timer: float = 0.0
 var current_direction: Vector2 = Vector2.ZERO
 var last_direction: Vector2 = Vector2(1, 0)
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	# Captura input de movimento em 8 direções
 	var input_vector = get_8_direction_input()
 	
@@ -53,6 +53,7 @@ func update_sprite_direction():
 		else:
 			# Para animação idle se necessário
 			animated_sprite.stop()
+	print("position", position)
 
 func get_8_direction_input() -> Vector2:
 	# Captura input das teclas direcionais
