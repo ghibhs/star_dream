@@ -53,6 +53,7 @@ func update_sprite_direction():
 		else:
 			# Para animação idle se necessário
 			animated_sprite.stop()
+	print("position", position)
 
 func get_8_direction_input() -> Vector2:
 	# Captura input das teclas direcionais

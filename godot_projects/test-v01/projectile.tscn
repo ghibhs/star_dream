@@ -1,5 +1,8 @@
-[gd_scene format=3 uid="uid://loe4db4bypkq"]
+[gd_scene load_steps=2 format=3 uid="uid://loe4db4bypkq"]
+
+[ext_resource type="Script" uid="uid://becpaqljv6m7g" path="res://projectile.gd" id="1_a85iw"]
 
 [node name="arrow" type="Node2D"]
+script = ExtResource("1_a85iw")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
