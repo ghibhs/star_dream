@@ -33,3 +33,18 @@ func play_animations(dir: Vector2):
 		animation.play("new_animation_4")
 	if dir.x > 0 and dir.y > 0:
 		animation.play("new_animation_6")
+		
+func _ready():
+	# OPÇÃO A: Conectar a um arco específico por referênci
+	call_deferred("setup_connections")
+
+func setup_connections():
+	var bows = get_tree().get_nodes_in_group("items")
+	for bow in bows:
+		bow.bow_collected.connect(attach)
+
+func attach(value):
+	var bow_scene = load(value)
+	var bow_instance = bow_scene.instantiate()
+	add_child(bow_instance)
+	
