@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cuee6dumfm03j"
-path="res://.godot/imported/chao_jogo3.png-627aae6ed2faeca8655998cfebb58c7c.ctex"
+uid="uid://b4l2484ruwn5"
+path="res://.godot/imported/Liron_Eye_rotation-Sheet-Direita-Baixo.png-5bd42d7031cc87ce20b8703cd3e0b628.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/chao_jogo3.png"
-dest_files=["res://.godot/imported/chao_jogo3.png-627aae6ed2faeca8655998cfebb58c7c.ctex"]
+source_file="res://art/Liron_Eye_rotation-Sheet-Direita-Baixo.png"
+dest_files=["res://.godot/imported/Liron_Eye_rotation-Sheet-Direita-Baixo.png-5bd42d7031cc87ce20b8703cd3e0b628.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://25j42aw5ps7i"
-path="res://.godot/imported/chao_jogo4.png-4227c61830520b2ba8890359d94ff465.ctex"
+uid="uid://d13uu3fpbo7qx"
+path="res://.godot/imported/Liron_Eye_rotation-Sheet-Cima.png-86bdc3994ca38dd71b1f3395a5896079.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/chao_jogo4.png"
-dest_files=["res://.godot/imported/chao_jogo4.png-4227c61830520b2ba8890359d94ff465.ctex"]
+source_file="res://art/Liron_Eye_rotation-Sheet-Cima.png"
+dest_files=["res://.godot/imported/Liron_Eye_rotation-Sheet-Cima.png-86bdc3994ca38dd71b1f3395a5896079.ctex"]
 
 [params]
 
