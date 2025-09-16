@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://deaodpc5w6ugl" path="res://entidades.tscn" id="1_bxlh1"]
 [ext_resource type="Script" uid="uid://dbv8kgf0ywdkl" path="res://the_game.gd" id="1_rwqnc"]
 [ext_resource type="Texture2D" uid="uid://cj3vou3sokp62" path="res://art/pixil-frame-0.png" id="2_sbril"]
-[ext_resource type="PackedScene" uid="uid://dj5sthl5sxy5" path="res://bow.tscn" id="3_ir4x8"]
+[ext_resource type="PackedScene" uid="uid://c0f1607nsdg0m" path="res://bow.tscn" id="3_ir4x8"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ir4x8"]
 texture = ExtResource("2_sbril")

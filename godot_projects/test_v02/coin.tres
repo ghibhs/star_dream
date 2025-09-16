@@ -1,0 +1,6 @@
+[gd_resource type="Resource" format=3 uid="uid://c0chp8nw0ptb0"]
+
+[resource]
+resource_name = "bow"
+metadata/bow_name = ""
+metadata/animation_name = ""
