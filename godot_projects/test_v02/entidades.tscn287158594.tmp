@@ -1,0 +1,117 @@
+[gd_scene load_steps=13 format=3 uid="uid://deaodpc5w6ugl"]
+
+[ext_resource type="Texture2D" uid="uid://dlpljx24qqki4" path="res://art/Liron_Eye_rotation-Sheet.png" id="1_dqdjt"]
+[ext_resource type="Script" uid="uid://cx2msu62txboe" path="res://entidades.gd" id="1_yeshm"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8boi7"]
+radius = 16.0
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yeshm"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7evp6"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ufisl"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aern5"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tap0e"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d6x5g"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pnt5t"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_542rn"]
+atlas = ExtResource("1_dqdjt")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_dqdjt"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yeshm")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7evp6")
+}],
+"loop": true,
+"name": &"new_animation",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ufisl")
+}],
+"loop": true,
+"name": &"new_animation_1",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aern5")
+}],
+"loop": true,
+"name": &"new_animation_2",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tap0e")
+}],
+"loop": true,
+"name": &"new_animation_3",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d6x5g")
+}],
+"loop": true,
+"name": &"new_animation_4",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pnt5t")
+}],
+"loop": true,
+"name": &"new_animation_5",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_542rn")
+}],
+"loop": true,
+"name": &"new_animation_6",
+"speed": 5.0
+}]
+
+[node name="Node2D" type="CharacterBody2D"]
+script = ExtResource("1_yeshm")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_8boi7")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(1, -2)
+sprite_frames = SubResource("SpriteFrames_dqdjt")
+animation = &"new_animation_6"
