@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3 uid="uid://kwure8xvbiuo"]
+
+[ext_resource type="Script" uid="uid://bq4vfahxytipk" path="res://ItemData.gd" id="1_28mxr"]
+
+[resource]
+script = ExtResource("1_28mxr")
+item_name = ""
+damage = 0.0
+speed = 0.0
