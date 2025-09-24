@@ -1,4 +1,4 @@
-[gd_scene load_steps=72 format=3 uid="uid://deaodpc5w6ugl"]
+[gd_scene load_steps=70 format=3 uid="uid://deaodpc5w6ugl"]
 
 [ext_resource type="Texture2D" uid="uid://dlpljx24qqki4" path="res://art/Liron_Eye_rotation-Sheet.png" id="1_dqdjt"]
 [ext_resource type="Script" uid="uid://cx2msu62txboe" path="res://entidades.gd" id="1_yeshm"]
@@ -10,7 +10,6 @@
 [ext_resource type="Texture2D" uid="uid://uyd7l326x40r" path="res://art/Liron_Eye_rotation-Sheet-Esquerda-Baixo.png" id="8_8dt8t"]
 [ext_resource type="Texture2D" uid="uid://bgpy6677k0fki" path="res://art/Liron_Eye_rotation-Sheet-Baixo.png" id="9_kpxy1"]
 [ext_resource type="Texture2D" uid="uid://b4l2484ruwn5" path="res://art/Liron_Eye_rotation-Sheet-Direita-Baixo.png" id="10_3s4nu"]
-[ext_resource type="Texture2D" uid="uid://d1vomg61bi3h7" path="res://art/moeda_game1.png" id="11_bavbo"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_8boi7"]
 radius = 16.0
@@ -457,17 +456,6 @@ animations = [{
 "speed": 15.0
 }]
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_lkdwd"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("11_bavbo")
-}],
-"loop": true,
-"name": &"default",
-"speed": 5.0
-}]
-
 [node name="Node2D" type="CharacterBody2D"]
 script = ExtResource("1_yeshm")
 speed = 150.0
@@ -479,13 +467,3 @@ shape = SubResource("CircleShape2D_8boi7")
 position = Vector2(1, -2)
 sprite_frames = SubResource("SpriteFrames_dqdjt")
 animation = &"new_animation_6"
-
-[node name="AnimatedSprite2D2" type="AnimatedSprite2D" parent="."]
-position = Vector2(17, 0)
-scale = Vector2(0.71, 0.3)
-sprite_frames = SubResource("SpriteFrames_lkdwd")
-
-[node name="Marker2D" type="Marker2D" parent="AnimatedSprite2D2"]
-gizmo_extents = 0.0
-
-[node name="Timer" type="Timer" parent="AnimatedSprite2D2"]

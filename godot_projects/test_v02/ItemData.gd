@@ -1,10 +1,10 @@
 # ItemData.gd
-class_name ItemData  # ← MUITO IMPORTANTE!
+class_name ItemData
 extends Resource
 
-@export var sprite_texture: Texture2D
+@export var sprite_frames: SpriteFrames  # ← Mudança aqui
+@export var animation_name: String = "default"
 @export var collision_shape: Shape2D
 @export var item_name: String
-@export var damage: float
-@export var speed: float
+@export var value: int
 @export var sound_effect: AudioStream

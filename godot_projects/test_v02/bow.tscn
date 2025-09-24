@@ -1,47 +1,15 @@
-[gd_scene load_steps=8 format=3 uid="uid://c0f1607nsdg0m"]
+[gd_scene load_steps=2 format=3 uid="uid://c0f1607nsdg0m"]
 
 [ext_resource type="Script" uid="uid://dp85bmi6j88bm" path="res://area_2d.gd" id="1_2l2of"]
-[ext_resource type="Texture2D" uid="uid://d2145chr1ulf3" path="res://art/arco1.png" id="1_cx05r"]
-[ext_resource type="Texture2D" uid="uid://c6akv1uvc3v7p" path="res://art/arco2.png" id="2_58rgb"]
-[ext_resource type="Texture2D" uid="uid://dkrw56ubxnbda" path="res://art/arco3.png" id="3_a60kk"]
-[ext_resource type="Texture2D" uid="uid://c5bh2xxldtvvc" path="res://art/arco4.png" id="4_p5kp7"]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_58rgb"]
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_a60kk"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("1_cx05r")
-}],
-"loop": true,
-"name": &"default",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("1_cx05r")
-}, {
-"duration": 1.0,
-"texture": ExtResource("2_58rgb")
-}, {
-"duration": 1.0,
-"texture": ExtResource("3_a60kk")
-}, {
-"duration": 1.0,
-"texture": ExtResource("4_p5kp7")
-}],
-"loop": true,
-"name": &"new_animation",
-"speed": 5.0
-}]
 
 [node name="Area2D" type="Area2D"]
 script = ExtResource("1_2l2of")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("CircleShape2D_58rgb")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-sprite_frames = SubResource("SpriteFrames_a60kk")
-animation = &"new_animation"
+animation = &""
+
+[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="."]
+
+[connection signal="screen_exited" from="VisibleOnScreenEnabler2D" to="." method="_on_visible_on_screen_enabler_2d_screen_exited"]

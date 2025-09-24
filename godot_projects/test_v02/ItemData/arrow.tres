@@ -1,14 +1,25 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3 uid="uid://yweurge002rt"]
+[gd_resource type="Resource" script_class="ItemData" load_steps=5 format=3 uid="uid://yweurge002rt"]
 
 [ext_resource type="Script" uid="uid://bq4vfahxytipk" path="res://ItemData.gd" id="1_mmcfl"]
 [ext_resource type="Texture2D" uid="uid://bnxt0ghdmmyrn" path="res://art/lanca.png" id="2_cv36r"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_jgh67"]
 
+[sub_resource type="SpriteFrames" id="SpriteFrames_mmcfl"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_cv36r")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
 [resource]
 script = ExtResource("1_mmcfl")
-sprite_texture = ExtResource("2_cv36r")
+sprite_frames = SubResource("SpriteFrames_mmcfl")
+animation_name = "default"
 collision_shape = SubResource("CapsuleShape2D_jgh67")
 item_name = ""
-damage = 5.0
-speed = 20.0
+value = 0
