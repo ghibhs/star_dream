@@ -458,7 +458,6 @@ animations = [{
 
 [node name="Node2D" type="CharacterBody2D"]
 script = ExtResource("1_yeshm")
-speed = 150.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_8boi7")
@@ -467,3 +466,7 @@ shape = SubResource("CircleShape2D_8boi7")
 position = Vector2(1, -2)
 sprite_frames = SubResource("SpriteFrames_dqdjt")
 animation = &"new_animation_6"
+
+[node name="WeaponMarker2D" type="Marker2D" parent="."]
+
+[node name="ProjectileSpawnMarker2D" type="Marker2D" parent="WeaponMarker2D"]

@@ -9,7 +9,3 @@ script = ExtResource("1_2l2of")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 animation = &""
-
-[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="."]
-
-[connection signal="screen_exited" from="VisibleOnScreenEnabler2D" to="." method="_on_visible_on_screen_enabler_2d_screen_exited"]

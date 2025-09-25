@@ -1,13 +1,18 @@
-[gd_scene load_steps=3 format=3 uid="uid://bpp0r72lubkxd"]
+[gd_scene load_steps=4 format=3 uid="uid://bpp0r72lubkxd"]
+
+[ext_resource type="Script" uid="uid://43ee04cvujil" path="res://projectile.gd" id="1_a85iw"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_akgne"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_a85iw"]
 
 [node name="projectile" type="Area2D"]
+script = ExtResource("1_a85iw")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CapsuleShape2D_akgne")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_a85iw")
+
+[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="."]
