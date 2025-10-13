@@ -1,44 +1,11 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=8 format=3 uid="uid://kwure8xvbiuo"]
+[gd_resource type="Resource" script_class="Weapon_Data" load_steps=3 format=3 uid="uid://kwure8xvbiuo"]
 
-[ext_resource type="Script" uid="uid://bq4vfahxytipk" path="res://ItemData.gd" id="1_28mxr"]
-[ext_resource type="Texture2D" uid="uid://d2145chr1ulf3" path="res://art/arco1.png" id="2_kx51b"]
-[ext_resource type="Texture2D" uid="uid://c6akv1uvc3v7p" path="res://art/arco2.png" id="3_lu6ex"]
-[ext_resource type="Texture2D" uid="uid://dkrw56ubxnbda" path="res://art/arco3.png" id="4_6g308"]
-[ext_resource type="Texture2D" uid="uid://c5bh2xxldtvvc" path="res://art/arco4.png" id="5_ibrur"]
+[ext_resource type="Script" uid="uid://bs5wps23xnbhp" path="res://WeaponData.gd" id="1_28mxr"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_jpofd"]
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_fqcou"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("2_kx51b")
-}],
-"loop": true,
-"name": &"default",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("2_kx51b")
-}, {
-"duration": 1.0,
-"texture": ExtResource("3_lu6ex")
-}, {
-"duration": 1.0,
-"texture": ExtResource("4_6g308")
-}, {
-"duration": 1.0,
-"texture": ExtResource("5_ibrur")
-}],
-"loop": false,
-"name": &"new_animation",
-"speed": 8.0
-}]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_28mxr"]
 
 [resource]
 script = ExtResource("1_28mxr")
-sprite_frames = SubResource("SpriteFrames_fqcou")
-collision_shape = SubResource("CircleShape2D_jpofd")
-item_name = "bow"
+attack_collision = SubResource("RectangleShape2D_28mxr")
 weapon_type = "projectile"
+damage = 1.5
