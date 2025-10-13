@@ -39,7 +39,6 @@ animations = [{
 [resource]
 script = ExtResource("1_28mxr")
 sprite_frames = SubResource("SpriteFrames_fqcou")
-animation_name = "default"
 collision_shape = SubResource("CircleShape2D_jpofd")
 item_name = "bow"
-value = 0
+weapon_type = "projectile"
