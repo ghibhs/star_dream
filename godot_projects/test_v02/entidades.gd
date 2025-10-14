@@ -38,7 +38,7 @@ func play_animations(dir: Vector2):
 	if dir.x > 0 and dir.y > 0:
 		animation.play("new_animation_6")
 
-var current_weapon_data: ItemData
+var current_weapon_data: Weapon_Data
 @onready var weapon_marker = $WeaponMarker2D  # Onde fica a arma
 @onready var projectile_spawn_marker = $WeaponMarker2D/ProjectileSpawnMarker2D
 
@@ -57,7 +57,7 @@ func _input(event):
 	if event.is_action_pressed("attack"):
 		perform_attack()
 
-func receive_weapon_data(weapon_data: ItemData):
+func receive_weapon_data(weapon_data: Weapon_Data):
 	print("Arma recebida: ", weapon_data.item_name)
 	current_weapon_data = weapon_data
 	call_deferred("setup_weapon")

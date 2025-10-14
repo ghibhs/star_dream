@@ -1,11 +1,11 @@
 # CollectableItem.gd (area_2d.gd)
 extends Area2D
 
-@export var item_data: ItemData : set = set_item_data
+@export var item_data: Weapon_Data : set = set_item_data
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var collision = $CollisionShape2D
 
-func set_item_data(new_data: ItemData):
+func set_item_data(new_data: Weapon_Data):
 	item_data = new_data
 	if animated_sprite and collision:
 		setup_item()

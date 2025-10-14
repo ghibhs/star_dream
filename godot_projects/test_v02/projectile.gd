@@ -15,7 +15,7 @@ func _ready():
 	if screen_notifier:
 		screen_notifier.screen_exited.connect(queue_free)
 
-func setup_from_weapon_data(weapon_data: ItemData, dir: Vector2):
+func setup_from_weapon_data(weapon_data: Weapon_Data, dir: Vector2):
 	# Configura visual
 	animated_sprite.sprite_frames = weapon_data.projectile_sprite_frames
 	animated_sprite.play(weapon_data.projectile_animation)
