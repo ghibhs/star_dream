@@ -16,7 +16,7 @@ sources/0 = SubResource("TileSetAtlasSource_ir4x8")
 [node name="The_game" type="Node2D"]
 script = ExtResource("1_rwqnc")
 
-[node name="Node2D" parent="." instance=ExtResource("1_bxlh1")]
+[node name="Node2D" parent="." groups=["player"] instance=ExtResource("1_bxlh1")]
 
 [node name="Camera2D" type="Camera2D" parent="Node2D"]
 zoom = Vector2(2.91, 2.91)

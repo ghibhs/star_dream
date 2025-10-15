@@ -1,4 +1,4 @@
-[gd_scene load_steps=70 format=3 uid="uid://deaodpc5w6ugl"]
+[gd_scene load_steps=71 format=3 uid="uid://deaodpc5w6ugl"]
 
 [ext_resource type="Texture2D" uid="uid://dlpljx24qqki4" path="res://art/Liron_Eye_rotation-Sheet.png" id="1_dqdjt"]
 [ext_resource type="Script" uid="uid://cx2msu62txboe" path="res://entidades.gd" id="1_yeshm"]
@@ -456,7 +456,10 @@ animations = [{
 "speed": 15.0
 }]
 
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_lkdwd"]
+
 [node name="Node2D" type="CharacterBody2D"]
+collision_mask = 7
 script = ExtResource("1_yeshm")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -467,6 +470,11 @@ position = Vector2(1, -2)
 sprite_frames = SubResource("SpriteFrames_dqdjt")
 animation = &"new_animation_6"
 
-[node name="WeaponMarker2D" type="Marker2D" parent="."]
+[node name="AttackArea" type="Area2D" parent="."]
 
-[node name="ProjectileSpawnMarker2D" type="Marker2D" parent="WeaponMarker2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea"]
+shape = SubResource("CapsuleShape2D_lkdwd")
+
+[node name="ProjectileSpam" type="Marker2D" parent="."]
+
+[node name="AttackCooldown" type="Timer" parent="."]

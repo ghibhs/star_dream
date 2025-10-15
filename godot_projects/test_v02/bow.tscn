@@ -1,8 +1,8 @@
 [gd_scene load_steps=2 format=3 uid="uid://c0f1607nsdg0m"]
 
-[ext_resource type="Script" uid="uid://dp85bmi6j88bm" path="res://area_2d.gd" id="1_2l2of"]
+[ext_resource type="Script" uid="uid://dp85bmi6j88bm" path="res://ColletableItem.gd" id="1_2l2of"]
 
-[node name="Area2D" type="Area2D"]
+[node name="ColletableItem" type="Area2D"]
 script = ExtResource("1_2l2of")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

@@ -7,6 +7,8 @@
 [sub_resource type="SpriteFrames" id="SpriteFrames_a85iw"]
 
 [node name="projectile" type="Area2D"]
+collision_layer = 8
+collision_mask = 6
 script = ExtResource("1_a85iw")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -15,4 +17,6 @@ shape = SubResource("CapsuleShape2D_akgne")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_a85iw")
 
-[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="."]
+[node name="LifeTimer" type="Timer" parent="."]
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
