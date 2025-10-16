@@ -59,9 +59,9 @@ var current_weapon_data: Weapon_Data
 @export var weapon_angle_offset_deg: float = 0.0   # ajuste fino da rotação do sprite da arma
 @onready var weapon_marker: Node2D = $WeaponMarker2D
 @onready var projectile_spawn_marker: Marker2D = $WeaponMarker2D/ProjectileSpawnMarker2D
-@onready var weapon_timer: Timer = $Weapon_timer
+@onready var weapon_timer: Timer = $WeaponMarker2D/Weapon_timer
 # IMPORTANTE: esse nó JÁ EXISTE na cena. Não vamos destruí-lo.
-@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponAnimatedSprite2D
+@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponMarker2D/WeaponAnimatedSprite2D
 @export var fire_rate: float = 3.0  # tiros por segundo (cd = 1 / fire_rate)
 var can_attack: bool = true
 
@@ -69,12 +69,9 @@ var attack_area: Area2D
 
 func _ready() -> void:
 	add_to_group("player")
-	if weapon_timer:
-		weapon_timer.one_shot = true
-
 
 func _process(_delta: float) -> void:
-	if current_weapon_data and weapon_marker:
+	if current_weapon_data.weapon_type == "projectile":
 		weapon_marker.look_at(get_global_mouse_position())
 		if weapon_angle_offset_deg != 0.0:
 			weapon_marker.rotation += deg_to_rad(weapon_angle_offset_deg)
@@ -82,7 +79,9 @@ func _process(_delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
-		perform_attack()
+		can_attack = true
+		if weapon_timer.is_stopped():
+			perform_attack()
 
 
 func receive_weapon_data(weapon_data: Weapon_Data) -> void:
@@ -165,13 +164,6 @@ func perform_attack() -> void:
 		_:
 			melee_attack()  # fallback
 
-	# --- inicia cooldown ---
-	var cd : float = 1.0 / max(0.01, fire_rate)
-	can_attack = false
-	weapon_timer.start(cd)
-	await weapon_timer.timeout
-	can_attack = true
-
 
 func melee_attack() -> void:
 	if not attack_area:
@@ -197,7 +189,7 @@ func projectile_attack() -> void:
 
 	# Passa os dados DEPOIS (deferred) — evita Nil no AnimatedSprite2D do projétil
 	projectile.call_deferred("setup_from_weapon_data", current_weapon_data, dir)
-
+	weapon_timer.start()
 
 func _on_attack_hit(body: Node) -> void:
 	if body.is_in_group("enemies"):

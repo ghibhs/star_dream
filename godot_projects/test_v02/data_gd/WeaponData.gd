@@ -13,6 +13,7 @@ extends Resource
 @export var attack_collision: Shape2D  # Collision do ataque
 @export var attack_collision_position: Vector2 = Vector2.ZERO
 @export var projectile_spawn_offset: Vector2 = Vector2.ZERO
+@export var sprite_position: Vector2 = Vector2.ZERO
 @export var weapon_type: String = "melee"  # "melee", "projectile"
 @export var damage: float = 10
 @export var attack_speed: float = 1.0

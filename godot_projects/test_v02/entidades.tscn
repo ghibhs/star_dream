@@ -474,5 +474,4 @@ animation = &"new_animation_6"
 [node name="WeaponAnimatedSprite2D" type="AnimatedSprite2D" parent="WeaponMarker2D"]
 
 [node name="Weapon_timer" type="Timer" parent="WeaponMarker2D"]
-wait_time = 2.0
 one_shot = true
