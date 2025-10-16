@@ -6,6 +6,8 @@ extends Resource
 @export var collision_shape: Shape2D  # Para coleta do item
 @export var item_name: String
 @export var value: int
+@export var Sprite_scale: Vector2 = Vector2.ONE
+
 
 # === DADOS DA ARMA ===
 @export var attack_collision: Shape2D  # Collision do ataque
@@ -19,6 +21,7 @@ extends Resource
 # === DADOS DO PROJÉTIL (se weapon_type = "projectile") ===
 @export var projectile_speed: float = 300.0
 @export var projectile_sprite_frames: SpriteFrames  # Sprite do projétil
-@export var projectile_animation: String = "default"
+@export var projectile_name: String = "default"
 @export var projectile_collision: Shape2D  # Collision do projétil
 @export var pierce: bool = false
+@export var projectile_scale: Vector2 = Vector2.ONE

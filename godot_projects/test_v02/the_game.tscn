@@ -17,6 +17,8 @@ sources/0 = SubResource("TileSetAtlasSource_ir4x8")
 script = ExtResource("1_rwqnc")
 
 [node name="Node2D" parent="." instance=ExtResource("1_bxlh1")]
+speed = 100.0
+weapon_angle_offset_deg = 0.0
 
 [node name="Camera2D" type="Camera2D" parent="Node2D"]
 zoom = Vector2(2.91, 2.91)
@@ -28,4 +30,5 @@ tile_set = SubResource("TileSet_rwqnc")
 
 [node name="Area2D" parent="." instance=ExtResource("4_rwqnc")]
 position = Vector2(64, -32)
+scale = Vector2(0.8, 0.8)
 item_data = ExtResource("5_o5p78")
