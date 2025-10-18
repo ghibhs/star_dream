@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="Enemy_Data" load_steps=12 format=3 uid="uid://b83hlcfidew6m"]
+
+[ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://data_gd/EnemyData.gd" id="1_x8s3z"]
+[ext_resource type="Texture2D" uid="uid://tvhieijwncdj" path="res://art/ChatGPT Image 18 de out-export.png" id="2_dntnr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dntnr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dp5aa"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dp5aa"]
+atlas = ExtResource("2_dntnr")
+region = Rect2(0, 0, 85, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3f6xc"]
+atlas = ExtResource("2_dntnr")
+region = Rect2(85, 0, 85, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xbvs3"]
+atlas = ExtResource("2_dntnr")
+region = Rect2(170, 0, 85, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jhnyg"]
+atlas = ExtResource("2_dntnr")
+region = Rect2(0, 128, 85, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_42e54"]
+atlas = ExtResource("2_dntnr")
+region = Rect2(85, 128, 85, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_p41qm"]
+atlas = ExtResource("2_dntnr")
+region = Rect2(170, 128, 85, 128)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_21uq7"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dp5aa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3f6xc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xbvs3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jhnyg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_42e54")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_p41qm")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[resource]
+script = ExtResource("1_x8s3z")
+enemy_name = "Lobo Veloz"
+sprite_frames = SubResource("SpriteFrames_21uq7")
+animation_name = "walk"
+sprite_scale = Vector2(2, 2)
+max_health = 30.0
+damage = 15.0
+defense = 0.0
+move_speed = 150.0
+chase_range = 300.0
+attack_range = 25.0
+collision_shape = SubResource("RectangleShape2D_dntnr")
+hitbox_shape = SubResource("RectangleShape2D_dp5aa")
+behavior = "Aggressive"
+attack_cooldown = 0.8
+experience_drop = 20
+coin_drop = 8
+death_animation = "death"
+hit_flash_duration = 0.1

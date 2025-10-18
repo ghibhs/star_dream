@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="Weapon_Data" load_steps=6 format=3 uid="uid://dtdjb3sh6ot1b"]
+[gd_resource type="Resource" script_class="Weapon_Data" load_steps=7 format=3 uid="uid://dtdjb3sh6ot1b"]
 
 [ext_resource type="Script" uid="uid://bs5wps23xnbhp" path="res://data_gd/WeaponData.gd" id="1_6jlct"]
 [ext_resource type="Texture2D" uid="uid://u3v1bo6op8st" path="res://art/Sprite-0004.png" id="2_2n2et"]
+[ext_resource type="Texture2D" uid="uid://d0mdbh8vyk3mx" path="res://art/Sprite-0004 - Copia.png" id="3_2n2et"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_slrpm"]
 
@@ -12,6 +13,17 @@ animations = [{
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("2_2n2et")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_2n2et")
+}],
+"loop": true,
+"name": &"attack",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_2n2et")
 }],
 "loop": true,
 "name": &"default",
@@ -23,17 +35,18 @@ script = ExtResource("1_6jlct")
 sprite_frames = SubResource("SpriteFrames_k3gbh")
 animation_name = "default"
 collision_shape = SubResource("RectangleShape2D_844wr")
-item_name = ""
+item_name = "Sword"
 value = 0
-Sprite_scale = Vector2(0.2, 0.2)
+Sprite_scale = Vector2(0.1, 0.1)
+weapon_marker_position = Vector2(0, 8)
 attack_collision = SubResource("RectangleShape2D_slrpm")
 attack_collision_position = Vector2(0, 0)
 projectile_spawn_offset = Vector2(0, 0)
-sprite_position = Vector2(10, -8)
+sprite_position = Vector2(20, 0)
 weapon_type = "melee"
 damage = 10.0
 attack_speed = 1.0
-range = 100.0
+weapon_range = 100.0
 projectile_speed = 300.0
 projectile_name = "default"
 pierce = false

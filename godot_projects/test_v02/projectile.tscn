@@ -7,6 +7,8 @@
 [sub_resource type="SpriteFrames" id="SpriteFrames_a85iw"]
 
 [node name="projectile" type="Area2D"]
+collision_layer = 32
+collision_mask = 5
 script = ExtResource("1_a85iw")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="Enemy_Data" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data_gd/EnemyData.gd" id="1_x8s3z"]
+
+[resource]
+script = ExtResource("1_x8s3z")
+enemy_name = "Golem de Pedra"
+animation_name = "walk"
+sprite_scale = Vector2(3, 3)
+max_health = 150.0
+damage = 25.0
+defense = 10.0
+move_speed = 40.0
+chase_range = 150.0
+attack_range = 40.0
+behavior = 1
+attack_cooldown = 2.5
+experience_drop = 50
+coin_drop = 20
+death_animation = "death"
+hit_flash_duration = 0.2

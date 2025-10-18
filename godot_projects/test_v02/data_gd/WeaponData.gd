@@ -10,6 +10,7 @@ extends Resource
 
 
 # === DADOS DA ARMA ===
+@export var weapon_marker_position: Vector2 = Vector2.ZERO  # Posição do marker (pivot de rotação)
 @export var attack_collision: Shape2D  # Collision do ataque
 @export var attack_collision_position: Vector2 = Vector2.ZERO
 @export var projectile_spawn_offset: Vector2 = Vector2.ZERO
@@ -17,7 +18,7 @@ extends Resource
 @export var weapon_type: String = "melee"  # "melee", "projectile"
 @export var damage: float = 10
 @export var attack_speed: float = 1.0
-@export var range: float = 100.0
+@export var weapon_range: float = 100.0
 
 # === DADOS DO PROJÉTIL (se weapon_type = "projectile") ===
 @export var projectile_speed: float = 300.0

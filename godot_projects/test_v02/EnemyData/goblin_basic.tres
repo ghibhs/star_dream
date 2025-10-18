@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="Enemy_Data" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data_gd/EnemyData.gd" id="1_x8s3z"]
+
+[resource]
+script = ExtResource("1_x8s3z")
+enemy_name = "Goblin Básico"
+animation_name = "walk"
+sprite_scale = Vector2(2, 2)
+max_health = 50.0
+damage = 10.0
+defense = 2.0
+move_speed = 80.0
+chase_range = 200.0
+attack_range = 30.0
+behavior = 1
+attack_cooldown = 1.5
+experience_drop = 15
+coin_drop = 5
+death_animation = "death"
+hit_flash_duration = 0.15

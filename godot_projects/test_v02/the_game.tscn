@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=4 uid="uid://bvsl6cdtgjpj1"]
+[gd_scene load_steps=10 format=4 uid="uid://bvsl6cdtgjpj1"]
 
 [ext_resource type="PackedScene" uid="uid://deaodpc5w6ugl" path="res://entidades.tscn" id="1_bxlh1"]
 [ext_resource type="Script" uid="uid://dbv8kgf0ywdkl" path="res://the_game.gd" id="1_rwqnc"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c0f1607nsdg0m" path="res://bow.tscn" id="4_rwqnc"]
 [ext_resource type="Resource" uid="uid://kwure8xvbiuo" path="res://ItemData/bow.tres" id="5_o5p78"]
 [ext_resource type="Resource" uid="uid://dtdjb3sh6ot1b" path="res://ItemData/sword.tres" id="6_wg70j"]
+[ext_resource type="PackedScene" uid="uid://bubo78mrq757p" path="res://enemy.tscn" id="7_ep5gg"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ir4x8"]
 texture = ExtResource("2_sbril")
@@ -18,6 +19,8 @@ sources/0 = SubResource("TileSetAtlasSource_ir4x8")
 script = ExtResource("1_rwqnc")
 
 [node name="Node2D" parent="." instance=ExtResource("1_bxlh1")]
+collision_layer = 1
+collision_mask = 1
 
 [node name="Camera2D" type="Camera2D" parent="Node2D"]
 zoom = Vector2(2.91, 2.91)
@@ -36,3 +39,6 @@ item_data = ExtResource("5_o5p78")
 position = Vector2(-76, -45)
 scale = Vector2(0.2, 0.2)
 item_data = ExtResource("6_wg70j")
+
+[node name="Enemy" parent="." instance=ExtResource("7_ep5gg")]
+position = Vector2(50, -26)
