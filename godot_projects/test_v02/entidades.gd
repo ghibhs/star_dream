@@ -210,6 +210,13 @@ func melee_attack() -> void:
 
 	# inicia cooldown
 	can_attack = false
+        # para a animação de ataque da espada após o golpe
+        if current_weapon_sprite:
+            if current_weapon_data and current_weapon_data.animation_name != "":
+                current_weapon_sprite.play(current_weapon_data.animation_name)
+            else:
+                current_weapon_sprite.stop()
+
 	if weapon_timer:
 		weapon_timer.wait_time = 1.0 / fire_rate
 		weapon_timer.start()
