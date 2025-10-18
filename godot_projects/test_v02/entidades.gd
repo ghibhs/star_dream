@@ -3,7 +3,7 @@ extends CharacterBody2D
 # -----------------------------
 # MOVIMENTO / ANIMAÇÃO DO PLAYER
 # -----------------------------
-@export var speed: float = 100.0
+@export var speed: float = 150.0
 var direction: Vector2 = Vector2.ZERO
 
 @onready var animation: AnimatedSprite2D = $AnimatedSprite2D
@@ -71,11 +71,12 @@ func _ready() -> void:
 	add_to_group("player")
 
 func _process(_delta: float) -> void:
-	if current_weapon_data.weapon_type == "projectile":
+	if current_weapon_data and current_weapon_data.weapon_type == "projectile":
 		weapon_marker.look_at(get_global_mouse_position())
 		if weapon_angle_offset_deg != 0.0:
 			weapon_marker.rotation += deg_to_rad(weapon_angle_offset_deg)
-
+	elif current_weapon_data and current_weapon_data.weapon_type == "melee": 
+		weapon_marker.position
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
@@ -118,8 +119,11 @@ func create_or_update_weapon_sprite() -> void:
 	if "Sprite_scale" in current_weapon_data and current_weapon_data.Sprite_scale != Vector2.ZERO:
 		current_weapon_sprite.scale = current_weapon_data.Sprite_scale
 		print("scale: ",current_weapon_sprite.scale)
+		
+	if "sprite_position" in current_weapon_data and current_weapon_data.sprite_position != Vector2.ZERO:
+		current_weapon_sprite.position = current_weapon_data.sprite_position
 	# Caso contrário, você pode continuar ajustando a escala desse nó no editor à vontade.
-
+	
 
 func setup_attack_area() -> void:
 	# Limpa hitbox antiga (se existir)
@@ -167,6 +171,7 @@ func perform_attack() -> void:
 
 func melee_attack() -> void:
 	if not attack_area:
+		print("no attack area")
 		return
 	attack_area.monitoring = true
 	await get_tree().create_timer(0.2).timeout

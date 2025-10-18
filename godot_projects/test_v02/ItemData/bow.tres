@@ -43,6 +43,7 @@ Sprite_scale = Vector2(0.8, 0.8)
 attack_collision = SubResource("CircleShape2D_kx51b")
 attack_collision_position = Vector2(0, 0)
 projectile_spawn_offset = Vector2(0, 0)
+sprite_position = Vector2(0, 0)
 weapon_type = "projectile"
 damage = 10.0
 attack_speed = 1.0
