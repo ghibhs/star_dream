@@ -76,41 +76,56 @@ var attack_area: Area2D
 
 func _ready() -> void:
 	add_to_group("player")
+	print("[PLAYER] Inicializado e adicionado ao grupo 'player'")
 	
 	# Inicializa saúde
 	current_health = max_health
+	print("[PLAYER] Saúde inicializada: %.1f/%.1f" % [current_health, max_health])
 	
 	# Configura timer de cooldown
 	if weapon_timer:
 		weapon_timer.wait_time = 1.0 / fire_rate
 		weapon_timer.one_shot = true
 		weapon_timer.timeout.connect(_on_weapon_timer_timeout)
+		print("[PLAYER] Timer de ataque configurado: %.2fs cooldown" % weapon_timer.wait_time)
 	# Armas melee não rotacionam para o mouse
 
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
+		print("[PLAYER] Tecla de ataque pressionada")
 		if can_attack and weapon_timer.is_stopped():
+			print("[PLAYER] Iniciando ataque...")
 			perform_attack()
+		else:
+			if not can_attack:
+				print("[PLAYER] ⚠️ Ataque bloqueado: can_attack = false")
+			if not weapon_timer.is_stopped():
+				print("[PLAYER] ⚠️ Ataque bloqueado: timer ainda ativo (%.2fs restantes)" % weapon_timer.time_left)
 
 
 func receive_weapon_data(weapon_data: Weapon_Data) -> void:
 	# Recebido do item coletável
-	print("Arma recebida: ", weapon_data.item_name)
+	print("[PLAYER] 🗡️ Arma recebida: ", weapon_data.item_name)
+	print("[PLAYER]    Tipo: ", weapon_data.weapon_type)
+	print("[PLAYER]    Dano: ", weapon_data.damage)
 	current_weapon_data = weapon_data
 	call_deferred("setup_weapon")
 
 
 func setup_weapon() -> void:
 	if not current_weapon_data:
+		print("[PLAYER] ⚠️ setup_weapon() chamado sem weapon_data")
 		return
 
+	print("[PLAYER] Configurando arma: ", current_weapon_data.item_name)
 	# NÃO destruímos o sprite da arma — ele já está na cena para você poder editar escala no editor.
 	# Apenas atualizamos os dados visuais e os pontos auxiliares.
 	setup_weapon_marker_position()
 	create_or_update_weapon_sprite()
 	setup_attack_area()
 	setup_projectile_spawn()
+	print("[PLAYER] ✅ Arma configurada com sucesso")
 
 
 func setup_weapon_marker_position() -> void:
@@ -147,11 +162,13 @@ func create_or_update_weapon_sprite() -> void:
 func setup_attack_area() -> void:
 	# Limpa hitbox antiga (se existir)
 	if attack_area and is_instance_valid(attack_area):
+		print("[PLAYER] Removendo hitbox antiga")
 		attack_area.queue_free()
 		attack_area = null
 
 	# Cria hitbox apenas se a arma possuir colisão de melee
 	if current_weapon_data.attack_collision:
+		print("[PLAYER] Criando hitbox de melee...")
 		attack_area = Area2D.new()
 		attack_area.collision_layer = 16  # Layer 5: Player Hitbox
 		attack_area.collision_mask = 4    # Mask 3: Detecta Enemy
@@ -163,6 +180,9 @@ func setup_attack_area() -> void:
 		# Coloca a hitbox como filha do marker da arma
 		if weapon_marker:
 			weapon_marker.add_child(attack_area)
+		
+		print("[PLAYER]    Hitbox shape: ", current_weapon_data.attack_collision)
+		print("[PLAYER]    Layer: 16, Mask: 4")
 
 		# Conexões e estado
 		attack_area.body_entered.connect(_on_attack_hit)
@@ -177,9 +197,14 @@ func setup_projectile_spawn() -> void:
 
 func perform_attack() -> void:
 	if not current_weapon_data:
+		print("[PLAYER] ⚠️ Tentou atacar sem arma equipada")
 		return
 	if not can_attack:
+		print("[PLAYER] ⚠️ Ataque bloqueado: ainda em cooldown")
 		return  # ainda em cooldown
+	
+	print("[PLAYER] ⚔️ ATACANDO com ", current_weapon_data.item_name)
+	print("[PLAYER]    Tipo: ", current_weapon_data.weapon_type)
 	
 	# Desabilita ataques durante cooldown
 	can_attack = false
@@ -187,22 +212,28 @@ func perform_attack() -> void:
 	# --- dispara conforme o tipo ---
 	match current_weapon_data.weapon_type:
 		"melee":
+			print("[PLAYER]    → Executando ataque melee")
 			melee_attack()
 		"projectile":
+			print("[PLAYER]    → Disparando projétil")
 			projectile_attack()
 		_:
+			print("[PLAYER]    → Tipo desconhecido, usando melee como fallback")
 			melee_attack()  # fallback
 	
 	# Inicia cooldown
 	if weapon_timer:
 		weapon_timer.wait_time = 1.0 / fire_rate
 		weapon_timer.start()
+		print("[PLAYER]    Cooldown iniciado: %.2fs" % weapon_timer.wait_time)
 
 
 func melee_attack() -> void:
 	if not attack_area:
-		print("no attack area")
+		print("[PLAYER] ⚠️ Ataque melee cancelado: attack_area não existe")
 		return
+	
+	print("[PLAYER] 🗡️ Executando ataque melee...")
 	
 	# Toca animação de ataque baseada na posição do mouse
 	if current_weapon_sprite and current_weapon_data:
@@ -214,67 +245,89 @@ func melee_attack() -> void:
 		if mouse_pos_x < 0:
 			# Mouse à esquerda
 			attack_animation = "attack_left"
-			print("ataque esquerda")
+			print("[PLAYER]    Direção: ESQUERDA (mouse_x: %.1f)" % mouse_pos_x)
 		else:
 			# Mouse à direita
 			attack_animation = "attack_right"
-			print("ataque direita")
+			print("[PLAYER]    Direção: DIREITA (mouse_x: %.1f)" % mouse_pos_x)
 
 		# Toca a animação se existir
 		if current_weapon_data.sprite_frames.has_animation(attack_animation):
 			current_weapon_sprite.play(attack_animation)
+			print("[PLAYER]    ✅ Animação: ", attack_animation)
 		elif current_weapon_data.sprite_frames.has_animation("attack"):
 			# Fallback para "attack" se as novas animações não existirem
 			current_weapon_sprite.play("attack")
+			print("[PLAYER]    ⚠️ Usando animação fallback: 'attack'")
 	
 	# Ativa hitbox
 	attack_area.monitoring = true
+	print("[PLAYER]    Hitbox ATIVADA (monitoring = true)")
 	await get_tree().create_timer(0.2).timeout
 	
 	# Desativa hitbox
 	attack_area.monitoring = false
+	print("[PLAYER]    Hitbox DESATIVADA (monitoring = false)")
 	
 	# Volta para animação idle/default
 	if current_weapon_sprite and current_weapon_data:
 		if current_weapon_data.animation_name != "":
 			current_weapon_sprite.play(current_weapon_data.animation_name)
+			print("[PLAYER]    Voltando para animação: ", current_weapon_data.animation_name)
 		else:
 			current_weapon_sprite.stop()
+			print("[PLAYER]    Sprite parado (sem animação idle)")
 
 
 func projectile_attack() -> void:
+	print("[PLAYER] 🏹 Disparando projétil...")
 	var scene := preload("res://projectile.tscn")
 	if not scene or not projectile_spawn_marker:
+		print("[PLAYER] ⚠️ Projétil cancelado: scene ou spawn_marker inválido")
 		return
 
 	var projectile := scene.instantiate()
 	projectile.global_position = projectile_spawn_marker.global_position
+	print("[PLAYER]    Spawn position: ", projectile_spawn_marker.global_position)
 
 	# Entra na árvore primeiro para garantir que _ready/@onready do projétil rodem
 	get_tree().current_scene.add_child(projectile)
+	print("[PLAYER]    Projétil adicionado à cena")
 
 	# Direção para o mouse
 	var dir: Vector2 = (get_global_mouse_position() - projectile.global_position).normalized()
+	print("[PLAYER]    Direção: ", dir)
 
 	# Passa os dados DEPOIS (deferred) — evita Nil no AnimatedSprite2D do projétil
 	projectile.call_deferred("setup_from_weapon_data", current_weapon_data, dir)
+	print("[PLAYER]    ✅ Projétil configurado e disparado")
 
 
 func _on_attack_hit(body: Node) -> void:
+	print("[PLAYER] 💥 Hitbox colidiu com: ", body.name)
+	print("[PLAYER]    Grupos: ", body.get_groups())
 	if body.is_in_group("enemies"):
+		print("[PLAYER]    ✅ É um inimigo! Aplicando dano...")
 		apply_damage_to_target(body)
+	else:
+		print("[PLAYER]    ⚠️ Não é um inimigo, ignorando")
 
 
 func apply_damage_to_target(target: Node) -> void:
 	if current_weapon_data == null:
+		print("[PLAYER] ⚠️ Dano cancelado: sem arma equipada")
 		return
 	if target.has_method("take_damage"):
+		print("[PLAYER] 💥 Causando %.1f de dano em %s" % [current_weapon_data.damage, target.name])
 		target.take_damage(current_weapon_data.damage)
-		print("Dano aplicado: ", current_weapon_data.damage)
+		print("[PLAYER]    ✅ Dano aplicado com sucesso")
+	else:
+		print("[PLAYER]    ⚠️ Alvo não tem método take_damage()")
 
 
 func _on_weapon_timer_timeout() -> void:
 	can_attack = true
+	print("[PLAYER] ⏱️ Cooldown terminado, can_attack = true")
 
 
 # ===== SISTEMA DE SAÚDE =====
@@ -284,29 +337,35 @@ func _ready_health() -> void:
 
 func take_damage(amount: float) -> void:
 	if is_dead:
+		print("[PLAYER] ⚠️ Dano ignorado: player já está morto")
 		return
 	
 	current_health -= amount
-	print("Player tomou %.1f de dano! HP: %.1f/%.1f" % [amount, current_health, max_health])
+	print("[PLAYER] 💔 DANO RECEBIDO: %.1f" % amount)
+	print("[PLAYER]    HP atual: %.1f/%.1f (%.1f%%)" % [current_health, max_health, (current_health/max_health)*100])
 	
 	# Visual de dano (flash)
 	apply_hit_flash()
 	
 	# Verifica morte
 	if current_health <= 0:
+		print("[PLAYER] ☠️ HP chegou a 0, iniciando morte...")
 		die()
 
 
 func apply_hit_flash() -> void:
+	print("[PLAYER]    🔴 Aplicando flash vermelho")
 	if animation:
 		animation.modulate = Color(1, 0.3, 0.3)  # Vermelho
 		await get_tree().create_timer(0.1).timeout
 		animation.modulate = Color(1, 1, 1)  # Volta ao normal
+		print("[PLAYER]    ✅ Flash terminado")
 
 
 func die() -> void:
 	is_dead = true
-	print("Player morreu!")
+	print("[PLAYER] ☠️☠️☠️ PLAYER MORREU! ☠️☠️☠️")
+	print("[PLAYER]    Physics desativado")
 	# TODO: Adicionar animação de morte, game over screen, etc.
 	# Por enquanto só para o movimento
 	set_physics_process(false)
