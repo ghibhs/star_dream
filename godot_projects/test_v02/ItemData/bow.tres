@@ -40,6 +40,44 @@ collision_shape = SubResource("CircleShape2D_jpofd")
 item_name = "bow"
 value = 0
 Sprite_scale = Vector2(0.8, 0.8)
+melee_anim_name = "attack"
+sprite_flip_on_left = true
+sprite_tilt_deg = 10.0
+melee_swing_time = 0.2
+hitbox_offsets = {
+"down": {
+"end": Vector2(16, 12),
+"start": Vector2(10, 6)
+},
+"down_left": {
+"end": Vector2(-16, 14),
+"start": Vector2(-8, 6)
+},
+"down_right": {
+"end": Vector2(16, 14),
+"start": Vector2(8, 6)
+},
+"left": {
+"end": Vector2(-16, 0),
+"start": Vector2(-10, 0)
+},
+"right": {
+"end": Vector2(18, 0),
+"start": Vector2(10, 0)
+},
+"up": {
+"end": Vector2(16, -12),
+"start": Vector2(10, -6)
+},
+"up_left": {
+"end": Vector2(-16, -14),
+"start": Vector2(-8, -6)
+},
+"up_right": {
+"end": Vector2(16, -14),
+"start": Vector2(8, -6)
+}
+}
 attack_collision = SubResource("CircleShape2D_kx51b")
 attack_collision_position = Vector2(0, 0)
 projectile_spawn_offset = Vector2(0, 0)
@@ -50,7 +88,7 @@ attack_speed = 1.0
 range = 100.0
 projectile_speed = 300.0
 projectile_sprite_frames = SubResource("SpriteFrames_lu6ex")
-projectile_name = "default"
+projectile_animation_name = "default"
 projectile_collision = SubResource("CapsuleShape2D_q81a1")
 pierce = false
 projectile_scale = Vector2(1, 1)

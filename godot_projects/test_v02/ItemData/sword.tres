@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="Weapon_Data" load_steps=6 format=3 uid="uid://dtdjb3sh6ot1b"]
+[gd_resource type="Resource" script_class="Weapon_Data" load_steps=7 format=3 uid="uid://dtdjb3sh6ot1b"]
 
 [ext_resource type="Script" uid="uid://bs5wps23xnbhp" path="res://data_gd/WeaponData.gd" id="1_6jlct"]
 [ext_resource type="Texture2D" uid="uid://u3v1bo6op8st" path="res://art/Sprite-0004.png" id="2_2n2et"]
+[ext_resource type="Texture2D" uid="uid://d0mdbh8vyk3mx" path="res://art/Sprite-0004 - Copia.png" id="3_2n2et"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_slrpm"]
 
@@ -9,6 +10,17 @@
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_k3gbh"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_2n2et")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_2n2et")
+}],
+"loop": true,
+"name": &"attack",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("2_2n2et")
@@ -26,6 +38,44 @@ collision_shape = SubResource("RectangleShape2D_844wr")
 item_name = ""
 value = 0
 Sprite_scale = Vector2(0.2, 0.2)
+melee_anim_name = "attack"
+sprite_flip_on_left = true
+sprite_tilt_deg = 10.0
+melee_swing_time = 0.2
+hitbox_offsets = {
+"down": {
+"end": Vector2(16, 12),
+"start": Vector2(10, 6)
+},
+"down_left": {
+"end": Vector2(-16, 14),
+"start": Vector2(-8, 6)
+},
+"down_right": {
+"end": Vector2(16, 14),
+"start": Vector2(8, 6)
+},
+"left": {
+"end": Vector2(-16, 0),
+"start": Vector2(-10, 0)
+},
+"right": {
+"end": Vector2(18, 0),
+"start": Vector2(10, 0)
+},
+"up": {
+"end": Vector2(16, -12),
+"start": Vector2(10, -6)
+},
+"up_left": {
+"end": Vector2(-16, -14),
+"start": Vector2(-8, -6)
+},
+"up_right": {
+"end": Vector2(16, -14),
+"start": Vector2(8, -6)
+}
+}
 attack_collision = SubResource("RectangleShape2D_slrpm")
 attack_collision_position = Vector2(0, 0)
 projectile_spawn_offset = Vector2(0, 0)
@@ -35,6 +85,6 @@ damage = 10.0
 attack_speed = 1.0
 range = 100.0
 projectile_speed = 300.0
-projectile_name = "default"
+projectile_animation_name = "default"
 pierce = false
 projectile_scale = Vector2(1, 1)

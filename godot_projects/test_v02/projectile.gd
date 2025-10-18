@@ -35,8 +35,6 @@ func setup_from_weapon_data(weapon_data: Weapon_Data, dir: Vector2):
 	speed = weapon_data.projectile_speed
 	damage = weapon_data.damage
 	pierce = weapon_data.pierce
-	
-
 func _physics_process(delta):
 	position += direction * speed * delta
 

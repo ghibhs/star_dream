@@ -16,14 +16,14 @@ extends Resource
 
 # Offsets da hitbox (relativos ao WeaponMarker2D) por direção principal/diagonal
 @export var hitbox_offsets := {
-    "down":       { "start": Vector2(10,  6), "end": Vector2(16,  12) },
-    "up":         { "start": Vector2(10, -6), "end": Vector2(16, -12) },
-    "left":       { "start": Vector2(-10, 0), "end": Vector2(-16, 0) },
-    "right":      { "start": Vector2(10,  0), "end": Vector2(18,  0) },
-    "up_right":   { "start": Vector2(8, -6),  "end": Vector2(16, -14) },
-    "up_left":    { "start": Vector2(-8,-6),  "end": Vector2(-16,-14) },
-    "down_right": { "start": Vector2(8,  6),  "end": Vector2(16,  14) },
-    "down_left":  { "start": Vector2(-8, 6),  "end": Vector2(-16, 14) },
+	"down":       { "start": Vector2(10,  6), "end": Vector2(16,  12) },
+	"up":         { "start": Vector2(10, -6), "end": Vector2(16, -12) },
+	"left":       { "start": Vector2(-10, 0), "end": Vector2(-16, 0) },
+	"right":      { "start": Vector2(10,  0), "end": Vector2(18,  0) },
+	"up_right":   { "start": Vector2(8, -6),  "end": Vector2(16, -14) },
+	"up_left":    { "start": Vector2(-8,-6),  "end": Vector2(-16,-14) },
+	"down_right": { "start": Vector2(8,  6),  "end": Vector2(16,  14) },
+	"down_left":  { "start": Vector2(-8, 6),  "end": Vector2(-16, 14) },
 }
 
 # === DADOS DA ARMA ===
