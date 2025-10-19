@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=4 uid="uid://bvsl6cdtgjpj1"]
+[gd_scene load_steps=13 format=4 uid="uid://bvsl6cdtgjpj1"]
 
 [ext_resource type="PackedScene" uid="uid://deaodpc5w6ugl" path="res://scenes/player/entidades.tscn" id="1_bxlh1"]
 [ext_resource type="Script" uid="uid://dbv8kgf0ywdkl" path="res://scripts/game/the_game.gd" id="1_rwqnc"]
@@ -9,6 +9,10 @@
 [ext_resource type="PackedScene" uid="uid://bubo78mrq757p" path="res://scenes/enemy/enemy.tscn" id="7_ep5gg"]
 [ext_resource type="Resource" uid="uid://b83hlcfidew6m" path="res://EnemyData/wolf_fast.tres" id="8_82yl5"]
 [ext_resource type="PackedScene" uid="uid://dy5k2x8m3oaqr" path="res://scenes/ui/pause_menu.tscn" id="9_pause"]
+[ext_resource type="PackedScene" uid="uid://b8t4x5y6z7a8b9c" path="res://scenes/ui/player_hud.tscn" id="10_player_hud"]
+[ext_resource type="PackedScene" uid="uid://c7v9w2x5y8z1a" path="res://scenes/game/enemy_spawner.tscn" id="11_spawner"]
+[ext_resource type="Resource" uid="uid://cqw8v7h2mnl5a" path="res://EnemyData/wolf_normal.tres" id="12_wolf_normal"]
+[ext_resource type="Resource" uid="uid://b5h4k9l2pqr8m" path="res://EnemyData/wolf_tank.tres" id="13_wolf_tank"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ir4x8"]
 texture = ExtResource("2_sbril")
@@ -42,6 +46,12 @@ item_data = ExtResource("6_wg70j")
 
 [node name="PauseMenu" parent="." instance=ExtResource("9_pause")]
 
+[node name="PlayerHUD" parent="." instance=ExtResource("10_player_hud")]
+
 [node name="Enemy" parent="." instance=ExtResource("7_ep5gg")]
 position = Vector2(129, 14)
 enemy_data = ExtResource("8_82yl5")
+
+[node name="EnemySpawner" parent="." instance=ExtResource("11_spawner")]
+enemy_scene = ExtResource("7_ep5gg")
+enemy_data_list = Array[Resource]([ExtResource("8_82yl5"), ExtResource("12_wolf_normal"), ExtResource("13_wolf_tank")])

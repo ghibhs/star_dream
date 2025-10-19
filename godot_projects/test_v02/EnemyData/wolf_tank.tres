@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="Enemy_Data" load_steps=15 format=3 uid="uid://b5h4lal2pqr8m"]
+
+[ext_resource type="Script" path="res://data_gd/EnemyData.gd" id="1_base"]
+[ext_resource type="Texture2D" uid="uid://cph0f5rq4qgyi" path="res://art/Sprite-0004.png" id="2_sprite"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_1"]
+atlas = ExtResource("2_sprite")
+region = Rect2(0, 0, 50, 50)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_2"]
+atlas = ExtResource("2_sprite")
+region = Rect2(50, 0, 50, 50)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_3"]
+atlas = ExtResource("2_sprite")
+region = Rect2(100, 0, 50, 50)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_4"]
+atlas = ExtResource("2_sprite")
+region = Rect2(150, 0, 50, 50)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wolf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_4")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 6.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_collision"]
+radius = 18.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 22.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
+size = Vector2(35, 25)
+
+[resource]
+script = ExtResource("1_base")
+enemy_name = "Lobo Alfa"
+sprite_frames = SubResource("SpriteFrames_wolf")
+animation_name = "walk"
+sprite_scale = Vector2(1.5, 1.5)
+max_health = 120.0
+damage = 15.0
+defense = 8.0
+move_speed = 60.0
+chase_range = 300.0
+attack_range = 40.0
+push_force = 30.0
+collision_shape = SubResource("CircleShape2D_collision")
+hitbox_shape = SubResource("CircleShape2D_hitbox")
+attack_hitbox_shape = SubResource("RectangleShape2D_attack")
+attack_hitbox_offset = Vector2(30, 0)
+attack_hitbox_duration = 0.2
+attack_hitbox_color = Color(0.8, 0, 0, 0.9)
+behavior = "Aggressive"
+attack_cooldown = 2.5
+experience_drop = 25
+coin_drop = 15
+death_animation = "death"
+hit_flash_duration = 0.15

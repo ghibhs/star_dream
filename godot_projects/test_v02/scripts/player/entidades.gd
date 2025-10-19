@@ -4,7 +4,20 @@ extends CharacterBody2D
 # MOVIMENTO / ANIMAÇÃO DO PLAYER
 # -----------------------------
 @export var speed: float = 150.0
+@export var sprint_multiplier: float = 1.8  # Multiplicador de velocidade no sprint
+@export var dash_speed: float = 500.0  # Velocidade do dash
+@export var dash_duration: float = 0.15  # Duração do dash em segundos
+@export var dash_cooldown: float = 1.0  # Cooldown entre dashes em segundos
+
 var direction: Vector2 = Vector2.ZERO
+var is_sprinting: bool = false
+var is_dashing: bool = false
+var can_dash: bool = true
+var dash_direction: Vector2 = Vector2.ZERO
+
+# Timers para dash
+var dash_timer: float = 0.0
+var dash_cooldown_timer: float = 0.0
 
 # -----------------------------
 # SISTEMA DE SAÚDE DO PLAYER
@@ -15,13 +28,25 @@ var is_dead: bool = false
 
 @onready var animation: AnimatedSprite2D = $AnimatedSprite2D
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	# Atualiza timers
+	update_dash_timers(delta)
+	
+	# Input de movimento
 	direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-
-	if direction != Vector2.ZERO:
+	
+	# Sprint (segurar Shift)
+	is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO
+	
+	# Dash (pressionar Space)
+	if Input.is_action_just_pressed("dash") and can_dash and direction != Vector2.ZERO:
+		start_dash()
+	
+	# Animações
+	if direction != Vector2.ZERO and not is_dashing:
 		play_animations(direction)
 	else:
-		if animation:
+		if animation and not is_dashing:
 			animation.stop()
 
 	# Arma aponta pro mouse (caso já tenha arma equipada)
@@ -31,7 +56,20 @@ func _physics_process(_delta: float) -> void:
 		if weapon_angle_offset_deg != 0.0:
 			weapon_marker.rotation += deg_to_rad(weapon_angle_offset_deg)
 
-	velocity = direction * speed
+	# Calcula velocidade final
+	var final_velocity: Vector2
+	
+	if is_dashing:
+		# Durante dash, movimento rápido na direção do dash
+		final_velocity = dash_direction * dash_speed
+	else:
+		# Movimento normal com sprint
+		var current_speed = speed
+		if is_sprinting:
+			current_speed *= sprint_multiplier
+		final_velocity = direction * current_speed
+	
+	velocity = final_velocity
 	move_and_slide()
 
 
@@ -59,9 +97,54 @@ func play_animations(dir: Vector2) -> void:
 
 
 # -----------------------------
+# SISTEMA DE SPRINT E DASH
+# -----------------------------
+func update_dash_timers(delta: float) -> void:
+	"""Atualiza os timers do dash"""
+	# Timer de duração do dash
+	if is_dashing:
+		dash_timer -= delta
+		if dash_timer <= 0.0:
+			end_dash()
+	
+	# Timer de cooldown do dash
+	if not can_dash:
+		dash_cooldown_timer -= delta
+		if dash_cooldown_timer <= 0.0:
+			can_dash = true
+			print("[PLAYER] 🔄 Dash disponível novamente!")
+
+
+func start_dash() -> void:
+	"""Inicia o dash"""
+	if is_dashing or not can_dash:
+		return
+	
+	print("[PLAYER] 💨 DASH iniciado!")
+	is_dashing = true
+	can_dash = false
+	dash_timer = dash_duration
+	dash_cooldown_timer = dash_cooldown
+	dash_direction = direction.normalized()
+	
+	# Efeito visual (opcional): pode adicionar partículas ou animação especial aqui
+
+
+func end_dash() -> void:
+	"""Finaliza o dash"""
+	print("[PLAYER] ✅ Dash finalizado")
+	is_dashing = false
+	dash_timer = 0.0
+
+
+# -----------------------------
 # ARMA / ATAQUE
 # -----------------------------
+# -----------------------------
+# ARMA DO PLAYER
+# -----------------------------
 var current_weapon_data: Weapon_Data
+var weapon_item_scene: PackedScene = preload("res://bow.tscn")  # Cena genérica do item
 
 @export var weapon_angle_offset_deg: float = 0.0   # ajuste fino da rotação do sprite da arma
 @onready var weapon_marker: Node2D = $WeaponMarker2D
@@ -127,8 +210,48 @@ func receive_weapon_data(weapon_data: Weapon_Data) -> void:
 	print("[PLAYER] 🗡️ Arma recebida: ", weapon_data.item_name)
 	print("[PLAYER]    Tipo: ", weapon_data.weapon_type)
 	print("[PLAYER]    Dano: ", weapon_data.damage)
+	
+	# ⚠️ NOVO: Se já temos uma arma equipada, dropa ela no mundo
+	if current_weapon_data:
+		print("[PLAYER] 🔄 Já existe arma equipada! Dropando arma antiga...")
+		drop_current_weapon()
+	
+	# Equipa a nova arma
 	current_weapon_data = weapon_data
 	call_deferred("setup_weapon")
+
+
+func drop_current_weapon() -> void:
+	"""
+	Dropa a arma atual no mundo próximo ao player
+	"""
+	if not current_weapon_data:
+		print("[PLAYER] ⚠️ Tentou dropar arma mas não há arma equipada")
+		return
+	
+	print("[PLAYER] 📦 Dropando arma: ", current_weapon_data.item_name)
+	
+	# Cria instância do item no mundo
+	var dropped_item = weapon_item_scene.instantiate() as Area2D
+	
+	if dropped_item:
+		# Posição de drop: um pouco à frente do player (na direção que ele está olhando)
+		var drop_offset = Vector2(50, 0)  # 50 pixels à direita
+		if direction != Vector2.ZERO:
+			# Se o player está se movendo, dropa na direção oposta
+			drop_offset = -direction.normalized() * 50
+		
+		dropped_item.global_position = global_position + drop_offset
+		
+		# ⚠️ IMPORTANTE: Configura o item ANTES de adicionar à árvore (evita glitch)
+		dropped_item.initialize_dropped_item(current_weapon_data)
+		
+		# Adiciona ao mundo (mesma cena que o player)
+		get_parent().add_child(dropped_item)
+		
+		print("[PLAYER]    ✅ Arma dropada na posição: ", dropped_item.global_position)
+	else:
+		push_error("[PLAYER] ❌ Falha ao instanciar item dropado")
 
 
 func setup_weapon() -> void:
