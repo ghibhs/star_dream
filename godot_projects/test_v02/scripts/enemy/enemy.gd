@@ -60,22 +60,81 @@ func setup_enemy() -> void:
 	
 	# Configura hitbox (área que causa dano ao player)
 	if hitbox_area and enemy_data.hitbox_shape:
+		print("[ENEMY]    Configurando Hitbox...")
+		print("[ENEMY]       Collision Layer ANTES: ", hitbox_area.collision_layer)
+		print("[ENEMY]       Collision Mask ANTES: ", hitbox_area.collision_mask)
+		print("[ENEMY]       Monitoring ANTES: ", hitbox_area.monitoring)
+		
 		var hitbox_collision = CollisionShape2D.new()
 		hitbox_collision.shape = enemy_data.hitbox_shape
 		hitbox_area.add_child(hitbox_collision)
 		hitbox_area.body_entered.connect(_on_hitbox_body_entered)
-		print("[ENEMY]    Hitbox configurada (Layer: 8, Mask: 2)")
+		
+		print("[ENEMY]    Hitbox configurada")
+		print("[ENEMY]       Layer: ", hitbox_area.collision_layer, " (binário: ", String.num_int64(hitbox_area.collision_layer, 2), ")")
+		print("[ENEMY]       Mask: ", hitbox_area.collision_mask, " (binário: ", String.num_int64(hitbox_area.collision_mask, 2), ")")
+		print("[ENEMY]       Monitoring: ", hitbox_area.monitoring)
+		print("[ENEMY]       Shape tipo: ", hitbox_collision.shape.get_class())
 	
 	# Configura área de detecção
 	if detection_area:
+		print("[ENEMY]    Configurando DetectionArea...")
+		print("[ENEMY]       Collision Layer ANTES: ", detection_area.collision_layer)
+		print("[ENEMY]       Collision Mask ANTES: ", detection_area.collision_mask)
+		print("[ENEMY]       Monitoring ANTES: ", detection_area.monitoring)
+		
 		var detection_shape = CollisionShape2D.new()
 		var circle = CircleShape2D.new()
 		circle.radius = enemy_data.chase_range
 		detection_shape.shape = circle
 		detection_area.add_child(detection_shape)
+		
+		print("[ENEMY]       Shape radius: ", circle.radius)
+		print("[ENEMY]       Shape adicionado como filho")
+		
 		detection_area.body_entered.connect(_on_detection_body_entered)
 		detection_area.body_exited.connect(_on_detection_body_exited)
+		print("[ENEMY]       Signals conectados")
+		
 		print("[ENEMY]    DetectionArea configurada (radius: %.1f)" % enemy_data.chase_range)
+		print("[ENEMY]    DetectionArea - Layer: %d, Mask: %d" % [detection_area.collision_layer, detection_area.collision_mask])
+		print("[ENEMY]    DetectionArea - Monitoring: %s" % detection_area.monitoring)
+		print("[ENEMY]    DetectionArea - Monitorable: %s" % detection_area.monitorable)
+		
+		# Debug: verifica se já existe algum corpo na área
+		await get_tree().process_frame  # Espera 1 frame para collision shape estar pronta
+		print("[ENEMY]    ⏳ Aguardou 1 frame, verificando overlaps...")
+		var bodies_in_area = detection_area.get_overlapping_bodies()
+		print("[ENEMY]    🔍 Corpos já na área de detecção: ", bodies_in_area.size())
+		for body in bodies_in_area:
+			print("[ENEMY]       - ", body.name, " (tipo: ", body.get_class(), ", grupos: ", body.get_groups(), ")")
+			if body.is_in_group("player"):
+				print("[ENEMY]       ✅ PLAYER DETECTADO no _ready()!")
+				target = body
+				if current_state == State.IDLE:
+					current_state = State.CHASE
+					print("[ENEMY]       Estado: IDLE → CHASE")
+		
+		# Debug: Busca manual do player e calcula distância
+		print("[ENEMY]    🔍 Verificação manual de distância...")
+		print("[ENEMY]       Posição global do Enemy: ", global_position)
+		print("[ENEMY]       Posição global da DetectionArea: ", detection_area.global_position)
+		print("[ENEMY]       Posição local da DetectionArea: ", detection_area.position)
+		var players = get_tree().get_nodes_in_group("player")
+		print("[ENEMY]       Players no grupo: ", players.size())
+		if players.size() > 0:
+			var player = players[0]
+			var distance = global_position.distance_to(player.global_position)
+			print("[ENEMY]       Player: ", player.name, " (", player.get_class(), ")")
+			print("[ENEMY]       Posição Enemy: ", global_position)
+			print("[ENEMY]       Posição Player: ", player.global_position)
+			print("[ENEMY]       Distância: %.1f pixels" % distance)
+			print("[ENEMY]       Chase Range: %.1f pixels" % enemy_data.chase_range)
+			if distance <= enemy_data.chase_range:
+				print("[ENEMY]       ✅ Player ESTÁ dentro do range! Deveria ter detectado!")
+				print("[ENEMY]       ⚠️ BUG: DetectionArea não está detectando apesar da distância correta!")
+			else:
+				print("[ENEMY]       ⚠️ Player está FORA do range")
 	
 	# Configura timer de ataque
 	if attack_timer:
@@ -98,6 +157,11 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 	
+	# Aplica velocidade de empurrão (decai com o tempo)
+	if push_velocity.length() > 0.1:
+		velocity += push_velocity
+		push_velocity = push_velocity.lerp(Vector2.ZERO, push_decay * delta)
+	
 	match current_state:
 		State.IDLE:
 			process_idle()
@@ -107,6 +171,9 @@ func _physics_process(delta: float) -> void:
 			process_attack()
 		State.HURT:
 			process_hurt()
+	
+	# Move o inimigo (importante: após os estados aplicarem velocity)
+	move_and_slide()
 
 
 func process_idle() -> void:
@@ -174,8 +241,13 @@ func process_hurt() -> void:
 	# Volta para chase após o flash
 	await hit_flash_timer.timeout
 	if not is_dead:
-		print("[ENEMY] Estado: HURT → CHASE (flash terminado)")
-		current_state = State.CHASE
+		# Só volta para chase se tiver alvo
+		if target and is_instance_valid(target):
+			print("[ENEMY] Estado: HURT → CHASE (flash terminado, alvo válido)")
+			current_state = State.CHASE
+		else:
+			print("[ENEMY] Estado: HURT → IDLE (flash terminado, sem alvo)")
+			current_state = State.IDLE
 
 
 func perform_attack() -> void:
@@ -208,6 +280,19 @@ func take_damage(amount: float) -> void:
 	print("[ENEMY] 💔 %s RECEBEU DANO!" % enemy_data.enemy_name)
 	print("[ENEMY]    Dano bruto: %.1f | Defesa: %.1f | Dano real: %.1f" % [amount, enemy_data.defense, damage_taken])
 	print("[ENEMY]    HP atual: %.1f/%.1f (%.1f%%)" % [current_health, enemy_data.max_health, (current_health/enemy_data.max_health)*100])
+	
+	# Se for agressivo e não tiver alvo, procura o player
+	if enemy_data.behavior == "Aggressive" and not target:
+		var players = get_tree().get_nodes_in_group("player")
+		print("[ENEMY]    🔍 Buscando players no grupo 'player': ", players.size(), " encontrado(s)")
+		for p in players:
+			print("[ENEMY]       - ", p.name, " (tipo: ", p.get_class(), ")")
+		if players.size() > 0:
+			target = players[0]
+			print("[ENEMY]    🎯 Alvo definido após dano: ", target.name, " (tipo: ", target.get_class(), ")")
+			# Verifica se é realmente o CharacterBody2D
+			if target.get_class() != "CharacterBody2D":
+				print("[ENEMY]    ⚠️ ALERTA: Alvo não é CharacterBody2D!")
 	
 	# Visual de dano (flash branco)
 	apply_hit_flash()
@@ -242,6 +327,10 @@ func die() -> void:
 	print("[ENEMY] ☠️☠️☠️ %s MORREU! ☠️☠️☠️" % enemy_data.enemy_name)
 	print("[ENEMY]    Exp drop: %d | Coins drop: %d" % [enemy_data.experience_drop, enemy_data.coin_drop])
 	
+	# Contabiliza inimigo derrotado
+	if has_node("/root/GameStats"):
+		get_node("/root/GameStats").enemy_defeated()
+	
 	# Toca animação de morte se existir
 	if sprite and enemy_data.sprite_frames.has_animation(enemy_data.death_animation):
 		sprite.play(enemy_data.death_animation)
@@ -264,18 +353,27 @@ func drop_rewards() -> void:
 
 # ===== SIGNALS DE DETECÇÃO =====
 func _on_detection_body_entered(body: Node2D) -> void:
-	print("[ENEMY] 👁️ DetectionArea detectou: ", body.name)
+	print("[ENEMY] 👁️ DetectionArea detectou ENTRADA: ", body.name)
+	print("[ENEMY]    Tipo do node: ", body.get_class())
 	print("[ENEMY]    Grupos: ", body.get_groups())
-	print("[ENEMY]    Behavior: ", enemy_data.behavior)
+	print("[ENEMY]    Behavior do enemy: ", enemy_data.behavior)
+	print("[ENEMY]    Estado atual: ", State.keys()[current_state])
+	print("[ENEMY]    Tem alvo atual? ", target != null)
 	
-	if body.is_in_group("player") and enemy_data.behavior == "Aggressive":
-		print("[ENEMY]    ✅ É o player e sou agressivo! Definindo como alvo...")
-		target = body
-		if current_state == State.IDLE:
-			print("[ENEMY]    Estado: IDLE → CHASE")
-			current_state = State.CHASE
+	if body.is_in_group("player"):
+		print("[ENEMY]    ✅ Confirmado: É o PLAYER!")
+		if enemy_data.behavior == "Aggressive":
+			print("[ENEMY]    ✅ Sou AGRESSIVO! Definindo como alvo...")
+			target = body
+			if current_state == State.IDLE:
+				print("[ENEMY]    Estado: IDLE → CHASE")
+				current_state = State.CHASE
+			else:
+				print("[ENEMY]    Estado já é: ", State.keys()[current_state])
+		else:
+			print("[ENEMY]    ⚠️ Não sou agressivo (behavior: ", enemy_data.behavior, ")")
 	else:
-		print("[ENEMY]    ⚠️ Não atendeu condições (não é player ou não sou agressivo)")
+		print("[ENEMY]    ⚠️ NÃO é o player")
 
 
 func _on_detection_body_exited(body: Node2D) -> void:
@@ -284,6 +382,24 @@ func _on_detection_body_exited(body: Node2D) -> void:
 		print("[ENEMY]    Era meu alvo! Perdendo alvo e voltando para IDLE")
 		target = null
 		current_state = State.IDLE
+
+
+# ===== SISTEMA DE EMPURRÃO =====
+# Retorna a força de resistência ao empurrão deste inimigo
+func get_push_force() -> float:
+	if enemy_data:
+		return enemy_data.push_force
+	return 0.0  # Não pode ser empurrado se não tiver data
+
+
+# Aplica um empurrão ao inimigo
+var push_velocity: Vector2 = Vector2.ZERO
+var push_decay: float = 5.0  # Quão rápido o empurrão diminui
+
+func apply_push(push_direction: Vector2, push_power: float) -> void:
+	# Adiciona velocidade de empurrão
+	push_velocity = push_direction * push_power
+	print("[ENEMY] 💨 Empurrado! Direção: ", push_direction, " Força: ", push_power)
 
 
 # ===== HITBOX (DANO AO PLAYER) =====

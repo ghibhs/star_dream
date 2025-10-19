@@ -16,6 +16,7 @@ extends Resource
 @export var move_speed: float = 80.0
 @export var chase_range: float = 200.0  # Distância para começar a perseguir
 @export var attack_range: float = 30.0  # Distância para atacar
+@export var push_force: float = 50.0  # Força de empurrão (0 = não pode ser empurrado, >100 = empurrado facilmente)
 
 # === COLISÃO ===
 @export var collision_shape: Shape2D  # Forma da colisão do corpo

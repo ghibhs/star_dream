@@ -456,7 +456,7 @@ animations = [{
 "speed": 15.0
 }]
 
-[node name="Node2D" type="CharacterBody2D"]
+[node name="Entidades" type="CharacterBody2D"]
 collision_layer = 2
 collision_mask = 13
 script = ExtResource("1_yeshm")
@@ -475,3 +475,5 @@ animation = &"new_animation_6"
 
 [node name="Weapon_timer" type="Timer" parent="WeaponMarker2D"]
 one_shot = true
+
+[node name="WeaponAnimatedSprite2D" type="AnimatedSprite2D" parent="."]

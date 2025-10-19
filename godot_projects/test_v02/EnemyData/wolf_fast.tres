@@ -4,8 +4,10 @@
 [ext_resource type="Texture2D" uid="uid://5hv15hube126" path="res://art/black_wolf_32x32_spritesheet.png" id="2_dntnr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dntnr"]
+size = Vector2(100, 60)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dp5aa"]
+size = Vector2(100, 100)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_dp5aa"]
 atlas = ExtResource("2_dntnr")
@@ -80,9 +82,10 @@ sprite_scale = Vector2(2, 2)
 max_health = 30.0
 damage = 15.0
 defense = 0.0
-move_speed = 150.0
+move_speed = 80.0
 chase_range = 300.0
 attack_range = 25.0
+push_force = 60.0
 collision_shape = SubResource("RectangleShape2D_dntnr")
 hitbox_shape = SubResource("RectangleShape2D_dp5aa")
 behavior = "Aggressive"

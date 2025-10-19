@@ -4,6 +4,7 @@ extends CharacterBody2D
 # MOVIMENTO / ANIMAÇÃO DO PLAYER
 # -----------------------------
 @export var speed: float = 150.0
+@export var player_push_strength: float = 100.0  # Força de empurrão do jogador
 var direction: Vector2 = Vector2.ZERO
 
 # -----------------------------
@@ -32,7 +33,38 @@ func _physics_process(_delta: float) -> void:
 			weapon_marker.rotation += deg_to_rad(weapon_angle_offset_deg)
 
 	velocity = direction * speed
-	move_and_slide()
+	
+	# Move e detecta colisões
+	var collision_occurred = move_and_slide()
+	
+	# Sistema de empurrão de inimigos
+	if collision_occurred:
+		handle_enemy_push()
+
+
+# -----------------------------
+# SISTEMA DE EMPURRÃO DE INIMIGOS
+# -----------------------------
+func handle_enemy_push() -> void:
+	# Verifica todas as colisões que ocorreram durante o movimento
+	for i in range(get_slide_collision_count()):
+		var collision = get_slide_collision(i)
+		var collider = collision.get_collider()
+		
+		# Verifica se colidiu com um inimigo
+		if collider and collider.is_in_group("enemies"):
+			# Tenta pegar o enemy_data para verificar a resistência ao empurrão
+			if collider.has_method("get_push_force"):
+				var enemy_push_resistance = collider.get_push_force()
+				
+				# Se a força do jogador for maior que a resistência do inimigo, empurra
+				if player_push_strength > enemy_push_resistance:
+					var push_direction = (collider.global_position - global_position).normalized()
+					var push_power = (player_push_strength - enemy_push_resistance) * 0.5
+					
+					# Aplica o empurrão no inimigo
+					if collider.has_method("apply_push"):
+						collider.apply_push(push_direction, push_power)
 
 
 func play_animations(dir: Vector2) -> void:
@@ -77,10 +109,28 @@ var attack_area: Area2D
 func _ready() -> void:
 	add_to_group("player")
 	print("[PLAYER] Inicializado e adicionado ao grupo 'player'")
+	print("[PLAYER]    Nome do node: ", name)
+	print("[PLAYER]    Tipo: ", get_class())
+	print("[PLAYER]    Collision Layer: ", collision_layer, " (binário: ", String.num_int64(collision_layer, 2), ")")
+	print("[PLAYER]    Collision Mask: ", collision_mask, " (binário: ", String.num_int64(collision_mask, 2), ")")
+	
+	# Verifica CollisionShape2D
+	var collision_shape = get_node_or_null("CollisionShape2D")
+	if collision_shape:
+		print("[PLAYER]    CollisionShape2D encontrado")
+		print("[PLAYER]       Disabled: ", collision_shape.disabled)
+		print("[PLAYER]       Shape: ", collision_shape.shape)
+	else:
+		print("[PLAYER]    ⚠️ CollisionShape2D NÃO encontrado!")
 	
 	# Inicializa saúde
 	current_health = max_health
 	print("[PLAYER] Saúde inicializada: %.1f/%.1f" % [current_health, max_health])
+	
+	# Inicia contagem de estatísticas
+	if has_node("/root/GameStats"):
+		get_node("/root/GameStats").start_game()
+		print("[PLAYER] Sistema de estatísticas iniciado")
 	
 	# Configura timer de cooldown
 	if weapon_timer:
@@ -172,6 +222,14 @@ func setup_attack_area() -> void:
 		attack_area = Area2D.new()
 		attack_area.collision_layer = 16  # Layer 5: Player Hitbox
 		attack_area.collision_mask = 4    # Mask 3: Detecta Enemy
+		
+		# Aplica posição da hitbox definida no .tres
+		if "attack_collision_position" in current_weapon_data:
+			attack_area.position = current_weapon_data.attack_collision_position
+			print("[PLAYER]    Hitbox position: ", current_weapon_data.attack_collision_position)
+		else:
+			attack_area.position = Vector2.ZERO
+			print("[PLAYER]    ⚠️ attack_collision_position não definido, usando Vector2.ZERO")
 		
 		var collision_shape := CollisionShape2D.new()
 		collision_shape.shape = current_weapon_data.attack_collision
@@ -366,6 +424,30 @@ func die() -> void:
 	is_dead = true
 	print("[PLAYER] ☠️☠️☠️ PLAYER MORREU! ☠️☠️☠️")
 	print("[PLAYER]    Physics desativado")
-	# TODO: Adicionar animação de morte, game over screen, etc.
-	# Por enquanto só para o movimento
+	
+	# Para o movimento
 	set_physics_process(false)
+	velocity = Vector2.ZERO
+	
+	# Para estatísticas
+	if has_node("/root/GameStats"):
+		get_node("/root/GameStats").stop_game()
+	
+	# Aguarda um pouco antes de mostrar a tela de Game Over
+	await get_tree().create_timer(1.5).timeout
+	
+	# Carrega e mostra a tela de Game Over
+	show_game_over()
+
+
+func show_game_over() -> void:
+	print("[PLAYER] 📺 Mostrando tela de Game Over")
+	
+	var game_over_scene = load("res://game_over.tscn")
+	if game_over_scene:
+		var game_over_instance = game_over_scene.instantiate()
+		get_tree().current_scene.add_child(game_over_instance)
+		print("[PLAYER] ✅ Tela de Game Over adicionada")
+	else:
+		push_error("Não foi possível carregar game_over.tscn")
+		print("[PLAYER] ❌ ERRO: game_over.tscn não encontrado")

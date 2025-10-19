@@ -8,7 +8,9 @@
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_jpofd"]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_q81a1"]
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_jpofd"]
+radius = 5.0
+height = 20.0
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_lu6ex"]
 animations = [{
@@ -40,6 +42,7 @@ collision_shape = SubResource("CircleShape2D_jpofd")
 item_name = "bow"
 value = 0
 Sprite_scale = Vector2(0.8, 0.8)
+weapon_marker_position = Vector2(0, 0)
 attack_collision = SubResource("CircleShape2D_kx51b")
 attack_collision_position = Vector2(0, 0)
 projectile_spawn_offset = Vector2(0, 0)
@@ -51,6 +54,6 @@ weapon_range = 100.0
 projectile_speed = 300.0
 projectile_sprite_frames = SubResource("SpriteFrames_lu6ex")
 projectile_name = "default"
-projectile_collision = SubResource("CapsuleShape2D_q81a1")
+projectile_collision = SubResource("CapsuleShape2D_jpofd")
 pierce = false
 projectile_scale = Vector2(1, 1)
