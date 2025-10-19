@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://c5hv8n2x3m7pk"]
+[gd_scene load_steps=2 format=3 uid="uid://b3a3d2ingp54a"]
 
-[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Script" uid="uid://b3l82qt1ve7fa" path="res://scripts/ui/main_menu.gd" id="1_menu"]
 
 [node name="MainMenu" type="CanvasLayer"]
 script = ExtResource("1_menu")
@@ -45,27 +45,27 @@ layout_mode = 2
 [node name="StartButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(300, 60)
 layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 0.8, 0.2, 1)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_colors/font_hover_color = Color(1, 0.8, 0.2, 1)
 theme_override_font_sizes/font_size = 32
 text = "INICIAR JOGO"
 
 [node name="OptionsButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(300, 50)
 layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 0.8, 0.2, 1)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_colors/font_hover_color = Color(1, 0.8, 0.2, 1)
 theme_override_font_sizes/font_size = 24
 text = "OPÇÕES"
 
 [node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(300, 50)
 layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 0.8, 0.2, 1)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_colors/font_hover_color = Color(1, 0.8, 0.2, 1)
 theme_override_font_sizes/font_size = 24
 text = "SAIR"
 

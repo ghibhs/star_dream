@@ -4,7 +4,6 @@ extends CharacterBody2D
 # MOVIMENTO / ANIMAÇÃO DO PLAYER
 # -----------------------------
 @export var speed: float = 150.0
-@export var player_push_strength: float = 100.0  # Força de empurrão do jogador
 var direction: Vector2 = Vector2.ZERO
 
 # -----------------------------
@@ -33,38 +32,7 @@ func _physics_process(_delta: float) -> void:
 			weapon_marker.rotation += deg_to_rad(weapon_angle_offset_deg)
 
 	velocity = direction * speed
-	
-	# Move e detecta colisões
-	var collision_occurred = move_and_slide()
-	
-	# Sistema de empurrão de inimigos
-	if collision_occurred:
-		handle_enemy_push()
-
-
-# -----------------------------
-# SISTEMA DE EMPURRÃO DE INIMIGOS
-# -----------------------------
-func handle_enemy_push() -> void:
-	# Verifica todas as colisões que ocorreram durante o movimento
-	for i in range(get_slide_collision_count()):
-		var collision = get_slide_collision(i)
-		var collider = collision.get_collider()
-		
-		# Verifica se colidiu com um inimigo
-		if collider and collider.is_in_group("enemies"):
-			# Tenta pegar o enemy_data para verificar a resistência ao empurrão
-			if collider.has_method("get_push_force"):
-				var enemy_push_resistance = collider.get_push_force()
-				
-				# Se a força do jogador for maior que a resistência do inimigo, empurra
-				if player_push_strength > enemy_push_resistance:
-					var push_direction = (collider.global_position - global_position).normalized()
-					var push_power = (player_push_strength - enemy_push_resistance) * 0.5
-					
-					# Aplica o empurrão no inimigo
-					if collider.has_method("apply_push"):
-						collider.apply_push(push_direction, push_power)
+	move_and_slide()
 
 
 func play_animations(dir: Vector2) -> void:
@@ -99,8 +67,8 @@ var current_weapon_data: Weapon_Data
 @onready var weapon_marker: Node2D = $WeaponMarker2D
 @onready var projectile_spawn_marker: Marker2D = $WeaponMarker2D/ProjectileSpawnMarker2D
 @onready var weapon_timer: Timer = $WeaponMarker2D/Weapon_timer
-# IMPORTANTE: esse nó JÁ EXISTE na cena. Não vamos destruí-lo.
-@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponAnimatedSprite2D
+# IMPORTANTE: Após mover WeaponAnimatedSprite2D para dentro do WeaponMarker2D no editor:
+@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponMarker2D/WeaponAnimatedSprite2D
 @export var fire_rate: float = 3.0  # tiros por segundo (cd = 1 / fire_rate)
 var can_attack: bool = true
 
@@ -223,17 +191,41 @@ func setup_attack_area() -> void:
 		attack_area.collision_layer = 16  # Layer 5: Player Hitbox
 		attack_area.collision_mask = 4    # Mask 3: Detecta Enemy
 		
-		# Aplica posição da hitbox definida no .tres
-		if "attack_collision_position" in current_weapon_data:
-			attack_area.position = current_weapon_data.attack_collision_position
-			print("[PLAYER]    Hitbox position: ", current_weapon_data.attack_collision_position)
-		else:
-			attack_area.position = Vector2.ZERO
-			print("[PLAYER]    ⚠️ attack_collision_position não definido, usando Vector2.ZERO")
-		
+		# 🗡️ HITBOX DE ATAQUE: Configurável via WeaponData.tres
 		var collision_shape := CollisionShape2D.new()
-		collision_shape.shape = current_weapon_data.attack_collision
+		
+		# Usa shape do .tres ou cria padrão
+		if "attack_hitbox_shape" in current_weapon_data and current_weapon_data.attack_hitbox_shape:
+			collision_shape.shape = current_weapon_data.attack_hitbox_shape
+			print("[PLAYER]    ✅ Usando attack_hitbox_shape do .tres")
+		else:
+			# Fallback: cria forma baseada no tipo de arma
+			var attack_shape = RectangleShape2D.new()
+			if current_weapon_data.weapon_type == "melee":
+				attack_shape.size = Vector2(40, 15)  # Linha de corte
+			else:
+				attack_shape.size = Vector2(25, 25)
+			collision_shape.shape = attack_shape
+			print("[PLAYER]    ⚠️ attack_hitbox_shape não definido, usando padrão")
+		
 		attack_area.add_child(collision_shape)
+		
+		# Usa offset do .tres
+		if "attack_hitbox_offset" in current_weapon_data:
+			attack_area.position = current_weapon_data.attack_hitbox_offset
+			print("[PLAYER]    Hitbox offset: ", current_weapon_data.attack_hitbox_offset)
+		elif "attack_collision_position" in current_weapon_data:
+			attack_area.position = current_weapon_data.attack_collision_position
+			print("[PLAYER]    Hitbox position (fallback): ", current_weapon_data.attack_collision_position)
+		else:
+			attack_area.position = Vector2(30, 0)
+			print("[PLAYER]    Hitbox position: Vector2(30, 0) - padrão")
+		
+		# 🎨 DEBUG VISUAL: Usa cor do .tres
+		if "attack_hitbox_color" in current_weapon_data:
+			collision_shape.debug_color = current_weapon_data.attack_hitbox_color
+		else:
+			collision_shape.debug_color = Color(0, 1, 0, 0.9)
 
 		# Coloca a hitbox como filha do marker da arma
 		if weapon_marker:
@@ -293,6 +285,15 @@ func melee_attack() -> void:
 	
 	print("[PLAYER] 🗡️ Executando ataque melee...")
 	
+	# 🎯 DIRECIONA a hitbox para o mouse
+	if attack_area:
+		var direction_to_mouse = (get_global_mouse_position() - global_position).normalized()
+		var angle_to_mouse = direction_to_mouse.angle()
+		
+		# Rotaciona a hitbox para apontar ao mouse
+		attack_area.rotation = angle_to_mouse
+		print("[PLAYER]    🎯 Hitbox rotacionada para o mouse (%.1f graus)" % rad_to_deg(angle_to_mouse))
+	
 	# Toca animação de ataque baseada na posição do mouse
 	if current_weapon_sprite and current_weapon_data:
 		# Calcula posição X do mouse em relação ao player
@@ -320,12 +321,31 @@ func melee_attack() -> void:
 	
 	# Ativa hitbox
 	attack_area.monitoring = true
-	print("[PLAYER]    Hitbox ATIVADA (monitoring = true)")
-	await get_tree().create_timer(0.2).timeout
+	print("[PLAYER]    Hitbox de GOLPE ATIVADA!")
+	
+	# 🎨 VISUAL: Deixa o golpe BEM visível
+	for child in attack_area.get_children():
+		if child is CollisionShape2D:
+			child.debug_color = Color(0, 1, 0, 0.95)  # Verde muito brilhante
+	
+	# ⚡ Usa duração configurada no .tres
+	var attack_hit_duration = 0.1
+	if "attack_hitbox_duration" in current_weapon_data:
+		attack_hit_duration = current_weapon_data.attack_hitbox_duration
+		print("[PLAYER]    ⏱️ Duração do golpe: %.2fs (do .tres)" % attack_hit_duration)
+	else:
+		print("[PLAYER]    ⏱️ Duração do golpe: %.2fs (padrão)" % attack_hit_duration)
+	
+	await get_tree().create_timer(attack_hit_duration).timeout
 	
 	# Desativa hitbox
 	attack_area.monitoring = false
-	print("[PLAYER]    Hitbox DESATIVADA (monitoring = false)")
+	print("[PLAYER]    Hitbox de GOLPE DESATIVADA!")
+	
+	# 🎨 VISUAL: Esconde o golpe
+	for child in attack_area.get_children():
+		if child is CollisionShape2D:
+			child.debug_color = Color(0, 1, 0, 0.0)  # Invisível
 	
 	# Volta para animação idle/default
 	if current_weapon_sprite and current_weapon_data:
@@ -339,7 +359,7 @@ func melee_attack() -> void:
 
 func projectile_attack() -> void:
 	print("[PLAYER] 🏹 Disparando projétil...")
-	var scene := preload("res://projectile.tscn")
+	var scene := preload("res://scenes/projectiles/projectile.tscn")
 	if not scene or not projectile_spawn_marker:
 		print("[PLAYER] ⚠️ Projétil cancelado: scene ou spawn_marker inválido")
 		return
@@ -442,12 +462,26 @@ func die() -> void:
 
 func show_game_over() -> void:
 	print("[PLAYER] 📺 Mostrando tela de Game Over")
+	print("[PLAYER] 🔄 VERSÃO NOVA - Trocando cena inteira (não add_child)")
 	
-	var game_over_scene = load("res://game_over.tscn")
-	if game_over_scene:
-		var game_over_instance = game_over_scene.instantiate()
-		get_tree().current_scene.add_child(game_over_instance)
-		print("[PLAYER] ✅ Tela de Game Over adicionada")
+	# Para o jogo (já está pausado pelo die())
+	if has_node("/root/GameStats"):
+		get_node("/root/GameStats").stop_game()
+		print("[PLAYER]    GameStats.stop_game() chamado")
+	
+	# Aguarda um frame para garantir que tudo foi processado
+	print("[PLAYER]    Aguardando 1 frame...")
+	await get_tree().process_frame
+	print("[PLAYER]    Frame processado, iniciando troca de cena")
+	
+	# TROCA a cena para o Game Over (não adiciona como filho!)
+	var game_over_path = "res://scenes/ui/game_over.tscn"
+	
+	if ResourceLoader.exists(game_over_path):
+		print("[PLAYER]    Arquivo encontrado: ", game_over_path)
+		print("[PLAYER]    Chamando change_scene_to_file()...")
+		get_tree().change_scene_to_file(game_over_path)
+		print("[PLAYER] ✅ change_scene_to_file() executado!")
 	else:
-		push_error("Não foi possível carregar game_over.tscn")
-		print("[PLAYER] ❌ ERRO: game_over.tscn não encontrado")
+		push_error("Não foi possível encontrar: " + game_over_path)
+		print("[PLAYER] ❌ ERRO: Arquivo não encontrado!")

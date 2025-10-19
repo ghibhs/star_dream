@@ -6,7 +6,8 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_slrpm"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_844wr"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_2n2et"]
+radius = 53.82
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_k3gbh"]
 animations = [{
@@ -34,7 +35,7 @@ animations = [{
 script = ExtResource("1_6jlct")
 sprite_frames = SubResource("SpriteFrames_k3gbh")
 animation_name = "default"
-collision_shape = SubResource("RectangleShape2D_844wr")
+collision_shape = SubResource("CircleShape2D_2n2et")
 item_name = "Sword"
 value = 0
 Sprite_scale = Vector2(0.1, 0.1)

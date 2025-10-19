@@ -65,16 +65,46 @@ func setup_enemy() -> void:
 		print("[ENEMY]       Collision Mask ANTES: ", hitbox_area.collision_mask)
 		print("[ENEMY]       Monitoring ANTES: ", hitbox_area.monitoring)
 		
+		# 🗡️ HITBOX DE ATAQUE: Configurável via EnemyData.tres
 		var hitbox_collision = CollisionShape2D.new()
-		hitbox_collision.shape = enemy_data.hitbox_shape
+		
+		# Usa shape do .tres ou cria padrão
+		if enemy_data.attack_hitbox_shape:
+			hitbox_collision.shape = enemy_data.attack_hitbox_shape
+			print("[ENEMY]       ✅ Usando attack_hitbox_shape do .tres")
+		else:
+			# Fallback: cria forma padrão
+			var attack_shape = RectangleShape2D.new()
+			attack_shape.size = Vector2(20, 30)
+			hitbox_collision.shape = attack_shape
+			print("[ENEMY]       ⚠️ attack_hitbox_shape não definido, usando padrão (20x30)")
+		
+		# Usa offset do .tres
+		if "attack_hitbox_offset" in enemy_data:
+			hitbox_collision.position = enemy_data.attack_hitbox_offset
+			print("[ENEMY]       Position offset: ", enemy_data.attack_hitbox_offset)
+		else:
+			hitbox_collision.position = Vector2(25, 0)
+			print("[ENEMY]       Position offset: Vector2(25, 0) - padrão")
+		
 		hitbox_area.add_child(hitbox_collision)
 		hitbox_area.body_entered.connect(_on_hitbox_body_entered)
 		
-		print("[ENEMY]    Hitbox configurada")
+		# 🎨 DEBUG VISUAL: Usa cor do .tres
+		if "attack_hitbox_color" in enemy_data:
+			hitbox_collision.debug_color = enemy_data.attack_hitbox_color
+		else:
+			hitbox_collision.debug_color = Color(1, 0, 0, 0.8)
+		
+		# 🛑 IMPORTANTE: Hitbox começa DESATIVADA
+		hitbox_area.monitoring = false
+		
+		print("[ENEMY]    Hitbox de ATAQUE configurada")
 		print("[ENEMY]       Layer: ", hitbox_area.collision_layer, " (binário: ", String.num_int64(hitbox_area.collision_layer, 2), ")")
 		print("[ENEMY]       Mask: ", hitbox_area.collision_mask, " (binário: ", String.num_int64(hitbox_area.collision_mask, 2), ")")
-		print("[ENEMY]       Monitoring: ", hitbox_area.monitoring)
-		print("[ENEMY]       Shape tipo: ", hitbox_collision.shape.get_class())
+		print("[ENEMY]       Monitoring: ", hitbox_area.monitoring, " ⚠️ (DESATIVADA - ativa apenas durante ataque)")
+		print("[ENEMY]       Shape: ", hitbox_collision.shape.get_class())
+		print("[ENEMY]       🎨 Configurações vindas do .tres")
 	
 	# Configura área de detecção
 	if detection_area:
@@ -157,11 +187,6 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 	
-	# Aplica velocidade de empurrão (decai com o tempo)
-	if push_velocity.length() > 0.1:
-		velocity += push_velocity
-		push_velocity = push_velocity.lerp(Vector2.ZERO, push_decay * delta)
-	
 	match current_state:
 		State.IDLE:
 			process_idle()
@@ -207,6 +232,11 @@ func process_chase(_delta: float) -> void:
 	
 	# Verifica distância para ataque
 	var distance = global_position.distance_to(target.global_position)
+	
+	# 🔍 DEBUG: Mostra distância a cada segundo aproximadamente
+	if Engine.get_frames_drawn() % 60 == 0:  # A cada ~60 frames (1 segundo a 60fps)
+		print("[ENEMY] 🏃 CHASE - Distância até player: %.1f / Attack Range: %.1f" % [distance, enemy_data.attack_range])
+	
 	if distance <= enemy_data.attack_range:
 		print("[ENEMY] Estado: CHASE → ATTACK (distância: %.1f)" % distance)
 		current_state = State.ATTACK
@@ -215,14 +245,21 @@ func process_chase(_delta: float) -> void:
 
 
 func process_attack() -> void:
-	# Para de se mover durante ataque
-	velocity = Vector2.ZERO
-	
 	if not target or not is_instance_valid(target):
 		print("[ENEMY] Estado: ATTACK → IDLE (alvo perdido)")
 		target = null
 		current_state = State.IDLE
 		return
+	
+	# 🏃 CONTINUA SE MOVENDO em direção ao player
+	var direction = (target.global_position - global_position).normalized()
+	velocity = direction * enemy_data.move_speed
+	
+	# Flip horizontal baseado na direção
+	if direction.x < 0:
+		sprite.flip_h = true
+	elif direction.x > 0:
+		sprite.flip_h = false
 	
 	# Ataca se possível
 	if can_attack:
@@ -233,6 +270,9 @@ func process_attack() -> void:
 	if distance > enemy_data.attack_range:
 		print("[ENEMY] Estado: ATTACK → CHASE (alvo fora do range)")
 		current_state = State.CHASE
+	
+	# Move o inimigo
+	move_and_slide()
 
 
 func process_hurt() -> void:
@@ -254,18 +294,54 @@ func perform_attack() -> void:
 	can_attack = false
 	print("[ENEMY] ⚔️ ATACANDO! (can_attack = false)")
 	
+	# 🎯 DIRECIONA a hitbox para o player
+	if hitbox_area and target and is_instance_valid(target):
+		# Calcula direção do player
+		var direction_to_player = (target.global_position - global_position).normalized()
+		var angle_to_player = direction_to_player.angle()
+		
+		# Rotaciona a hitbox para apontar ao player
+		hitbox_area.rotation = angle_to_player
+		print("[ENEMY]    🎯 Hitbox rotacionada para o player (%.1f graus)" % rad_to_deg(angle_to_player))
+		
+		# ATIVA a hitbox temporariamente
+		hitbox_area.monitoring = true
+		print("[ENEMY]    ⚡ Hitbox de GOLPE ATIVADA!")
+		
+		# 🎨 VISUAL: Deixa o retângulo de golpe BEM visível
+		for child in hitbox_area.get_children():
+			if child is CollisionShape2D:
+				child.debug_color = Color(1, 0, 0, 0.9)  # Vermelho muito visível
+	
 	# Toca animação de ataque se existir
 	if sprite and enemy_data.sprite_frames.has_animation("attack"):
 		sprite.play("attack")
-		print("[ENEMY]    Animação 'attack' tocando")
-	
-	# Causa dano ao player (via hitbox collision)
-	# O dano é aplicado em _on_hitbox_body_entered
+		print("[ENEMY]    🎬 Animação 'attack' tocando")
 	
 	# Inicia cooldown
 	if attack_timer:
 		attack_timer.start()
-		print("[ENEMY]    Cooldown iniciado (%.2fs)" % attack_timer.wait_time)
+		print("[ENEMY]    ⏳ Cooldown iniciado (%.2fs)" % attack_timer.wait_time)
+	
+	# 🕐 Usa duração configurada no .tres
+	var attack_hit_duration = 0.15
+	if "attack_hitbox_duration" in enemy_data:
+		attack_hit_duration = enemy_data.attack_hitbox_duration
+		print("[ENEMY]    ⏱️ Duração do golpe: %.2fs (do .tres)" % attack_hit_duration)
+	else:
+		print("[ENEMY]    ⏱️ Duração do golpe: %.2fs (padrão)" % attack_hit_duration)
+	
+	await get_tree().create_timer(attack_hit_duration).timeout
+	
+	# 🛑 DESATIVA a hitbox após o golpe rápido
+	if hitbox_area:
+		hitbox_area.monitoring = false
+		print("[ENEMY]    🛑 Hitbox de GOLPE DESATIVADA!")
+		
+		# Esconde o visual novamente
+		for child in hitbox_area.get_children():
+			if child is CollisionShape2D:
+				child.debug_color = Color(1, 0, 0, 0.0)  # Invisível
 
 
 func take_damage(amount: float) -> void:
@@ -384,44 +460,29 @@ func _on_detection_body_exited(body: Node2D) -> void:
 		current_state = State.IDLE
 
 
-# ===== SISTEMA DE EMPURRÃO =====
-# Retorna a força de resistência ao empurrão deste inimigo
-func get_push_force() -> float:
-	if enemy_data:
-		return enemy_data.push_force
-	return 0.0  # Não pode ser empurrado se não tiver data
-
-
-# Aplica um empurrão ao inimigo
-var push_velocity: Vector2 = Vector2.ZERO
-var push_decay: float = 5.0  # Quão rápido o empurrão diminui
-
-func apply_push(push_direction: Vector2, push_power: float) -> void:
-	# Adiciona velocidade de empurrão
-	push_velocity = push_direction * push_power
-	print("[ENEMY] 💨 Empurrado! Direção: ", push_direction, " Força: ", push_power)
-
-
 # ===== HITBOX (DANO AO PLAYER) =====
+# 🎯 NOVO SISTEMA: Hitbox ativa apenas durante ataque
+# Quando player entra na hitbox ATIVA, aplica dano
 func _on_hitbox_body_entered(body: Node2D) -> void:
-	print("[ENEMY] 💥 Hitbox colidiu com: ", body.name)
-	print("[ENEMY]    Grupos: ", body.get_groups())
-	print("[ENEMY]    can_attack: ", can_attack)
+	print("[ENEMY] 🔔 Hitbox detectou entrada: ", body.name)
 	
-	if body.is_in_group("player") and can_attack:
-		print("[ENEMY]    ✅ É o player e pode atacar!")
-		# Aplica dano ao player
+	# Só aplica dano se a hitbox estiver ATIVA (durante ataque)
+	if not hitbox_area or not hitbox_area.monitoring:
+		print("[ENEMY]    ⚠️ Hitbox inativa, ignorando")
+		return
+	
+	# Verifica se é o player
+	if body.is_in_group("player"):
+		print("[ENEMY]    💥 Player detectado na hitbox ATIVA!")
+		
+		# Aplica dano
 		if body.has_method("take_damage"):
-			print("[ENEMY]    💥 Causando %.1f de dano no player!" % enemy_data.damage)
 			body.take_damage(enemy_data.damage)
-			print("[ENEMY]    ✅ Dano aplicado com sucesso")
+			print("[ENEMY]    ✅ Dano %.1f aplicado ao player!" % enemy_data.damage)
 		else:
-			print("[ENEMY]    ⚠️ Player não tem método take_damage()")
+			print("[ENEMY]    ❌ Player não tem método take_damage!")
 	else:
-		if not body.is_in_group("player"):
-			print("[ENEMY]    ⚠️ Não é o player")
-		if not can_attack:
-			print("[ENEMY]    ⚠️ Ainda em cooldown")
+		print("[ENEMY]    ⚠️ Não é o player, ignorando")
 
 
 func _on_attack_timer_timeout() -> void:

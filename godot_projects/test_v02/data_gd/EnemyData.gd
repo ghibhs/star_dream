@@ -22,6 +22,13 @@ extends Resource
 @export var collision_shape: Shape2D  # Forma da colisão do corpo
 @export var hitbox_shape: Shape2D     # Forma da hitbox de dano ao player
 
+# === HITBOX DE ATAQUE (Golpe) ===
+@export_group("Attack Hitbox")
+@export var attack_hitbox_shape: Shape2D  # Forma do golpe (RectangleShape2D recomendado)
+@export var attack_hitbox_offset: Vector2 = Vector2(25, 0)  # Distância à frente do inimigo
+@export var attack_hitbox_duration: float = 0.15  # Duração do golpe em segundos
+@export var attack_hitbox_color: Color = Color(1, 0, 0, 0.9)  # Cor de debug (vermelho padrão)
+
 # === COMPORTAMENTO ===
 @export_enum("Passive", "Aggressive", "Patrol") var behavior: String = "Aggressive"
 @export var attack_cooldown: float = 1.5  # Tempo entre ataques

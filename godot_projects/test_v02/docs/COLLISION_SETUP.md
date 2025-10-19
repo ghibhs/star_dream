@@ -72,6 +72,20 @@ DetectionArea2D (filho do enemy):
 **O que detecta:**
 - ✅ Player para iniciar chase
 
+### **Collectable Items (bow.tscn, etc.)**
+```
+Area2D:
+  collision_layer = 0       (Não está em nenhuma layer)
+  collision_mask = 2        (Layer 2: Player)
+```
+**O que detecta:**
+- ✅ Player para ser coletado
+
+**Por quê Layer 0?**
+- Itens são triggers, não objetos físicos
+- Não precisam colidir com nada
+- Apenas detectam quando o player entra na área
+
 ## 🎯 Fluxo de Dano
 
 ### Player → Enemy

@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://c0f1607nsdg0m"]
+[gd_scene load_steps=2 format=3 uid="uid://ckq0gfefc3xwx"]
 
-[ext_resource type="Script" uid="uid://dp85bmi6j88bm" path="res://scripts/items/area_2d.gd" id="1_2l2of"]
+[ext_resource type="Script" path="res://scripts/items/area_2d.gd" id="1_2l2of"]
 
 [node name="Area2D" type="Area2D"]
 collision_layer = 0

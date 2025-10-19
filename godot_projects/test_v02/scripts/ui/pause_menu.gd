@@ -10,6 +10,10 @@ extends CanvasLayer
 func _ready() -> void:
 	print("[PAUSE_MENU] Menu de pausa inicializado")
 	
+	# ⚠️ CRÍTICO: Permite que esta UI funcione mesmo quando o jogo está pausado
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	print("[PAUSE_MENU]    ✅ Process mode configurado para ALWAYS")
+	
 	# Esconde o menu por padrão
 	hide()
 	
@@ -58,25 +62,46 @@ func _on_continue_button_pressed() -> void:
 func _on_restart_button_pressed() -> void:
 	print("[PAUSE_MENU] 🔄 Botão REINICIAR pressionado")
 	
-	# Despausa e recarrega
+	# Despausa o jogo
 	get_tree().paused = false
-	get_tree().reload_current_scene()
-	print("[PAUSE_MENU]    ✅ Cena recarregada")
+	
+	# Reseta estatísticas
+	if has_node("/root/GameStats"):
+		get_node("/root/GameStats").reset_stats()
+	
+	# Recarrega a CENA DO JOGO
+	var game_scene_path = "res://scenes/game/the_game.tscn"
+	
+	if ResourceLoader.exists(game_scene_path):
+		get_tree().change_scene_to_file(game_scene_path)
+		print("[PAUSE_MENU]    ✅ Jogo reiniciado")
+	else:
+		push_error("Cena do jogo não encontrada: " + game_scene_path)
+		print("[PAUSE_MENU]    ❌ ERRO: Cena do jogo não encontrada!")
+
 
 
 func _on_menu_button_pressed() -> void:
 	print("[PAUSE_MENU] 🏠 Botão MENU PRINCIPAL pressionado")
 	
-	# Despausa e vai para menu
+	# Despausa o jogo
 	get_tree().paused = false
 	
-	var menu_scene_path = "res://main_menu.tscn"
+	# Reseta estatísticas
+	if has_node("/root/GameStats"):
+		get_node("/root/GameStats").reset_stats()
+		print("[PAUSE_MENU]    Estatísticas resetadas")
+	
+	# Vai para menu principal
+	var menu_scene_path = "res://scenes/ui/main_menu.tscn"
+	
 	if ResourceLoader.exists(menu_scene_path):
 		get_tree().change_scene_to_file(menu_scene_path)
 		print("[PAUSE_MENU]    ✅ Voltando para menu principal")
 	else:
 		push_error("Menu principal não encontrado: " + menu_scene_path)
-		print("[PAUSE_MENU]    ⚠️ Menu não encontrado!")
+		print("[PAUSE_MENU]    ❌ ERRO: Menu não encontrado!")
+
 
 
 func _on_quit_button_pressed() -> void:

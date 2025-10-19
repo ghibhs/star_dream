@@ -20,6 +20,13 @@ extends Resource
 @export var attack_speed: float = 1.0
 @export var weapon_range: float = 100.0
 
+# === HITBOX DE ATAQUE (Golpe) ===
+@export_group("Attack Hitbox")
+@export var attack_hitbox_shape: Shape2D  # Forma do golpe (RectangleShape2D para espadas)
+@export var attack_hitbox_offset: Vector2 = Vector2(30, 0)  # Distância à frente do player
+@export var attack_hitbox_duration: float = 0.1  # Duração do golpe em segundos
+@export var attack_hitbox_color: Color = Color(0, 1, 0, 0.95)  # Cor de debug (verde padrão)
+
 # === DADOS DO PROJÉTIL (se weapon_type = "projectile") ===
 @export var projectile_speed: float = 300.0
 @export var projectile_sprite_frames: SpriteFrames  # Sprite do projétil
