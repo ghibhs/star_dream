@@ -159,7 +159,7 @@ func _on_player_health_changed(_new_health: float) -> void:
 	update_health()
 
 
-func _on_player_weapon_changed(_new_weapon: Weapon_Data) -> void:
+func _on_player_weapon_changed(_new_weapon: WeaponData) -> void:
 	"""Callback quando a arma do player muda (se implementar sinal)"""
 	update_weapon_info()
 	update_stats()

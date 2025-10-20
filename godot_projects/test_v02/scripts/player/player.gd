@@ -143,8 +143,8 @@ func end_dash() -> void:
 # -----------------------------
 # ARMA DO PLAYER
 # -----------------------------
-var current_weapon_data: Weapon_Data
-var weapon_item_scene: PackedScene = preload("res://bow.tscn")  # Cena genérica do item
+var current_weapon_data: WeaponData
+@export var weapon_item_scene: PackedScene = preload("res://scenes/items/bow.tscn")  # Cena genérica do item
 
 @export var weapon_angle_offset_deg: float = 0.0   # ajuste fino da rotação do sprite da arma
 @onready var weapon_marker: Node2D = $WeaponMarker2D
@@ -205,7 +205,7 @@ func _input(event: InputEvent) -> void:
 				print("[PLAYER] ⚠️ Ataque bloqueado: timer ainda ativo (%.2fs restantes)" % weapon_timer.time_left)
 
 
-func receive_weapon_data(weapon_data: Weapon_Data) -> void:
+func receive_weapon_data(weapon_data: WeaponData) -> void:
 	# Recebido do item coletável
 	print("[PLAYER] 🗡️ Arma recebida: ", weapon_data.item_name)
 	print("[PLAYER]    Tipo: ", weapon_data.weapon_type)

@@ -1,7 +1,7 @@
 # CollectableItem.gd (area_2d.gd)
 extends Area2D
 
-@export var item_data: Weapon_Data : set = set_item_data
+@export var item_data: WeaponData : set = set_item_data
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var collision = $CollisionShape2D
 
@@ -10,7 +10,7 @@ var can_be_picked_up: bool = true
 var pickup_delay: float = 0.5  # Meio segundo de delay
 var is_dropped_item: bool = false  # Flag para saber se é item dropado
 
-func set_item_data(new_data: Weapon_Data):
+func set_item_data(new_data: WeaponData):
 	item_data = new_data
 	# Se já estamos na árvore e os nodes estão prontos, configura imediatamente
 	if is_inside_tree() and animated_sprite and collision:
@@ -86,7 +86,7 @@ func setup_item():
 		print("[ITEM]    ✅ Item configurado com sucesso")
 
 
-func initialize_dropped_item(weapon_data: Weapon_Data) -> void:
+func initialize_dropped_item(weapon_data: WeaponData) -> void:
 	"""
 	Função específica para configurar item dropado.
 	Deve ser chamada ANTES de adicionar o item à árvore.

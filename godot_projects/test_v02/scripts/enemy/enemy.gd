@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 # ===== DADOS DO INIMIGO =====
-@export var enemy_data: Enemy_Data
+@export var enemy_data: EnemyData
 
 # ===== COMPONENTES =====
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -30,8 +30,8 @@ func _ready() -> void:
 		print("[ENEMY] Carregando dados: ", enemy_data.enemy_name)
 		setup_enemy()
 	else:
-		push_error("Enemy_Data not assigned!")
-		print("[ENEMY] ❌ ERRO: Enemy_Data não atribuído!")
+		push_error("EnemyData not assigned!")
+		print("[ENEMY] ❌ ERRO: EnemyData não atribuído!")
 		queue_free()
 
 

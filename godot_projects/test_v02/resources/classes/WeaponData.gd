@@ -1,4 +1,4 @@
-class_name Weapon_Data 
+class_name WeaponData
 extends Resource
 
 @export var sprite_frames: SpriteFrames

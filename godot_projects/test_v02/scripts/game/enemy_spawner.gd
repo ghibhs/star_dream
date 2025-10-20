@@ -83,7 +83,7 @@ func find_player() -> void:
 
 func load_default_enemy_data() -> void:
 	"""Carrega dados padrão de inimigos"""
-	var wolf_data = load("res://EnemyData/wolf_fast.tres")
+	var wolf_data = load("res://resources/enemies/wolf_fast.tres")
 	if wolf_data:
 		enemy_data_list.append(wolf_data)
 		print("[SPAWNER] Dados padrão carregados: wolf_fast")

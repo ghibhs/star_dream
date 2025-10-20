@@ -1,4 +1,4 @@
-class_name Enemy_Data
+class_name EnemyData
 extends Resource
 
 # === INFORMAÇÕES BÁSICAS ===
