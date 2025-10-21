@@ -67,6 +67,7 @@ attack_hitbox_shape = SubResource("RectangleShape2D_attack")
 attack_hitbox_offset = Vector2(25, 0)
 attack_hitbox_duration = 0.15
 attack_hitbox_color = Color(1, 0.5, 0, 0.9)
+attack_warning_delay = 0.3
 behavior = "Aggressive"
 attack_cooldown = 1.8
 experience_drop = 12

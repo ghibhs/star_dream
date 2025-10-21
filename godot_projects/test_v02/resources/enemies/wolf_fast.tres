@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=15 format=3 uid="uid://b83hlcfidew6m"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=11 format=3 uid="uid://b83hlcfidew6m"]
 
 [ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://resources/classes/EnemyData.gd" id="1_x8s3z"]
-[ext_resource type="Texture2D" uid="uid://5hv15hube126" path="res://art/black_wolf_32x32_spritesheet.png" id="2_dntnr"]
+[ext_resource type="Texture2D" uid="uid://dkvi6ixq428cy" path="res://art/lobao.png" id="2_cu5q2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dntnr"]
 
@@ -11,64 +11,36 @@ radius = 35.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_dp5aa"]
 radius = 50.0
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_dp5aa"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(0, 0, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_kuj74"]
+atlas = ExtResource("2_cu5q2")
+region = Rect2(0, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_3f6xc"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(32, 0, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_ghq24"]
+atlas = ExtResource("2_cu5q2")
+region = Rect2(64, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_xbvs3"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(64, 0, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_4jjs0"]
+atlas = ExtResource("2_cu5q2")
+region = Rect2(128, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_jhnyg"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(96, 0, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_42e54"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(0, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_p41qm"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(32, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_21uq7"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(64, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_atgq4"]
-atlas = ExtResource("2_dntnr")
-region = Rect2(96, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_da5cm"]
+atlas = ExtResource("2_cu5q2")
+region = Rect2(192, 0, 64, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_21uq7"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_dp5aa")
+"texture": SubResource("AtlasTexture_kuj74")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_3f6xc")
+"texture": SubResource("AtlasTexture_ghq24")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_xbvs3")
+"texture": SubResource("AtlasTexture_4jjs0")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_jhnyg")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_42e54")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_p41qm")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_21uq7")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_atgq4")
+"texture": SubResource("AtlasTexture_da5cm")
 }],
 "loop": true,
 "name": &"walk",
@@ -94,6 +66,7 @@ attack_hitbox_shape = SubResource("RectangleShape2D_dntnr")
 attack_hitbox_offset = Vector2(40, 0)
 attack_hitbox_duration = 0.15
 attack_hitbox_color = Color(1, 0, 0, 0.9)
+attack_warning_delay = 0.3
 behavior = "Aggressive"
 attack_cooldown = 0.8
 experience_drop = 20
