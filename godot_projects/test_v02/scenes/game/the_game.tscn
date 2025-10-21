@@ -1,8 +1,10 @@
-[gd_scene load_steps=16 format=4 uid="uid://bvsl6cdtgjpj1"]
+[gd_scene load_steps=18 format=4 uid="uid://bvsl6cdtgjpj1"]
 
 [ext_resource type="PackedScene" uid="uid://deaodpc5w6ugl" path="res://scenes/player/player.tscn" id="1_bxlh1"]
 [ext_resource type="Script" uid="uid://dbv8kgf0ywdkl" path="res://scripts/game/the_game.gd" id="1_rwqnc"]
 [ext_resource type="Texture2D" uid="uid://cj3vou3sokp62" path="res://art/pixil-frame-0.png" id="2_sbril"]
+[ext_resource type="Script" uid="uid://hsiodn7wj2tb" path="res://scripts/inventory/inventory.gd" id="3_bufxe"]
+[ext_resource type="Script" uid="uid://bpcl8hotuoiwb" path="res://scripts/ui/inventory_ui.gd" id="4_jcrc0"]
 [ext_resource type="PackedScene" uid="uid://c0f1607nsdg0m" path="res://scenes/items/bow.tscn" id="4_rwqnc"]
 [ext_resource type="Resource" uid="uid://kwure8xvbiuo" path="res://resources/weapons/bow.tres" id="5_o5p78"]
 [ext_resource type="Resource" uid="uid://dtdjb3sh6ot1b" path="res://resources/weapons/sword.tres" id="6_wg70j"]
@@ -28,6 +30,12 @@ script = ExtResource("1_rwqnc")
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
 zoom = Vector2(2.91, 2.91)
+
+[node name="Node" type="Node" parent="Player"]
+script = ExtResource("3_bufxe")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="Player"]
+script = ExtResource("4_jcrc0")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 show_behind_parent = true

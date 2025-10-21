@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/classes/ItemData.gd" id="1_1"]
+
+[resource]
+script = ExtResource("1_1")
+item_id = "health_potion"
+item_name = "Poção de Vida"
+description = "Restaura 50 pontos de vida"
+icon = null
+item_type = 0
+sprite_frames = null
+animation_name = "default"
+collision_shape = null
+is_stackable = true
+max_stack_size = 20
+is_equippable = false
+equipment_slot = 0
+weapon_data = null
+value = 50
+weight = 0.2
+sound_effect = null
+hit_effect = null
+bonus_health = 50.0
+bonus_defense = 0.0
+bonus_speed = 0.0
+bonus_damage = 0.0

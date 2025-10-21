@@ -37,6 +37,12 @@ var knockback_timer: float = 0.0
 
 @onready var animation: AnimatedSprite2D = $AnimatedSprite2D
 
+# -----------------------------
+# SISTEMA DE INVENTÁRIO
+# -----------------------------
+var inventory: Inventory
+var inventory_ui: InventoryUI
+
 func _physics_process(delta: float) -> void:
 	# Atualiza timers
 	update_dash_timers(delta)
@@ -248,6 +254,19 @@ func _ready() -> void:
 	# Inicializa saúde
 	current_health = max_health
 	print("[PLAYER] Saúde inicializada: %.1f/%.1f" % [current_health, max_health])
+	
+	# Inicializa inventário (se existir na cena)
+	inventory = get_node_or_null("Inventory")
+	inventory_ui = get_node_or_null("InventoryUI")
+	
+	if inventory and inventory_ui:
+		inventory_ui.setup_inventory(inventory)
+		print("[PLAYER] ✅ Sistema de inventário inicializado")
+	else:
+		if not inventory:
+			print("[PLAYER] ⚠️ Nó 'Inventory' não encontrado - adicione à cena do player")
+		if not inventory_ui:
+			print("[PLAYER] ⚠️ Nó 'InventoryUI' não encontrado - adicione à cena do player")
 	
 	# Inicia contagem de estatísticas
 	if has_node("/root/GameStats"):
