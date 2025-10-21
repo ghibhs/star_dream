@@ -76,9 +76,14 @@ func setup_item():
 			animated_sprite.position = item_data.sprite_position
 			print("[ITEM]    Posição do sprite: ", item_data.sprite_position)
 		
-		if item_data.collision_shape:
-			collision.shape = item_data.collision_shape
-			print("[ITEM]    Collision shape configurado")
+		# ⚠️ COLISÃO: Para itens no chão, usa um shape pequeno e fixo
+		# NÃO usar o attack_collision que é enorme e só serve para hitbox de ataque
+		if collision:
+			# Cria um círculo pequeno para coletar o item
+			var pickup_shape = CircleShape2D.new()
+			pickup_shape.radius = 20.0  # Raio fixo de 20 pixels para coleta
+			collision.shape = pickup_shape
+			print("[ITEM]    Collision shape criado: CircleShape2D (radius=20)")
 		
 		# Torna o sprite visível DEPOIS de configurar tudo (evita glitch)
 		animated_sprite.visible = true

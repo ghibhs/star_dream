@@ -90,11 +90,15 @@ func setup_enemy() -> void:
 		hitbox_area.add_child(hitbox_collision)
 		hitbox_area.body_entered.connect(_on_hitbox_body_entered)
 		
-		# 🎨 DEBUG VISUAL: Usa cor do .tres
+		# 🎨 VISUAL: Hitbox SEMPRE VISÍVEL com cor configurável
+		var hitbox_color = Color(1, 0, 0, 0.6)  # Vermelho semi-transparente (Enemy = Vermelho)
 		if "attack_hitbox_color" in enemy_data:
-			hitbox_collision.debug_color = enemy_data.attack_hitbox_color
-		else:
-			hitbox_collision.debug_color = Color(1, 0, 0, 0.8)
+			hitbox_color = enemy_data.attack_hitbox_color
+			# Garante visibilidade mínima
+			hitbox_color.a = max(hitbox_color.a, 0.5)
+		
+		hitbox_collision.debug_color = hitbox_color
+		print("[ENEMY]       🎨 Hitbox cor: ", hitbox_color)
 		
 		# 🛑 IMPORTANTE: Hitbox começa DESATIVADA
 		hitbox_area.monitoring = false
@@ -292,7 +296,7 @@ func process_hurt() -> void:
 
 func perform_attack() -> void:
 	can_attack = false
-	print("[ENEMY] ⚔️ ATACANDO! (can_attack = false)")
+	print("[ENEMY] ⚔️ PREPARANDO ATAQUE! (can_attack = false)")
 	
 	# 🎯 DIRECIONA a hitbox para o player
 	if hitbox_area and target and is_instance_valid(target):
@@ -303,20 +307,27 @@ func perform_attack() -> void:
 		# Rotaciona a hitbox para apontar ao player
 		hitbox_area.rotation = angle_to_player
 		print("[ENEMY]    🎯 Hitbox rotacionada para o player (%.1f graus)" % rad_to_deg(angle_to_player))
-		
-		# ATIVA a hitbox temporariamente
-		hitbox_area.monitoring = true
-		print("[ENEMY]    ⚡ Hitbox de GOLPE ATIVADA!")
-		
-		# 🎨 VISUAL: Deixa o retângulo de golpe BEM visível
-		for child in hitbox_area.get_children():
-			if child is CollisionShape2D:
-				child.debug_color = Color(1, 0, 0, 0.9)  # Vermelho muito visível
 	
 	# Toca animação de ataque se existir
 	if sprite and enemy_data.sprite_frames.has_animation("attack"):
 		sprite.play("attack")
 		print("[ENEMY]    🎬 Animação 'attack' tocando")
+	
+	# ⏰ DELAY DE AVISO: Tempo para o player esquivar
+	var warning_delay = 0.3  # Padrão de 0.3 segundos
+	if "attack_warning_delay" in enemy_data:
+		warning_delay = enemy_data.attack_warning_delay
+		print("[ENEMY]    ⚠️ Delay de aviso: %.2fs (do .tres)" % warning_delay)
+	else:
+		print("[ENEMY]    ⚠️ Delay de aviso: %.2fs (padrão)" % warning_delay)
+	
+	# 🟡 Durante o delay, a hitbox fica visível mas NÃO causa dano (aviso visual)
+	await get_tree().create_timer(warning_delay).timeout
+	
+	# ⚡ AGORA SIM ATIVA a hitbox para causar dano
+	if hitbox_area:
+		hitbox_area.monitoring = true
+		print("[ENEMY]    ⚡ Hitbox de GOLPE ATIVADA!")
 	
 	# Inicia cooldown
 	if attack_timer:
@@ -337,11 +348,7 @@ func perform_attack() -> void:
 	if hitbox_area:
 		hitbox_area.monitoring = false
 		print("[ENEMY]    🛑 Hitbox de GOLPE DESATIVADA!")
-		
-		# Esconde o visual novamente
-		for child in hitbox_area.get_children():
-			if child is CollisionShape2D:
-				child.debug_color = Color(1, 0, 0, 0.0)  # Invisível
+
 
 
 func take_damage(amount: float) -> void:

@@ -1,6 +1,6 @@
-[gd_scene load_steps=13 format=4 uid="uid://bvsl6cdtgjpj1"]
+[gd_scene load_steps=16 format=4 uid="uid://bvsl6cdtgjpj1"]
 
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_bxlh1"]
+[ext_resource type="PackedScene" uid="uid://deaodpc5w6ugl" path="res://scenes/player/player.tscn" id="1_bxlh1"]
 [ext_resource type="Script" uid="uid://dbv8kgf0ywdkl" path="res://scripts/game/the_game.gd" id="1_rwqnc"]
 [ext_resource type="Texture2D" uid="uid://cj3vou3sokp62" path="res://art/pixil-frame-0.png" id="2_sbril"]
 [ext_resource type="PackedScene" uid="uid://c0f1607nsdg0m" path="res://scenes/items/bow.tscn" id="4_rwqnc"]
@@ -47,10 +47,6 @@ item_data = ExtResource("6_wg70j")
 [node name="PauseMenu" parent="." instance=ExtResource("9_pause")]
 
 [node name="PlayerHUD" parent="." instance=ExtResource("10_player_hud")]
-
-[node name="Enemy" parent="." instance=ExtResource("7_ep5gg")]
-position = Vector2(129, 14)
-enemy_data = ExtResource("8_82yl5")
 
 [node name="EnemySpawner" parent="." instance=ExtResource("11_spawner")]
 enemy_scene = ExtResource("7_ep5gg")

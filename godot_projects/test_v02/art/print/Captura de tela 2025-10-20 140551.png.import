@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c5bh2xxldtvvc"
-path="res://.godot/imported/arco4.png-0e925f4548ad9ec951ff42b1361eb255.ctex"
+uid="uid://75diqg8bkwv3"
+path="res://.godot/imported/Captura de tela 2025-10-20 140551.png-632628e1c8566fab65d1c97fe89c93ab.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/arco4.png"
-dest_files=["res://.godot/imported/arco4.png-0e925f4548ad9ec951ff42b1361eb255.ctex"]
+source_file="res://art/print/Captura de tela 2025-10-20 140551.png"
+dest_files=["res://.godot/imported/Captura de tela 2025-10-20 140551.png-632628e1c8566fab65d1c97fe89c93ab.ctex"]
 
 [params]
 

@@ -28,6 +28,7 @@ extends Resource
 @export var attack_hitbox_offset: Vector2 = Vector2(25, 0)  # Distância à frente do inimigo
 @export var attack_hitbox_duration: float = 0.15  # Duração do golpe em segundos
 @export var attack_hitbox_color: Color = Color(1, 0, 0, 0.9)  # Cor de debug (vermelho padrão)
+@export var attack_warning_delay: float = 0.3  # Tempo de aviso antes do ataque (para dar tempo de esquiva)
 
 # === COMPORTAMENTO ===
 @export_enum("Passive", "Aggressive", "Patrol") var behavior: String = "Aggressive"

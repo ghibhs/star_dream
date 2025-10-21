@@ -55,6 +55,20 @@ func _physics_process(delta: float) -> void:
 		# offset opcional, se o sprite "aponta" para cima/direita diferente do seu:
 		if weapon_angle_offset_deg != 0.0:
 			weapon_marker.rotation += deg_to_rad(weapon_angle_offset_deg)
+		
+		# 🔒 Garante que a hitbox de ataque não gire em si mesma
+		# A hitbox gira com o weapon_marker, mas mantém rotation local = 0
+		if attack_area and is_instance_valid(attack_area):
+			attack_area.rotation = 0.0
+		
+		# 🔄 Garante que o sprite da arma também rotacione junto
+		# Se o sprite não está filho do weapon_marker, ele deve rotacionar manualmente
+		if current_weapon_sprite and is_instance_valid(current_weapon_sprite):
+			if current_weapon_sprite.get_parent() != weapon_marker:
+				# Sprite está fora do marker, rotaciona manualmente
+				current_weapon_sprite.global_rotation = weapon_marker.global_rotation
+				# Posiciona no mesmo lugar que o marker
+				current_weapon_sprite.global_position = weapon_marker.global_position
 
 	# Calcula velocidade final
 	var final_velocity: Vector2
@@ -150,8 +164,8 @@ var current_weapon_data: WeaponData
 @onready var weapon_marker: Node2D = $WeaponMarker2D
 @onready var projectile_spawn_marker: Marker2D = $WeaponMarker2D/ProjectileSpawnMarker2D
 @onready var weapon_timer: Timer = $WeaponMarker2D/Weapon_timer
-# IMPORTANTE: Após mover WeaponAnimatedSprite2D para dentro do WeaponMarker2D no editor:
-@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponMarker2D/WeaponAnimatedSprite2D
+# WeaponAnimatedSprite2D está diretamente como filho do Player
+@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponAnimatedSprite2D
 @export var fire_rate: float = 3.0  # tiros por segundo (cd = 1 / fire_rate)
 var can_attack: bool = true
 
@@ -344,15 +358,23 @@ func setup_attack_area() -> void:
 			attack_area.position = Vector2(30, 0)
 			print("[PLAYER]    Hitbox position: Vector2(30, 0) - padrão")
 		
-		# 🎨 DEBUG VISUAL: Usa cor do .tres
+		# 🎨 VISUAL: Hitbox SEMPRE VISÍVEL com cor configurável
+		var hitbox_color = Color(0, 1, 0, 0.6)  # Verde semi-transparente (Player = Verde)
 		if "attack_hitbox_color" in current_weapon_data:
-			collision_shape.debug_color = current_weapon_data.attack_hitbox_color
-		else:
-			collision_shape.debug_color = Color(0, 1, 0, 0.9)
+			hitbox_color = current_weapon_data.attack_hitbox_color
+			# Garante visibilidade mínima
+			hitbox_color.a = max(hitbox_color.a, 0.5)
+		
+		collision_shape.debug_color = hitbox_color
+		print("[PLAYER]    🎨 Hitbox cor: ", hitbox_color)
 
 		# Coloca a hitbox como filha do marker da arma
 		if weapon_marker:
 			weapon_marker.add_child(attack_area)
+		
+		# 🔒 IMPORTANTE: Hitbox não deve rotacionar em si mesma
+		# A rotação vem do weapon_marker (pai), então mantemos rotation = 0
+		attack_area.rotation = 0.0
 		
 		print("[PLAYER]    Hitbox shape: ", current_weapon_data.attack_collision)
 		print("[PLAYER]    Layer: 16, Mask: 4")
@@ -408,76 +430,72 @@ func melee_attack() -> void:
 	
 	print("[PLAYER] 🗡️ Executando ataque melee...")
 	
-	# 🎯 DIRECIONA a hitbox para o mouse
-	if attack_area:
-		var direction_to_mouse = (get_global_mouse_position() - global_position).normalized()
-		var angle_to_mouse = direction_to_mouse.angle()
-		
-		# Rotaciona a hitbox para apontar ao mouse
-		attack_area.rotation = angle_to_mouse
-		print("[PLAYER]    🎯 Hitbox rotacionada para o mouse (%.1f graus)" % rad_to_deg(angle_to_mouse))
+	# 🎯 A rotação já é feita pelo weapon_marker no _process
+	# Não rotacionar a attack_area separadamente para evitar dupla rotação
 	
-	# Toca animação de ataque baseada na posição do mouse
+	# 🎬 ANIMAÇÃO: Toca animação de ataque na arma
 	if current_weapon_sprite and current_weapon_data:
-		# Calcula posição X do mouse em relação ao player
-		var mouse_pos_x = get_global_mouse_position().x - global_position.x
-		
-		# Escolhe animação baseada na posição X do mouse
-		var attack_animation = ""
-		if mouse_pos_x < 0:
-			# Mouse à esquerda
-			attack_animation = "attack_left"
-			print("[PLAYER]    Direção: ESQUERDA (mouse_x: %.1f)" % mouse_pos_x)
-		else:
-			# Mouse à direita
-			attack_animation = "attack_right"
-			print("[PLAYER]    Direção: DIREITA (mouse_x: %.1f)" % mouse_pos_x)
-
-		# Toca a animação se existir
-		if current_weapon_data.sprite_frames.has_animation(attack_animation):
-			current_weapon_sprite.play(attack_animation)
-			print("[PLAYER]    ✅ Animação: ", attack_animation)
-		elif current_weapon_data.sprite_frames.has_animation("attack"):
-			# Fallback para "attack" se as novas animações não existirem
+		if current_weapon_data.sprite_frames.has_animation("attack"):
 			current_weapon_sprite.play("attack")
-			print("[PLAYER]    ⚠️ Usando animação fallback: 'attack'")
+			print("[PLAYER]    ✅ Tocando animação: 'attack'")
+			
+			# Aguarda animação completar antes de ativar hitbox
+			await current_weapon_sprite.animation_finished
+			print("[PLAYER]    ✅ Animação 'attack' finalizada")
+		else:
+			print("[PLAYER]    ⚠️ Animação 'attack' não encontrada no SpriteFrames")
 	
-	# Ativa hitbox
+	# ⚔️ ATIVA hitbox (só depois da animação)
 	attack_area.monitoring = true
-	print("[PLAYER]    Hitbox de GOLPE ATIVADA!")
+	print("[PLAYER]    ✅ Hitbox de GOLPE ATIVADA!")
 	
-	# 🎨 VISUAL: Deixa o golpe BEM visível
-	for child in attack_area.get_children():
-		if child is CollisionShape2D:
-			child.debug_color = Color(0, 1, 0, 0.95)  # Verde muito brilhante
+	# Lista de inimigos já atingidos (para garantir dano único)
+	var enemies_hit = []
 	
-	# ⚡ Usa duração configurada no .tres
-	var attack_hit_duration = 0.1
+	# ⚡ Duração da hitbox ativa
+	var attack_hit_duration = 0.15
 	if "attack_hitbox_duration" in current_weapon_data:
 		attack_hit_duration = current_weapon_data.attack_hitbox_duration
 		print("[PLAYER]    ⏱️ Duração do golpe: %.2fs (do .tres)" % attack_hit_duration)
 	else:
 		print("[PLAYER]    ⏱️ Duração do golpe: %.2fs (padrão)" % attack_hit_duration)
 	
-	await get_tree().create_timer(attack_hit_duration).timeout
+	# Verifica colisões durante a duração da hitbox
+	var timer = 0.0
+	while timer < attack_hit_duration:
+		await get_tree().process_frame
+		timer += get_process_delta_time()
+		
+		# ✅ Verifica se monitoring está ativo antes de pegar overlapping bodies
+		if not attack_area.monitoring:
+			break
+		
+		# Verifica inimigos colidindo
+		for body in attack_area.get_overlapping_bodies():
+			if body.is_in_group("enemies") and body not in enemies_hit:
+				enemies_hit.append(body)
+				# Aplica dano
+				if body.has_method("take_damage"):
+					var damage_amount = current_weapon_data.damage if current_weapon_data else 10.0
+					body.take_damage(damage_amount)
+					print("[PLAYER]    💥 Dano aplicado a ", body.name, ": ", damage_amount)
 	
 	# Desativa hitbox
 	attack_area.monitoring = false
-	print("[PLAYER]    Hitbox de GOLPE DESATIVADA!")
-	
-	# 🎨 VISUAL: Esconde o golpe
-	for child in attack_area.get_children():
-		if child is CollisionShape2D:
-			child.debug_color = Color(0, 1, 0, 0.0)  # Invisível
+	print("[PLAYER]    ❌ Hitbox de GOLPE DESATIVADA!")
 	
 	# Volta para animação idle/default
 	if current_weapon_sprite and current_weapon_data:
-		if current_weapon_data.animation_name != "":
+		# Verifica se existe a animação antes de tocar
+		if current_weapon_data.sprite_frames.has_animation(current_weapon_data.animation_name):
 			current_weapon_sprite.play(current_weapon_data.animation_name)
-			print("[PLAYER]    Voltando para animação: ", current_weapon_data.animation_name)
+			print("[PLAYER]    🔄 Voltando para animação: ", current_weapon_data.animation_name)
+		elif current_weapon_data.sprite_frames.has_animation("default"):
+			current_weapon_sprite.play("default")
+			print("[PLAYER]    🔄 Voltando para animação: default")
 		else:
 			current_weapon_sprite.stop()
-			print("[PLAYER]    Sprite parado (sem animação idle)")
+			print("[PLAYER]    ⏸️ Sprite parado (sem animação idle)")
 
 
 func projectile_attack() -> void:

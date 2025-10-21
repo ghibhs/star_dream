@@ -15,6 +15,7 @@ chase_range = 200.0
 attack_range = 30.0
 behavior = 1
 attack_cooldown = 1.5
+attack_warning_delay = 0.5
 experience_drop = 15
 coin_drop = 5
 death_animation = "death"
