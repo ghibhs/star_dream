@@ -26,11 +26,21 @@ var dash_cooldown_timer: float = 0.0
 var current_health: float
 var is_dead: bool = false
 
+# -----------------------------
+# SISTEMA DE KNOCKBACK (EMPURRÃO)
+# -----------------------------
+@export var knockback_force: float = 300.0  # Força do empurrão
+@export var knockback_duration: float = 0.2  # Duração do empurrão em segundos
+var is_being_knocked_back: bool = false
+var knockback_velocity: Vector2 = Vector2.ZERO
+var knockback_timer: float = 0.0
+
 @onready var animation: AnimatedSprite2D = $AnimatedSprite2D
 
 func _physics_process(delta: float) -> void:
 	# Atualiza timers
 	update_dash_timers(delta)
+	update_knockback_timer(delta)
 	
 	# Input de movimento
 	direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -43,7 +53,7 @@ func _physics_process(delta: float) -> void:
 		start_dash()
 	
 	# Animações
-	if direction != Vector2.ZERO and not is_dashing:
+	if direction != Vector2.ZERO and not is_dashing and not is_being_knocked_back:
 		play_animations(direction)
 	else:
 		if animation and not is_dashing:
@@ -74,7 +84,10 @@ func _physics_process(delta: float) -> void:
 	# Calcula velocidade final
 	var final_velocity: Vector2
 	
-	if is_dashing:
+	if is_being_knocked_back:
+		# Durante knockback, usa a velocidade do empurrão
+		final_velocity = knockback_velocity
+	elif is_dashing:
 		# Durante dash, movimento rápido na direção do dash
 		final_velocity = dash_direction * dash_speed
 	else:
@@ -150,6 +163,49 @@ func end_dash() -> void:
 	print("[PLAYER] ✅ Dash finalizado")
 	is_dashing = false
 	dash_timer = 0.0
+
+
+# -----------------------------
+# SISTEMA DE KNOCKBACK (EMPURRÃO)
+# -----------------------------
+func update_knockback_timer(delta: float) -> void:
+	"""Atualiza o timer do knockback"""
+	if is_being_knocked_back:
+		knockback_timer -= delta
+		if knockback_timer <= 0.0:
+			end_knockback()
+
+
+func apply_knockback(from_position: Vector2, force: float = 0.0, duration: float = 0.0) -> void:
+	"""Aplica empurrão na direção oposta ao atacante"""
+	if is_dead:
+		return
+	
+	# Usa força e duração customizadas ou valores padrão do player
+	var actual_force = force if force > 0.0 else knockback_force
+	var actual_duration = duration if duration > 0.0 else knockback_duration
+	
+	# Calcula direção do empurrão (do atacante para o player)
+	var knockback_direction = (global_position - from_position).normalized()
+	
+	# Define velocidade do empurrão
+	knockback_velocity = knockback_direction * actual_force
+	
+	# Ativa knockback
+	is_being_knocked_back = true
+	knockback_timer = actual_duration
+	
+	print("[PLAYER]    💥 Knockback aplicado!")
+	print("[PLAYER]       Direção: ", knockback_direction)
+	print("[PLAYER]       Força: %.1f" % actual_force)
+	print("[PLAYER]       Duração: %.2fs" % actual_duration)
+
+
+func end_knockback() -> void:
+	"""Finaliza o knockback"""
+	is_being_knocked_back = false
+	knockback_velocity = Vector2.ZERO
+	knockback_timer = 0.0
 
 
 # -----------------------------
@@ -578,22 +634,33 @@ func _ready_health() -> void:
 	current_health = max_health
 
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, attacker_position: Vector2 = Vector2.ZERO, kb_force: float = 0.0, kb_duration: float = 0.0, apply_kb: bool = true) -> void:
 	if is_dead:
 		print("[PLAYER] ⚠️ Dano ignorado: player já está morto")
 		return
 	
+	var previous_health = current_health
 	current_health -= amount
 	print("[PLAYER] 💔 DANO RECEBIDO: %.1f" % amount)
-	print("[PLAYER]    HP atual: %.1f/%.1f (%.1f%%)" % [current_health, max_health, (current_health/max_health)*100])
+	print("[PLAYER]    HP: %.1f → %.1f (%.1f%%)" % [previous_health, current_health, (current_health/max_health)*100])
 	
-	# Visual de dano (flash)
+	# Aplica flash vermelho (sempre, mesmo se morrer)
 	apply_hit_flash()
 	
-	# Verifica morte
+	# ⚠️ VERIFICA MORTE
 	if current_health <= 0:
-		print("[PLAYER] ☠️ HP chegou a 0, iniciando morte...")
+		print("[PLAYER] ══════════════════════════════════════")
+		print("[PLAYER] ⚠️⚠️⚠️  VIDA ZEROU!  ⚠️⚠️⚠️")
+		print("[PLAYER] HP FINAL: %.1f / %.1f" % [current_health, max_health])
+		print("[PLAYER] ══════════════════════════════════════")
+		# Aguarda o flash terminar antes de morrer
+		await get_tree().create_timer(0.1).timeout
 		die()
+		return
+	
+	# Aplica knockback se configurado (apenas se sobreviveu)
+	if apply_kb and attacker_position != Vector2.ZERO:
+		apply_knockback(attacker_position, kb_force, kb_duration)
 
 
 func apply_hit_flash() -> void:
@@ -607,8 +674,14 @@ func apply_hit_flash() -> void:
 
 func die() -> void:
 	is_dead = true
-	print("[PLAYER] ☠️☠️☠️ PLAYER MORREU! ☠️☠️☠️")
+	print("")
+	print("[PLAYER] ══════════════════════════════════════")
+	print("[PLAYER] ☠️☠️☠️  PLAYER MORREU!  ☠️☠️☠️")
+	print("[PLAYER] ══════════════════════════════════════")
+	print("[PLAYER]    HP Final: %.1f / %.1f" % [current_health, max_health])
 	print("[PLAYER]    Physics desativado")
+	print("[PLAYER] ══════════════════════════════════════")
+	print("")
 	
 	# Para o movimento
 	set_physics_process(false)

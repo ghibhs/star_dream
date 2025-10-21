@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=11 format=3 uid="uid://b83hlcfidew6m"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=12 format=3 uid="uid://b83hlcfidew6m"]
 
 [ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://resources/classes/EnemyData.gd" id="1_x8s3z"]
-[ext_resource type="Texture2D" uid="uid://dkvi6ixq428cy" path="res://art/lobao.png" id="2_cu5q2"]
+[ext_resource type="Texture2D" uid="uid://035ktywctnl8" path="res://art/lobao-Sheet.png" id="2_cu5q2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dntnr"]
 
@@ -27,6 +27,10 @@ region = Rect2(128, 0, 64, 64)
 atlas = ExtResource("2_cu5q2")
 region = Rect2(192, 0, 64, 64)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_tdcnq"]
+atlas = ExtResource("2_cu5q2")
+region = Rect2(256, 0, 64, 64)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_21uq7"]
 animations = [{
 "frames": [{
@@ -41,6 +45,9 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_da5cm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tdcnq")
 }],
 "loop": true,
 "name": &"walk",
