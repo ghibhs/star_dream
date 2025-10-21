@@ -18,6 +18,7 @@ extends Resource
 @export var weapon_type: String = "melee"  # "melee", "projectile"
 @export var damage: float = 10
 @export var attack_speed: float = 1.0
+@export var attack_cooldown: float = 0.5  # Tempo de cooldown entre ataques em segundos
 @export var weapon_range: float = 100.0
 
 # === HITBOX DE ATAQUE (Golpe) ===

@@ -61,14 +61,15 @@ func _physics_process(delta: float) -> void:
 		if attack_area and is_instance_valid(attack_area):
 			attack_area.rotation = 0.0
 		
-		# 🔄 Garante que o sprite da arma também rotacione junto
-		# Se o sprite não está filho do weapon_marker, ele deve rotacionar manualmente
+		# 🔄 O sprite da arma é filho do weapon_marker, então rotaciona automaticamente
+		# Apenas garantimos que ele está visível e no lugar certo
 		if current_weapon_sprite and is_instance_valid(current_weapon_sprite):
+			# Se o sprite não é filho do marker por algum motivo, corrige isso
 			if current_weapon_sprite.get_parent() != weapon_marker:
-				# Sprite está fora do marker, rotaciona manualmente
-				current_weapon_sprite.global_rotation = weapon_marker.global_rotation
-				# Posiciona no mesmo lugar que o marker
-				current_weapon_sprite.global_position = weapon_marker.global_position
+				print("[PLAYER] ⚠️ Sprite da arma não é filho do marker! Reparentando...")
+				current_weapon_sprite.reparent(weapon_marker)
+			# Mantém rotação local = 0 para que apenas o marker controle a rotação
+			current_weapon_sprite.rotation = 0.0
 
 	# Calcula velocidade final
 	var final_velocity: Vector2
@@ -164,8 +165,8 @@ var current_weapon_data: WeaponData
 @onready var weapon_marker: Node2D = $WeaponMarker2D
 @onready var projectile_spawn_marker: Marker2D = $WeaponMarker2D/ProjectileSpawnMarker2D
 @onready var weapon_timer: Timer = $WeaponMarker2D/Weapon_timer
-# WeaponAnimatedSprite2D está diretamente como filho do Player
-@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponAnimatedSprite2D
+# O sprite da arma será criado dinamicamente como filho do WeaponMarker2D
+var current_weapon_sprite: AnimatedSprite2D = null
 @export var fire_rate: float = 3.0  # tiros por segundo (cd = 1 / fire_rate)
 var can_attack: bool = true
 
@@ -199,10 +200,10 @@ func _ready() -> void:
 	
 	# Configura timer de cooldown
 	if weapon_timer:
-		weapon_timer.wait_time = 1.0 / fire_rate
+		weapon_timer.wait_time = 1.0 / fire_rate  # Valor padrão (será sobrescrito pela arma)
 		weapon_timer.one_shot = true
 		weapon_timer.timeout.connect(_on_weapon_timer_timeout)
-		print("[PLAYER] Timer de ataque configurado: %.2fs cooldown" % weapon_timer.wait_time)
+		print("[PLAYER] Timer de ataque configurado (cooldown será definido pela arma equipada)")
 	# Armas melee não rotacionam para o mouse
 
 
@@ -293,25 +294,47 @@ func setup_weapon_marker_position() -> void:
 
 
 func create_or_update_weapon_sprite() -> void:
-	# Se por algum motivo não existir, criamos um novo e anexamos ao marker.
-	if current_weapon_sprite == null:
+	# Remove sprite antigo se existir
+	if current_weapon_sprite != null and is_instance_valid(current_weapon_sprite):
+		print("[PLAYER] Removendo sprite de arma anterior")
+		current_weapon_sprite.queue_free()
+		current_weapon_sprite = null
+	
+	# Cria novo sprite como filho do weapon_marker
+	if weapon_marker:
 		current_weapon_sprite = AnimatedSprite2D.new()
-		if weapon_marker:
-			weapon_marker.add_child(current_weapon_sprite)
+		weapon_marker.add_child(current_weapon_sprite)
+		print("[PLAYER] Novo sprite de arma criado como filho do WeaponMarker2D")
+	else:
+		push_error("[PLAYER] WeaponMarker2D não existe!")
+		return
+	
 	# Atualiza frames e animação
 	if current_weapon_data.sprite_frames:
 		current_weapon_sprite.sprite_frames = current_weapon_data.sprite_frames
+		print("[PLAYER]    Sprite frames configurados")
+	
 	if current_weapon_data.animation_name != "":
 		current_weapon_sprite.play(current_weapon_data.animation_name)
+		print("[PLAYER]    Tocando animação: ", current_weapon_data.animation_name)
 
-	# (Opcional) se seu Resource tiver um campo de escala da arma:
+	# Configura escala da arma (se definido no Resource)
 	if "Sprite_scale" in current_weapon_data and current_weapon_data.Sprite_scale != Vector2.ZERO:
 		current_weapon_sprite.scale = current_weapon_data.Sprite_scale
-		print("scale: ",current_weapon_sprite.scale)
-		
+		print("[PLAYER]    Scale: ", current_weapon_sprite.scale)
+	
+	# Configura posição local do sprite (offset relativo ao marker)
 	if "sprite_position" in current_weapon_data and current_weapon_data.sprite_position != Vector2.ZERO:
 		current_weapon_sprite.position = current_weapon_data.sprite_position
-	# Caso contrário, você pode continuar ajustando a escala desse nó no editor à vontade.
+		print("[PLAYER]    Position: ", current_weapon_sprite.position)
+	else:
+		# Posição padrão (centro do marker)
+		current_weapon_sprite.position = Vector2.ZERO
+		print("[PLAYER]    Position: Vector2.ZERO (padrão)")
+	
+	# IMPORTANTE: Rotação local sempre 0, o marker controla a rotação
+	current_weapon_sprite.rotation = 0.0
+	print("[PLAYER] ✅ Sprite da arma configurado e pronto para rotacionar com o mouse")
 	
 
 func setup_attack_area() -> void:
@@ -416,11 +439,12 @@ func perform_attack() -> void:
 			print("[PLAYER]    → Tipo desconhecido, usando melee como fallback")
 			melee_attack()  # fallback
 	
-	# Inicia cooldown
+	# Inicia cooldown usando o valor do WeaponData
 	if weapon_timer:
-		weapon_timer.wait_time = 1.0 / fire_rate
+		var cooldown_time = current_weapon_data.attack_cooldown if current_weapon_data else (1.0 / fire_rate)
+		weapon_timer.wait_time = cooldown_time
 		weapon_timer.start()
-		print("[PLAYER]    Cooldown iniciado: %.2fs" % weapon_timer.wait_time)
+		print("[PLAYER]    Cooldown iniciado: %.2fs (do WeaponData)" % weapon_timer.wait_time)
 
 
 func melee_attack() -> void:
