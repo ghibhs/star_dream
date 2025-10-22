@@ -20,14 +20,27 @@ var grid_container: GridContainer
 var equipment_panel: Panel
 var close_button: Button
 var split_button: Button
+var use_button: Button
+var drop_button: Button
+
+# Filtros
+var filter_buttons: Dictionary = {}
+var current_filter: int = -1  # -1 = Todos, ou ItemData.ItemType
 
 # Equipment slot UIs
 var equipment_slot_uis: Dictionary = {}
+
+# Slot selecionado
+var selected_slot_index: int = -1
 
 
 func _ready() -> void:
 	# Esconde por padrão
 	hide()
+	
+	# Define layer MUITO alto para ficar acima de TUDO
+	layer = 100
+	print("[INVENTORY UI] 🔝 CanvasLayer definido para 100 (acima de tudo)")
 	
 	create_ui()
 	
@@ -37,17 +50,31 @@ func _ready() -> void:
 
 ## Cria toda a estrutura da UI
 func create_ui() -> void:
+	print("[INVENTORY UI] 🎨 Criando UI do inventário...")
+	
 	# Panel principal
 	panel = Panel.new()
 	panel.name = "InventoryPanel"
 	panel.custom_minimum_size = Vector2(450, 500)
-	panel.position = Vector2(100, 100)
+	
+	# 🎯 CENTRALIZA O PAINEL!
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.position = Vector2(-225, -250)  # Offset para centralizar (metade do tamanho)
+	
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP  # STOP para capturar eventos!
 	add_child(panel)
+	
+	print("[INVENTORY UI]    Panel mouse_filter: STOP (captura eventos!)")
+	print("[INVENTORY UI]    Panel position: %s" % panel.position)
+	print("[INVENTORY UI]    Panel size: %s" % panel.custom_minimum_size)
 	
 	# VBox para organizar conteúdo
 	var vbox = VBoxContainer.new()
 	vbox.anchor_right = 1
 	vbox.anchor_bottom = 1
+	vbox.mouse_filter = Control.MOUSE_FILTER_PASS  # Passa eventos para os filhos
 	panel.add_child(vbox)
 	
 	# Header com título e botão de fechar
@@ -72,14 +99,54 @@ func create_ui() -> void:
 	var separator1 = HSeparator.new()
 	vbox.add_child(separator1)
 	
+	# === FILTROS ===
+	var filters_hbox = HBoxContainer.new()
+	filters_hbox.add_theme_constant_override("separation", 4)
+	filters_hbox.mouse_filter = Control.MOUSE_FILTER_PASS
+	vbox.add_child(filters_hbox)
+	
+	var filter_label = Label.new()
+	filter_label.text = "Filtrar:"
+	filters_hbox.add_child(filter_label)
+	
+	# Botão "Todos"
+	var all_button = Button.new()
+	all_button.text = "Todos"
+	all_button.toggle_mode = true
+	all_button.button_pressed = true
+	all_button.pressed.connect(_on_filter_changed.bind(-1))
+	filters_hbox.add_child(all_button)
+	filter_buttons[-1] = all_button
+	
+	# Botões para cada tipo
+	var filter_types = [
+		["Consumíveis", ItemData.ItemType.CONSUMABLE],
+		["Equipamentos", ItemData.ItemType.EQUIPMENT],
+		["Armas", ItemData.ItemType.WEAPON],
+		["Materiais", ItemData.ItemType.MATERIAL],
+	]
+	
+	for filter_data in filter_types:
+		var btn = Button.new()
+		btn.text = filter_data[0]
+		btn.toggle_mode = true
+		btn.pressed.connect(_on_filter_changed.bind(filter_data[1]))
+		filters_hbox.add_child(btn)
+		filter_buttons[filter_data[1]] = btn
+	
+	var separator_filter = HSeparator.new()
+	vbox.add_child(separator_filter)
+	
 	# HBox para slots principais e equipamentos
 	var hbox_main = HBoxContainer.new()
 	hbox_main.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hbox_main.mouse_filter = Control.MOUSE_FILTER_PASS
 	vbox.add_child(hbox_main)
 	
 	# === GRID DE SLOTS PRINCIPAIS ===
 	var slots_vbox = VBoxContainer.new()
 	slots_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slots_vbox.mouse_filter = Control.MOUSE_FILTER_PASS
 	hbox_main.add_child(slots_vbox)
 	
 	var slots_label = Label.new()
@@ -90,22 +157,39 @@ func create_ui() -> void:
 	# ScrollContainer para os slots
 	var scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.mouse_filter = Control.MOUSE_FILTER_PASS  # Passa eventos para os filhos
 	slots_vbox.add_child(scroll)
 	
 	grid_container = GridContainer.new()
 	grid_container.columns = grid_columns
 	grid_container.add_theme_constant_override("h_separation", slot_spacing)
 	grid_container.add_theme_constant_override("v_separation", slot_spacing)
+	grid_container.mouse_filter = Control.MOUSE_FILTER_PASS  # Passa eventos para os filhos
 	scroll.add_child(grid_container)
 	
 	# Botões de ação
 	var actions_hbox = HBoxContainer.new()
+	actions_hbox.add_theme_constant_override("separation", 4)
+	actions_hbox.mouse_filter = Control.MOUSE_FILTER_PASS
 	slots_vbox.add_child(actions_hbox)
 	
+	use_button = Button.new()
+	use_button.text = "Usar"
+	use_button.disabled = true
+	use_button.pressed.connect(_on_use_button_pressed)
+	actions_hbox.add_child(use_button)
+	
 	split_button = Button.new()
-	split_button.text = "Dividir (Shift+Click)"
+	split_button.text = "Dividir"
 	split_button.disabled = true
+	split_button.pressed.connect(_on_split_button_pressed)
 	actions_hbox.add_child(split_button)
+	
+	drop_button = Button.new()
+	drop_button.text = "Dropar"
+	drop_button.disabled = true
+	drop_button.pressed.connect(_on_drop_button_pressed)
+	actions_hbox.add_child(drop_button)
 	
 	# === PANEL DE EQUIPAMENTOS ===
 	equipment_panel = Panel.new()
@@ -158,7 +242,14 @@ func create_equipment_slots(parent: VBoxContainer) -> void:
 
 ## Configura o inventário
 func setup_inventory(inv: Inventory) -> void:
+	print("\n[INVENTORY UI] 🔧 Configurando inventário...")
 	inventory = inv
+	
+	if not inventory:
+		print("[INVENTORY UI] ❌ Inventário é NULL!")
+		return
+	
+	print("[INVENTORY UI]    Slots: %d" % inventory.inventory_size)
 	
 	# Limpa slots existentes
 	for child in grid_container.get_children():
@@ -171,8 +262,12 @@ func setup_inventory(inv: Inventory) -> void:
 		slot_ui.slot_index = i
 		slot_ui.slot_size = slot_size
 		slot_ui.set_inventory_slot(inventory.slots[i])
+		
+		# Conecta sinais
 		slot_ui.slot_clicked.connect(_on_slot_clicked)
 		slot_ui.slot_right_clicked.connect(_on_slot_right_clicked)
+		
+		print("[INVENTORY UI]    Slot %d criado e conectado" % i)
 		
 		grid_container.add_child(slot_ui)
 		slot_uis.append(slot_ui)
@@ -188,16 +283,22 @@ func setup_inventory(inv: Inventory) -> void:
 
 ## Abre o inventário
 func open_inventory() -> void:
+	print("[INVENTORY UI] 📂 Abrindo inventário...")
 	is_open = true
 	show()
-	print("[INVENTORY UI] Inventário aberto")
+	if current_filter != -1:
+		apply_filter()
+	print("[INVENTORY UI] ✅ Inventário aberto")
 
 
 ## Fecha o inventário
 func close_inventory() -> void:
+	print("[INVENTORY UI] 📁 Fechando inventário...")
 	is_open = false
 	hide()
-	print("[INVENTORY UI] Inventário fechado")
+	selected_slot_index = -1
+	update_action_buttons()
+	print("[INVENTORY UI] ✅ Inventário fechado")
 
 
 ## Toggle do inventário
@@ -210,30 +311,73 @@ func toggle_inventory() -> void:
 
 ## Callback quando um slot é clicado
 func _on_slot_clicked(slot_index: int, mouse_button: int) -> void:
+	print("\n[INVENTORY UI] 🖱️ CALLBACK _on_slot_clicked chamado!")
+	print("[INVENTORY UI]    Slot: %d" % slot_index)
+	print("[INVENTORY UI]    Botão: %d" % mouse_button)
+	
 	if not inventory:
+		print("[INVENTORY UI] ❌ Inventory é NULL!")
 		return
+	
+	var slot = inventory.slots[slot_index]
+	print("[INVENTORY UI]    Slot vazio? %s" % slot.is_empty())
 	
 	# Shift + Click = Split
 	if Input.is_key_pressed(KEY_SHIFT) and mouse_button == MOUSE_BUTTON_LEFT:
+		print("[INVENTORY UI] ✂️ Shift+Click detectado - dividindo slot")
 		inventory.split_slot(slot_index)
 		return
 	
-	# Ctrl + Click = Drop/Delete (poderia implementar)
-	if Input.is_key_pressed(KEY_CTRL) and mouse_button == MOUSE_BUTTON_LEFT:
-		print("[INVENTORY UI] Drop não implementado ainda")
-		return
+	# Double click em consumível = Usar
+	# (Godot não tem double click built-in, então usamos click único)
 	
-	# Click normal em item equipável = equipar
-	var slot = inventory.slots[slot_index]
-	if not slot.is_empty() and slot.item_data.is_equippable:
-		if mouse_button == MOUSE_BUTTON_LEFT:
-			inventory.equip_item(slot_index)
+	# Click esquerdo = Seleciona slot ou usa/equipa
+	if mouse_button == MOUSE_BUTTON_LEFT:
+		print("[INVENTORY UI] 👆 Click esquerdo")
+		# Se já está selecionado, tenta usar/equipar
+		if selected_slot_index == slot_index and not slot.is_empty():
+			print("[INVENTORY UI] 🔄 Slot já selecionado - tentando usar/equipar")
+			if slot.item_data.is_usable():
+				print("[INVENTORY UI] ✅ Item é usável!")
+				inventory.use_item(slot_index)
+				selected_slot_index = -1
+			elif slot.item_data.is_equippable:
+				print("[INVENTORY UI] ✅ Item é equipável!")
+				inventory.equip_item(slot_index)
+				selected_slot_index = -1
+		else:
+			# Seleciona o slot
+			print("[INVENTORY UI] ✅ Selecionando slot %d" % slot_index)
+			selected_slot_index = slot_index
+		
+		update_action_buttons()
+		highlight_selected_slot()
 
 
 ## Callback quando um slot é clicado com botão direito
 func _on_slot_right_clicked(slot_index: int) -> void:
-	print("[INVENTORY UI] Right click no slot %d" % slot_index)
-	# Poderia abrir menu contextual aqui
+	if not inventory:
+		return
+	
+	var slot = inventory.slots[slot_index]
+	if slot.is_empty():
+		return
+	
+	# Botão direito = ação rápida
+	if slot.item_data.is_usable():
+		inventory.use_item(slot_index)
+	elif slot.item_data.is_equippable:
+		inventory.equip_item(slot_index)
+
+
+## Destaca visualmente o slot selecionado
+func highlight_selected_slot() -> void:
+	for i in range(slot_uis.size()):
+		var slot_ui = slot_uis[i]
+		if i == selected_slot_index:
+			slot_ui.modulate = Color(1.2, 1.2, 1.0)  # Amarelo claro
+		else:
+			slot_ui.modulate = Color.WHITE
 
 
 ## Callback quando slot de equipamento é clicado
@@ -272,8 +416,125 @@ func _on_equipment_changed(_slot_type: ItemData.EquipmentSlot) -> void:
 	update_equipment_display()
 
 
+## Callback para mudança de filtro
+func _on_filter_changed(filter_type: int) -> void:
+	print("\n[INVENTORY UI] 🔍 Mudando filtro para: ", filter_type)
+	
+	# Desativa outros botões
+	for btn_type in filter_buttons:
+		filter_buttons[btn_type].button_pressed = (btn_type == filter_type)
+	
+	current_filter = filter_type
+	apply_filter()
+	
+	var filter_name = "Todos" if filter_type == -1 else ItemData.ItemType.keys()[filter_type]
+	print("[INVENTORY UI] ✅ Filtro aplicado: %s" % filter_name)
+
+
+## Aplica o filtro atual aos slots
+func apply_filter() -> void:
+	if not inventory:
+		print("[INVENTORY UI] ⚠️ Filtro: Inventário é NULL")
+		return
+	
+	var visible_count = 0
+	
+	for i in range(slot_uis.size()):
+		var slot_ui = slot_uis[i]
+		var slot = inventory.slots[i]
+		
+		# Se filtro é "Todos" (-1) ou slot vazio, sempre mostra
+		if current_filter == -1 or slot.is_empty():
+			slot_ui.visible = true
+			if not slot.is_empty():
+				visible_count += 1
+			continue
+		
+		# Mostra apenas se o tipo corresponde
+		var should_show = (slot.item_data.item_type == current_filter)
+		slot_ui.visible = should_show
+		if should_show:
+			visible_count += 1
+	
+	print("[INVENTORY UI]    Itens visíveis após filtro: %d" % visible_count)
+
+
+## Callback para botão "Usar"
+func _on_use_button_pressed() -> void:
+	print("\n[INVENTORY UI] 🔘 Botão 'Usar' pressionado")
+	
+	if selected_slot_index == -1:
+		print("[INVENTORY UI] ❌ Nenhum slot selecionado")
+		return
+	
+	if not inventory:
+		print("[INVENTORY UI] ❌ Inventário é NULL!")
+		return
+	
+	print("[INVENTORY UI]    Slot selecionado: %d" % selected_slot_index)
+	
+	if inventory.use_item(selected_slot_index):
+		print("[INVENTORY UI] ✅ Item usado com sucesso")
+		selected_slot_index = -1
+		update_action_buttons()
+	else:
+		print("[INVENTORY UI] ❌ Falha ao usar item")
+
+
+## Callback para botão "Dividir"
+func _on_split_button_pressed() -> void:
+	if selected_slot_index == -1 or not inventory:
+		return
+	
+	inventory.split_slot(selected_slot_index)
+	selected_slot_index = -1
+	update_action_buttons()
+
+
+## Callback para botão "Dropar"
+func _on_drop_button_pressed() -> void:
+	if selected_slot_index == -1 or not inventory:
+		return
+	
+	# Remove o item do inventário (poderia criar no mundo)
+	var slot = inventory.slots[selected_slot_index]
+	if not slot.is_empty():
+		print("[INVENTORY UI] 📦 Dropando: ", slot.item_data.item_name)
+		slot.clear()
+		selected_slot_index = -1
+		update_action_buttons()
+
+
+## Atualiza estado dos botões de ação
+func update_action_buttons() -> void:
+	if selected_slot_index == -1 or not inventory:
+		use_button.disabled = true
+		split_button.disabled = true
+		drop_button.disabled = true
+		return
+	
+	var slot = inventory.slots[selected_slot_index]
+	
+	if slot.is_empty():
+		use_button.disabled = true
+		split_button.disabled = true
+		drop_button.disabled = true
+		return
+	
+	# Usar: apenas consumíveis
+	use_button.disabled = not slot.item_data.is_usable()
+	
+	# Dividir: apenas se quantidade > 1
+	split_button.disabled = (slot.quantity <= 1)
+	
+	# Dropar: sempre disponível se tem item
+	drop_button.disabled = false
+
+
 ## Input handler
 func _input(event: InputEvent) -> void:
+	# Toggle inventário
 	if event.is_action_pressed("inventory"):
 		toggle_inventory()
 		get_viewport().set_input_as_handled()
+		return

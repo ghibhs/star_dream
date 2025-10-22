@@ -56,6 +56,15 @@ enum EquipmentSlot {
 @export var sound_effect: AudioStream
 @export var hit_effect: PackedScene
 
+@export_group("Consumable Effects")
+## Efeitos quando consumido (poções, comida, etc)
+@export var restore_health: float = 0.0
+@export var restore_mana: float = 0.0
+@export var restore_stamina: float = 0.0
+@export var apply_buff_duration: float = 0.0  # Duração do buff em segundos
+@export var buff_speed_multiplier: float = 1.0  # Multiplicador de velocidade durante buff
+@export var buff_damage_multiplier: float = 1.0  # Multiplicador de dano durante buff
+
 ## Bônus quando equipado
 @export_group("Equipment Bonuses")
 @export var bonus_health: float = 0.0
@@ -71,6 +80,23 @@ func get_display_name() -> String:
 func get_tooltip_text() -> String:
 	var text = "[b]%s[/b]\n%s" % [item_name, description]
 	
+	# Efeitos de consumível
+	if item_type == ItemType.CONSUMABLE:
+		text += "\n\n[color=lime]Consumível[/color]"
+		if restore_health > 0:
+			text += "\n+%.0f HP" % restore_health
+		if restore_mana > 0:
+			text += "\n+%.0f Mana" % restore_mana
+		if restore_stamina > 0:
+			text += "\n+%.0f Stamina" % restore_stamina
+		if apply_buff_duration > 0:
+			text += "\n\n[color=cyan]Buff (%.1fs):[/color]" % apply_buff_duration
+			if buff_speed_multiplier != 1.0:
+				text += "\nVelocidade x%.1f" % buff_speed_multiplier
+			if buff_damage_multiplier != 1.0:
+				text += "\nDano x%.1f" % buff_damage_multiplier
+	
+	# Bônus de equipamento
 	if item_type == ItemType.EQUIPMENT or item_type == ItemType.WEAPON:
 		text += "\n\n[color=yellow]Equipável[/color]"
 		if bonus_health > 0:
@@ -89,3 +115,8 @@ func get_tooltip_text() -> String:
 		text += "\n\n[color=gold]Valor: %d moedas[/color]" % value
 	
 	return text
+
+
+## Verifica se o item pode ser usado/consumido
+func is_usable() -> bool:
+	return item_type == ItemType.CONSUMABLE

@@ -7,6 +7,7 @@ signal inventory_changed()
 signal item_added(item: ItemData, quantity: int)
 signal item_removed(item: ItemData, quantity: int)
 signal equipment_changed(slot_type: ItemData.EquipmentSlot)
+signal item_used(item: ItemData)
 
 @export var inventory_size: int = 30
 @export var enable_equipment_slots: bool = true
@@ -45,10 +46,15 @@ func initialize_inventory() -> void:
 
 ## Adiciona um item ao inventário
 func add_item(item: ItemData, quantity: int = 1) -> bool:
-	if item == null or quantity <= 0:
+	if item == null:
+		print("[INVENTORY] ❌ Tentou adicionar item NULL")
 		return false
 	
-	print("[INVENTORY] Tentando adicionar: %s x%d" % [item.item_name, quantity])
+	if quantity <= 0:
+		print("[INVENTORY] ❌ Quantidade inválida: %d" % quantity)
+		return false
+	
+	print("[INVENTORY] 📥 Tentando adicionar: %s x%d (tipo: %s)" % [item.item_name, quantity, ItemData.ItemType.keys()[item.item_type]])
 	
 	var remaining = quantity
 	
@@ -231,25 +237,36 @@ func split_slot(index: int) -> int:
 
 ## Equipa um item
 func equip_item(inventory_index: int) -> bool:
+	print("\n[INVENTORY] 🎽 Tentando equipar item do slot %d" % inventory_index)
+	
 	if inventory_index < 0 or inventory_index >= slots.size():
+		print("[INVENTORY] ❌ Índice inválido: %d" % inventory_index)
 		return false
 	
 	var slot = slots[inventory_index]
-	if slot.is_empty() or not slot.item_data.is_equippable:
+	if slot.is_empty():
+		print("[INVENTORY] ❌ Slot está vazio")
+		return false
+	
+	if not slot.item_data.is_equippable:
+		print("[INVENTORY] ❌ Item não é equipável: %s" % slot.item_data.item_name)
 		return false
 	
 	var item = slot.item_data
 	var equip_slot_type = item.equipment_slot
+	print("[INVENTORY]    Item: %s" % item.item_name)
+	print("[INVENTORY]    Slot de destino: %s" % ItemData.EquipmentSlot.keys()[equip_slot_type])
 	
 	# Desequipa o que está no slot de equipamento (se houver)
 	if equipment_slots[equip_slot_type] != null:
+		print("[INVENTORY]    Já existe item equipado, desequipando...")
 		unequip_item(equip_slot_type)
 	
 	# Equipa o novo item
 	equipment_slots[equip_slot_type] = item
 	slot.remove(1)  # Remove 1 do inventário
 	
-	print("[INVENTORY] ⚔️ Equipado: %s no slot %s" % [item.item_name, ItemData.EquipmentSlot.keys()[equip_slot_type]])
+	print("[INVENTORY] ✅ Equipado: %s no slot %s" % [item.item_name, ItemData.EquipmentSlot.keys()[equip_slot_type]])
 	equipment_changed.emit(equip_slot_type)
 	inventory_changed.emit()
 	return true
@@ -301,6 +318,118 @@ func transfer_to(target_inventory: Inventory, from_index: int, quantity: int = -
 ## Callback quando um slot muda
 func _on_slot_changed() -> void:
 	inventory_changed.emit()
+
+
+## Usa um item consumível
+func use_item(inventory_index: int) -> bool:
+	print("\n[INVENTORY] 🔍 Tentando usar item do slot %d" % inventory_index)
+	
+	if inventory_index < 0 or inventory_index >= slots.size():
+		print("[INVENTORY] ❌ Índice inválido: %d (total: %d)" % [inventory_index, slots.size()])
+		return false
+	
+	var slot = slots[inventory_index]
+	if slot.is_empty():
+		print("[INVENTORY] ❌ Slot está vazio")
+		return false
+	
+	var item = slot.item_data
+	print("[INVENTORY]    Item: %s (tipo: %s)" % [item.item_name, ItemData.ItemType.keys()[item.item_type]])
+	
+	# Verifica se o item é usável
+	if not item.is_usable():
+		print("[INVENTORY] ⚠️ Item não é consumível: ", item.item_name)
+		return false
+	
+	print("[INVENTORY] ✅ Item é consumível!")
+	print("[INVENTORY]    Restore Health: %.1f" % item.restore_health)
+	print("[INVENTORY]    Restore Mana: %.1f" % item.restore_mana)
+	print("[INVENTORY]    Buff Duration: %.1fs" % item.apply_buff_duration)
+	print("[INVENTORY] 🍷 Emitindo sinal item_used...")
+	
+	# Emite sinal para o player aplicar os efeitos
+	item_used.emit(item)
+	
+	# Remove uma unidade do item
+	print("[INVENTORY]    Removendo 1 unidade (tinha: %d)" % slot.quantity)
+	slot.remove(1)
+	print("[INVENTORY]    Agora tem: %d" % slot.quantity)
+	
+	return true
+
+
+## Obtém todos os itens de um tipo específico
+func get_items_by_type(item_type: ItemData.ItemType) -> Array[ItemData]:
+	var result: Array[ItemData] = []
+	for slot in slots:
+		if not slot.is_empty() and slot.item_data.item_type == item_type:
+			if slot.item_data not in result:
+				result.append(slot.item_data)
+	return result
+
+
+## Salva o inventário em um dicionário
+func save_to_dict() -> Dictionary:
+	var save_data = {
+		"slots": [],
+		"equipment": {}
+	}
+	
+	# Salva slots principais
+	for slot in slots:
+		if slot.is_empty():
+			save_data.slots.append({"empty": true})
+		else:
+			save_data.slots.append({
+				"empty": false,
+				"item_id": slot.item_data.item_id,
+				"quantity": slot.quantity
+			})
+	
+	# Salva equipamentos
+	for slot_type in equipment_slots:
+		var equipped_item = equipment_slots[slot_type]
+		if equipped_item:
+			save_data.equipment[slot_type] = equipped_item.item_id
+		else:
+			save_data.equipment[slot_type] = null
+	
+	return save_data
+
+
+## Carrega o inventário de um dicionário
+func load_from_dict(save_data: Dictionary) -> void:
+	if not save_data.has("slots"):
+		return
+	
+	# Limpa inventário atual
+	for slot in slots:
+		slot.clear()
+	
+	# Carrega slots
+	for i in range(min(save_data.slots.size(), slots.size())):
+		var slot_data = save_data.slots[i]
+		if slot_data.get("empty", true):
+			continue
+		
+		# Precisa carregar o ItemData pelo item_id
+		# Isso requer um sistema de registro de itens
+		var item_id = slot_data.get("item_id", "")
+		var quantity = slot_data.get("quantity", 1)
+		
+		# TODO: Implementar ItemRegistry para carregar ItemData pelo ID
+		print("[INVENTORY] Carregando item: ", item_id, " x", quantity)
+	
+	# Carrega equipamentos
+	if save_data.has("equipment"):
+		for slot_type in save_data.equipment:
+			var item_id = save_data.equipment[slot_type]
+			if item_id:
+				# TODO: Carregar ItemData e equipar
+				print("[INVENTORY] Carregando equipamento: ", item_id)
+	
+	inventory_changed.emit()
+	print("[INVENTORY] ✅ Inventário carregado")
 
 
 ## Debug: imprime todo o inventário
