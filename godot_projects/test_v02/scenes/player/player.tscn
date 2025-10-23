@@ -489,9 +489,21 @@ script = ExtResource("12_gx1jg")
 inventory = NodePath("../Inventory")
 
 [node name="HotbarUI" type="CanvasLayer" parent="."]
+layer = 100
 
 [node name="HBoxContainer" type="HBoxContainer" parent="HotbarUI" node_paths=PackedStringArray("inventory")]
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -84.0
+offset_right = 180.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
 script = ExtResource("13_gx1jg")
 inventory = NodePath("../../Inventory")
+hotbar_size = 9

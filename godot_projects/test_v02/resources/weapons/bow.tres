@@ -40,6 +40,7 @@ sprite_frames = SubResource("SpriteFrames_q81a1")
 animation_name = "default"
 collision_shape = SubResource("CircleShape2D_jpofd")
 item_name = "bow"
+icon = ExtResource("2_jpofd")
 value = 0
 Sprite_scale = Vector2(0.8, 0.8)
 weapon_marker_position = Vector2(0, 0)

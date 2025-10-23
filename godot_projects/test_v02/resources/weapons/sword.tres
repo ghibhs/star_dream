@@ -38,6 +38,7 @@ sprite_frames = SubResource("SpriteFrames_3ygup")
 animation_name = "default"
 collision_shape = SubResource("CircleShape2D_2n2et")
 item_name = "Sword"
+icon = ExtResource("3_2n2et")
 value = 0
 Sprite_scale = Vector2(0.1, 0.1)
 weapon_marker_position = Vector2(0, 8)

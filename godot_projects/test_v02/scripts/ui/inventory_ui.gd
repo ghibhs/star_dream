@@ -37,6 +37,9 @@ var selected_slot_index: int = -1
 
 
 func _ready() -> void:
+	# Define layer alto para aparecer na frente de tudo
+	layer = 150
+	
 	# Adiciona ao grupo para fácil acesso
 	add_to_group("inventory_ui")
 	
@@ -653,3 +656,14 @@ func _input(event: InputEvent) -> void:
 		toggle_inventory()
 		get_viewport().set_input_as_handled()
 		return
+
+
+## Verifica se o mouse está sobre a UI do inventário
+func is_mouse_over_ui() -> bool:
+	if not visible or not panel:
+		return false
+	
+	var mouse_pos = get_viewport().get_mouse_position()
+	var panel_rect = panel.get_global_rect()
+	
+	return panel_rect.has_point(mouse_pos)

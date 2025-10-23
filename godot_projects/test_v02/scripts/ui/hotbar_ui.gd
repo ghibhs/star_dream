@@ -6,7 +6,7 @@ class_name HotbarUI
 signal hotbar_slot_used(slot_index: int)
 
 @export var inventory: Inventory
-@export var hotbar_size: int = 5  # Número de slots na hotbar
+@export var hotbar_size: int = 9  # Mudado de 5 para 9 slots
 @export var slot_size: Vector2 = Vector2(64, 64)
 
 var hotbar_slots: Array[InventorySlotUI] = []
@@ -74,8 +74,12 @@ func setup_inventory(inv: Inventory) -> void:
 		inventory.inventory_changed.connect(_on_inventory_changed)
 		print("[HOTBAR] ✅ Sinal inventory_changed conectado")
 	
+	# ✨ AUTO-POPULATE: Primeiros 9 slots do inventário vão pra hotbar
+	for i in range(min(hotbar_size, 9)):
+		hotbar_item_indices[i] = i  # Slot 0 da hotbar = Slot 0 do inventário, etc
+	
 	update_hotbar()
-	print("[HOTBAR] ✅ Hotbar configurada")
+	print("[HOTBAR] ✅ Hotbar configurada (auto-sync com primeiros 9 slots)")
 
 
 ## Adiciona um item do inventário à hotbar
@@ -172,13 +176,13 @@ func use_hotbar_slot(hotbar_index: int) -> void:
 		print("[HOTBAR] ❌ Falha ao usar item")
 
 
-## Input para teclas 1-5
+## Input para teclas 1-9
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
 	
-	# Teclas numéricas 1-5
-	for i in range(min(5, hotbar_size)):
+	# Teclas numéricas 1-9
+	for i in range(min(9, hotbar_size)):
 		var key = KEY_1 + i
 		if event is InputEventKey and event.pressed and event.keycode == key:
 			print("[HOTBAR] ⌨️ Tecla %d pressionada" % (i + 1))
