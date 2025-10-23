@@ -36,3 +36,13 @@ extends Resource
 @export var projectile_collision: Shape2D  # Collision do projétil
 @export var pierce: bool = false
 @export var projectile_scale: Vector2 = Vector2.ONE
+
+# === SISTEMA DE CARREGAMENTO (para arcos) ===
+@export_group("Charge System")
+@export var can_charge: bool = false  # Se a arma pode ser carregada
+@export var min_charge_time: float = 0.2  # Tempo mínimo para carregar
+@export var max_charge_time: float = 2.0  # Tempo máximo de carregamento
+@export var min_damage_multiplier: float = 0.5  # Multiplicador mínimo (50% do dano)
+@export var max_damage_multiplier: float = 3.0  # Multiplicador máximo (300% do dano)
+@export var charge_speed_multiplier: float = 1.5  # Multiplicador de velocidade quando carregado
+@export var charge_color: Color = Color(1, 0.8, 0, 0.8)  # Cor do indicador de carga (amarelo)

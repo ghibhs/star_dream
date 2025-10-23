@@ -49,6 +49,23 @@ func _physics_process(delta: float) -> void:
 	update_dash_timers(delta)
 	update_knockback_timer(delta)
 	
+	# === SISTEMA DE ATAQUE COM CLIQUE/SEGURAR ===
+	# Se o botão de ataque está sendo segurado, conta o tempo
+	if is_attack_button_pressed and not is_charging:
+		attack_button_held_time += delta
+		
+		# Se segurou por tempo suficiente E a arma pode carregar, inicia carregamento
+		if attack_button_held_time >= CHARGE_START_DELAY:
+			if current_weapon_data and current_weapon_data.can_charge:
+				print("[PLAYER] 🏹 Tempo de segurar atingido! Iniciando CARREGAMENTO (%.3fs)" % attack_button_held_time)
+				start_charging()
+				is_attack_button_pressed = false  # Para não entrar aqui novamente
+	
+	# Atualiza carregamento do arco
+	if is_charging:
+		update_charge(delta)
+		update_charge_indicator()
+	
 	# ⚠️ Bloqueia movimento se inventário estiver aberto
 	var inventory_is_open = inventory_ui and inventory_ui.is_open
 	
@@ -250,6 +267,18 @@ var can_attack: bool = true
 
 var attack_area: Area2D
 
+# === SISTEMA DE CARREGAMENTO DO ARCO ===
+var is_charging: bool = false
+var charge_time: float = 0.0
+var attack_button_held_time: float = 0.0  # Tempo que o botão está pressionado
+var is_attack_button_pressed: bool = false  # Flag para saber se está segurando
+const CHARGE_START_DELAY: float = 0.15  # Tempo mínimo para iniciar carregamento (em segundos)
+var charge_indicator: Node2D = null  # Indicador visual de carga
+var charge_particles: GPUParticles2D = null  # Partículas de energia
+var charge_audio: AudioStreamPlayer2D = null  # Som de carregamento
+var charge_max_audio: AudioStreamPlayer2D = null  # Som ao atingir máximo
+var has_played_max_sound: bool = false  # Flag para tocar som máximo apenas 1x
+
 func _ready() -> void:
 	add_to_group("player")
 	print("[PLAYER] Inicializado e adicionado ao grupo 'player'")
@@ -321,16 +350,38 @@ func _input(event: InputEvent) -> void:
 	if inventory_is_open:
 		return  # Ignora todos os inputs se inventário estiver aberto
 	
+	# === SISTEMA DE CARREGAMENTO DO ARCO ===
 	if event.is_action_pressed("attack"):
-		print("[PLAYER] Tecla de ataque pressionada")
-		if can_attack and weapon_timer.is_stopped():
-			print("[PLAYER] Iniciando ataque...")
-			perform_attack()
-		else:
+		print("[PLAYER] 🎯 Botão de ataque PRESSIONADO")
+		
+		# Verifica se pode atacar
+		if not can_attack or not weapon_timer.is_stopped():
 			if not can_attack:
 				print("[PLAYER] ⚠️ Ataque bloqueado: can_attack = false")
 			if not weapon_timer.is_stopped():
 				print("[PLAYER] ⚠️ Ataque bloqueado: timer ainda ativo (%.2fs restantes)" % weapon_timer.time_left)
+			return
+		
+		# Marca que o botão foi pressionado e inicia o contador
+		is_attack_button_pressed = true
+		attack_button_held_time = 0.0
+		print("[PLAYER] ⏱️ Iniciando contagem de tempo de pressionamento...")
+	
+	elif event.is_action_released("attack"):
+		print("[PLAYER] 🎯 Botão de ataque SOLTO")
+		
+		# Se estava carregando, dispara com o poder acumulado
+		if is_charging:
+			print("[PLAYER] 🏹 Disparando arco carregado!")
+			release_charged_attack()
+		# Se soltou rápido (antes do delay), dispara normal
+		elif is_attack_button_pressed and attack_button_held_time < CHARGE_START_DELAY:
+			print("[PLAYER] ⚔️ Clique rápido detectado! Ataque instantâneo (%.3fs)" % attack_button_held_time)
+			perform_attack()
+		
+		# Reseta flags
+		is_attack_button_pressed = false
+		attack_button_held_time = 0.0
 
 
 func receive_weapon_data(weapon_data: WeaponData) -> void:
@@ -696,6 +747,378 @@ func projectile_attack() -> void:
 	# Passa os dados DEPOIS (deferred) — evita Nil no AnimatedSprite2D do projétil
 	projectile.call_deferred("setup_from_weapon_data", current_weapon_data, dir)
 	print("[PLAYER]    ✅ Projétil configurado e disparado")
+
+
+# ========================================
+# SISTEMA DE CARREGAMENTO DO ARCO
+# ========================================
+
+func start_charging() -> void:
+	"""Inicia o carregamento do arco"""
+	if not current_weapon_data or not current_weapon_data.can_charge:
+		print("[PLAYER] ⚠️ Arma não pode ser carregada")
+		return
+	
+	is_charging = true
+	charge_time = 0.0
+	has_played_max_sound = false
+	
+	print("[PLAYER] 🏹 Carregamento INICIADO")
+	print("[PLAYER]    Tempo mínimo: %.2fs" % current_weapon_data.min_charge_time)
+	print("[PLAYER]    Tempo máximo: %.2fs" % current_weapon_data.max_charge_time)
+	
+	# Cria indicador visual de carga (inclui partículas e sons)
+	create_charge_indicator()
+
+
+func create_charge_indicator() -> void:
+	"""Cria o indicador visual de carregamento"""
+	# Remove indicador anterior se existir
+	if charge_indicator:
+		charge_indicator.queue_free()
+	
+	# Cria novo indicador usando Sprite2D para visualização simples
+	var sprite = Sprite2D.new()
+	sprite.name = "ChargeIndicator"
+	sprite.z_index = 10
+	add_child(sprite)
+	
+	charge_indicator = sprite
+	
+	# === 🎨 PARTÍCULAS DE ENERGIA ===
+	create_charge_particles()
+	
+	# === 🎵 SONS DE CARREGAMENTO ===
+	create_charge_audio()
+	
+	print("[PLAYER]    ✅ Indicador de carga criado")
+
+
+func update_charge(delta: float) -> void:
+	"""Atualiza o tempo de carregamento"""
+	if not is_charging:
+		return
+	
+	charge_time += delta
+	
+	# Limita ao tempo máximo
+	if charge_time >= current_weapon_data.max_charge_time:
+		charge_time = current_weapon_data.max_charge_time
+		print("[PLAYER] ⚡ CARGA MÁXIMA ATINGIDA!")
+
+
+func release_charged_attack() -> void:
+	"""Dispara o ataque carregado"""
+	if not is_charging:
+		return
+	
+	print("[PLAYER] 🎯 LIBERANDO ATAQUE CARREGADO")
+	print("[PLAYER]    Tempo carregado: %.2fs" % charge_time)
+	
+	# Verifica se atingiu o tempo mínimo
+	if charge_time < current_weapon_data.min_charge_time:
+		print("[PLAYER] ⚠️ Tempo de carga insuficiente (mínimo: %.2fs)" % current_weapon_data.min_charge_time)
+		cancel_charge()
+		return
+	
+	# Calcula o multiplicador de dano baseado no tempo de carga
+	var charge_ratio = (charge_time - current_weapon_data.min_charge_time) / (current_weapon_data.max_charge_time - current_weapon_data.min_charge_time)
+	charge_ratio = clamp(charge_ratio, 0.0, 1.0)
+	
+	var damage_multiplier = lerp(current_weapon_data.min_damage_multiplier, current_weapon_data.max_damage_multiplier, charge_ratio)
+	var speed_multiplier = lerp(1.0, current_weapon_data.charge_speed_multiplier, charge_ratio)
+	
+	print("[PLAYER]    Porcentagem de carga: %.1f%%" % (charge_ratio * 100))
+	print("[PLAYER]    Multiplicador de dano: %.2fx" % damage_multiplier)
+	print("[PLAYER]    Multiplicador de velocidade: %.2fx" % speed_multiplier)
+	
+	# Aplica efeito de câmera baseado no nível de carga
+	camera_shake_on_release(charge_ratio)
+	
+	# Dispara o projétil com dano e velocidade aumentados
+	fire_charged_projectile(damage_multiplier, speed_multiplier)
+	
+	# Finaliza o carregamento
+	end_charge()
+	
+	# Inicia cooldown
+	can_attack = false
+	if weapon_timer:
+		var cooldown_time = current_weapon_data.attack_cooldown if current_weapon_data else 0.5
+		weapon_timer.wait_time = cooldown_time
+		weapon_timer.start()
+		print("[PLAYER]    Cooldown iniciado: %.2fs" % cooldown_time)
+
+
+func fire_charged_projectile(damage_mult: float, speed_mult: float) -> void:
+	"""Dispara um projétil com modificadores de carga"""
+	print("[PLAYER] 🏹 Disparando projétil CARREGADO...")
+	var scene := preload("res://scenes/projectiles/projectile.tscn")
+	if not scene or not projectile_spawn_marker:
+		print("[PLAYER] ⚠️ Projétil cancelado: scene ou spawn_marker inválido")
+		return
+
+	var projectile := scene.instantiate()
+	projectile.global_position = projectile_spawn_marker.global_position
+	
+	# Adiciona à cena
+	get_tree().current_scene.add_child(projectile)
+	
+	# Direção para o mouse
+	var dir: Vector2 = (get_global_mouse_position() - projectile.global_position).normalized()
+	
+	# Cria uma cópia temporária do WeaponData com valores modificados
+	var modified_weapon_data = current_weapon_data.duplicate()
+	modified_weapon_data.damage *= damage_mult
+	modified_weapon_data.projectile_speed *= speed_mult
+	
+	print("[PLAYER]    Dano modificado: %.1f (base: %.1f)" % [modified_weapon_data.damage, current_weapon_data.damage])
+	print("[PLAYER]    Velocidade modificada: %.1f (base: %.1f)" % [modified_weapon_data.projectile_speed, current_weapon_data.projectile_speed])
+	
+	# Configura o projétil
+	projectile.call_deferred("setup_from_weapon_data", modified_weapon_data, dir)
+	print("[PLAYER]    ✅ Projétil carregado disparado!")
+
+
+func cancel_charge() -> void:
+	"""Cancela o carregamento sem disparar"""
+	print("[PLAYER] ❌ Carregamento cancelado")
+	end_charge()
+
+
+func end_charge() -> void:
+	"""Finaliza o estado de carregamento"""
+	is_charging = false
+	charge_time = 0.0
+	has_played_max_sound = false
+	
+	# Remove indicador visual
+	if charge_indicator:
+		charge_indicator.queue_free()
+		charge_indicator = null
+	
+	# Remove partículas
+	if is_instance_valid(charge_particles):
+		charge_particles.emitting = false
+		# Remove após as partículas terminarem
+		get_tree().create_timer(2.0).timeout.connect(func():
+			if is_instance_valid(charge_particles):
+				charge_particles.queue_free()
+		)
+		charge_particles = null
+	
+	# Para o som de carregamento
+	if is_instance_valid(charge_audio):
+		charge_audio.stop()
+		charge_audio.queue_free()
+		charge_audio = null
+	
+	print("[PLAYER]    Carregamento finalizado")
+
+
+func update_charge_indicator() -> void:
+	"""Atualiza o indicador visual de carregamento"""
+	if not charge_indicator or not current_weapon_data:
+		return
+	
+	if not charge_indicator is Sprite2D:
+		return
+	
+	# Calcula progresso (0.0 a 1.0)
+	var progress = 0.0
+	if charge_time >= current_weapon_data.min_charge_time:
+		var charge_range = current_weapon_data.max_charge_time - current_weapon_data.min_charge_time
+		var actual_charge = charge_time - current_weapon_data.min_charge_time
+		progress = clamp(actual_charge / charge_range, 0.0, 1.0)
+	
+	# Escala o indicador baseado no progresso (cresce de 1.0 a 2.0)
+	var scale_value = lerp(1.0, 2.0, progress)
+	charge_indicator.scale = Vector2(scale_value, scale_value)
+	
+	# Cor muda de amarelo para laranja/vermelho quando carregado
+	var color = current_weapon_data.charge_color.lerp(Color.ORANGE_RED, progress)
+	charge_indicator.modulate = color
+	
+	# Rotaciona o indicador
+	charge_indicator.rotation += 0.1
+	
+	# === 🎵 SOM DE CARGA MÁXIMA ===
+	if progress >= 1.0 and not has_played_max_sound:
+		play_charge_max_sound()
+		has_played_max_sound = true
+	
+	# === 🎨 PARTÍCULAS AUMENTAM COM PROGRESSO ===
+	if charge_particles and charge_particles.process_material:
+		charge_particles.amount = int(lerp(10, 50, progress))
+		var mat = charge_particles.process_material as ParticleProcessMaterial
+		if mat:
+			mat.initial_velocity_min = lerp(50, 150, progress)
+			mat.initial_velocity_max = lerp(100, 200, progress)
+	
+	# Adiciona brilho quando carga está completa
+	if progress >= 1.0:
+		# Efeito de pulso
+		var pulse = abs(sin(Time.get_ticks_msec() * 0.005)) * 0.3 + 0.7
+		charge_indicator.modulate.a = pulse
+
+
+# ========================================
+# SISTEMA DE PARTÍCULAS DE CARGA
+# ========================================
+
+func create_charge_particles() -> void:
+	"""Cria as partículas de energia durante o carregamento"""
+	# Remove partículas anteriores
+	if charge_particles:
+		charge_particles.queue_free()
+	
+	# Cria novo sistema de partículas
+	var particles = GPUParticles2D.new()
+	particles.name = "ChargeParticles"
+	particles.z_index = 5
+	add_child(particles)
+	
+	# Configurações do emissor
+	particles.amount = 20
+	particles.lifetime = 0.8
+	particles.preprocess = 0.5
+	particles.explosiveness = 0.0
+	particles.randomness = 0.5
+	particles.local_coords = true
+	particles.emitting = true
+	
+	# Cria material de partículas
+	var particle_material = ParticleProcessMaterial.new()
+	
+	# Configuração da emissão
+	particle_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	particle_material.emission_sphere_radius = 30.0
+	
+	# Direção e gravidade
+	particle_material.direction = Vector3(0, -1, 0)
+	particle_material.spread = 180.0
+	particle_material.gravity = Vector3(0, 0, 0)
+	
+	# Velocidade (propriedades corretas do Godot 4.x)
+	particle_material.initial_velocity_min = 50.0
+	particle_material.initial_velocity_max = 100.0
+	
+	# Escala (propriedades corretas do Godot 4.x)
+	particle_material.scale_min = 0.5
+	particle_material.scale_max = 1.5
+	
+	# Cor (amarelo brilhante)
+	particle_material.color = Color(1, 1, 0, 0.8)
+	
+	# Fade out usando curva
+	var fade_curve = Curve.new()
+	fade_curve.add_point(Vector2(0, 1))
+	fade_curve.add_point(Vector2(1, 0))
+	particle_material.alpha_curve = fade_curve
+	
+	particles.process_material = particle_material
+	
+	charge_particles = particles
+	
+	print("[PLAYER]    ✨ Partículas de carga criadas")
+
+
+# ========================================
+# SISTEMA DE ÁUDIO DE CARGA
+# ========================================
+
+func create_charge_audio() -> void:
+	"""Cria os players de áudio para carregamento"""
+	# Som de carregamento contínuo
+	charge_audio = AudioStreamPlayer2D.new()
+	charge_audio.name = "ChargeAudio"
+	charge_audio.bus = "SFX"
+	add_child(charge_audio)
+	
+	# Cria som procedural de carregamento (tom crescente)
+	var charge_stream = create_charge_sound()
+	if charge_stream:
+		charge_audio.stream = charge_stream
+		charge_audio.play()
+		print("[PLAYER]    🎵 Som de carregamento iniciado")
+	
+	# Som de carga máxima (será criado depois)
+	charge_max_audio = AudioStreamPlayer2D.new()
+	charge_max_audio.name = "ChargeMaxAudio"
+	charge_max_audio.bus = "SFX"
+	add_child(charge_max_audio)
+
+
+func create_charge_sound() -> AudioStream:
+	"""Cria som procedural de carregamento"""
+	# Nota: Idealmente usaria AudioStreamGenerator, mas por simplicidade
+	# vamos retornar null e adicionar sons reais depois
+	# Por enquanto, o sistema está preparado para receber os AudioStreams
+	return null
+
+
+func play_charge_max_sound() -> void:
+	"""Toca som quando atinge carga máxima"""
+	if charge_max_audio and charge_max_audio.stream:
+		charge_max_audio.play()
+		print("[PLAYER]    ⚡ Som de CARGA MÁXIMA!")
+	
+	# === 📳 VIBRAÇÃO (se disponível) ===
+	if Input.is_joy_known(0):
+		Input.start_joy_vibration(0, 0.3, 0.3, 0.2)
+
+
+func stop_charge_audio() -> void:
+	"""Para os sons de carregamento"""
+	if charge_audio and charge_audio.playing:
+		charge_audio.stop()
+	
+	print("[PLAYER]    🔇 Som de carregamento parado")
+
+
+# ========================================
+# EFEITOS DE CÂMERA
+# ========================================
+
+func apply_camera_effects(charge_progress: float) -> void:
+	"""Aplica efeitos de câmera baseados no progresso"""
+	var camera = get_viewport().get_camera_2d()
+	if not camera:
+		return
+	
+	# Zoom suave quando carregado
+	var target_zoom = lerp(1.0, 1.15, charge_progress)
+	camera.zoom = camera.zoom.lerp(Vector2(target_zoom, target_zoom), 0.1)
+
+
+func camera_shake_on_release(charge_level: float = 1.0) -> void:
+	"""Aplica shake na câmera ao disparar (intensidade baseada no nível de carga)"""
+	var camera = get_viewport().get_camera_2d()
+	if not camera:
+		return
+	
+	# Intensidade do shake baseada no nível de carga
+	var shake_amount = lerp(2.0, 8.0, charge_level)
+	var shake_duration = lerp(0.15, 0.4, charge_level)
+	
+	var tween = create_tween()
+	tween.set_parallel(true)
+	
+	# Número de tremidas baseado no nível
+	var shake_count = int(lerp(5.0, 15.0, charge_level))
+	
+	# Shake aleatório
+	for i in range(shake_count):
+		var random_offset = Vector2(
+			randf_range(-shake_amount, shake_amount),
+			randf_range(-shake_amount, shake_amount)
+		)
+		tween.tween_property(camera, "offset", random_offset, shake_duration / shake_count)
+	
+	# Volta ao normal
+	tween.chain().tween_property(camera, "offset", Vector2.ZERO, 0.1)
+	
+	print("[PLAYER]    📹 Camera shake aplicado! (intensidade: %.1f%%)" % (charge_level * 100))
 
 
 func _on_attack_hit(body: Node) -> void:
