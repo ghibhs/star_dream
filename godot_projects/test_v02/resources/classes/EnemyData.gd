@@ -30,6 +30,12 @@ extends Resource
 @export var attack_hitbox_color: Color = Color(1, 0, 0, 0.9)  # Cor de debug (vermelho padrão)
 @export var attack_warning_delay: float = 0.3  # Tempo de aviso antes do ataque (para dar tempo de esquiva)
 
+# === KNOCKBACK (EMPURRÃO AO ATACAR) ===
+@export_group("Knockback")
+@export var applies_knockback: bool = true  # Se este inimigo causa empurrão ao atacar
+@export var knockback_force: float = 300.0  # Força do empurrão (0 = sem empurrão, maior = empurrão mais forte)
+@export var knockback_duration: float = 0.2  # Duração do empurrão em segundos
+
 # === COMPORTAMENTO ===
 @export_enum("Passive", "Aggressive", "Patrol") var behavior: String = "Aggressive"
 @export var attack_cooldown: float = 1.5  # Tempo entre ataques

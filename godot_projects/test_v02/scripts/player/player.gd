@@ -26,24 +26,56 @@ var dash_cooldown_timer: float = 0.0
 var current_health: float
 var is_dead: bool = false
 
+# -----------------------------
+# SISTEMA DE KNOCKBACK (EMPURRÃO)
+# -----------------------------
+@export var knockback_force: float = 300.0  # Força do empurrão
+@export var knockback_duration: float = 0.2  # Duração do empurrão em segundos
+var is_being_knocked_back: bool = false
+var knockback_velocity: Vector2 = Vector2.ZERO
+var knockback_timer: float = 0.0
+
 @onready var animation: AnimatedSprite2D = $AnimatedSprite2D
+
+# -----------------------------
+# SISTEMA DE INVENTÁRIO
+# -----------------------------
+var inventory: Inventory
+var inventory_ui: InventoryUI
+var hotbar: HotbarUI  # Mudado de Hotbar para HotbarUI
 
 func _physics_process(delta: float) -> void:
 	# Atualiza timers
 	update_dash_timers(delta)
+	update_knockback_timer(delta)
 	
-	# Input de movimento
-	direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	# ⚠️ Bloqueia movimento se inventário estiver aberto
+	var inventory_is_open = inventory_ui and inventory_ui.is_open
 	
-	# Sprint (segurar Shift)
-	is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO
-	
-	# Dash (pressionar Space)
-	if Input.is_action_just_pressed("dash") and can_dash and direction != Vector2.ZERO:
-		start_dash()
+	# Input de movimento (apenas se inventário estiver fechado)
+	if not inventory_is_open:
+		# Só aceita input se não estiver com mouse sobre UI
+		var mouse_over_ui = inventory_ui and inventory_ui.visible and inventory_ui.is_mouse_over_ui()
+		
+		if not mouse_over_ui:
+			direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+			
+			# Sprint (segurar Shift)
+			is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO
+			
+			# Dash (pressionar Space)
+			if Input.is_action_just_pressed("dash") and can_dash and direction != Vector2.ZERO:
+				start_dash()
+		else:
+			direction = Vector2.ZERO
+			is_sprinting = false
+	else:
+		# Inventário aberto: zera movimento
+		direction = Vector2.ZERO
+		is_sprinting = false
 	
 	# Animações
-	if direction != Vector2.ZERO and not is_dashing:
+	if direction != Vector2.ZERO and not is_dashing and not is_being_knocked_back:
 		play_animations(direction)
 	else:
 		if animation and not is_dashing:
@@ -61,19 +93,23 @@ func _physics_process(delta: float) -> void:
 		if attack_area and is_instance_valid(attack_area):
 			attack_area.rotation = 0.0
 		
-		# 🔄 Garante que o sprite da arma também rotacione junto
-		# Se o sprite não está filho do weapon_marker, ele deve rotacionar manualmente
+		# 🔄 O sprite da arma é filho do weapon_marker, então rotaciona automaticamente
+		# Apenas garantimos que ele está visível e no lugar certo
 		if current_weapon_sprite and is_instance_valid(current_weapon_sprite):
+			# Se o sprite não é filho do marker por algum motivo, corrige isso
 			if current_weapon_sprite.get_parent() != weapon_marker:
-				# Sprite está fora do marker, rotaciona manualmente
-				current_weapon_sprite.global_rotation = weapon_marker.global_rotation
-				# Posiciona no mesmo lugar que o marker
-				current_weapon_sprite.global_position = weapon_marker.global_position
+				print("[PLAYER] ⚠️ Sprite da arma não é filho do marker! Reparentando...")
+				current_weapon_sprite.reparent(weapon_marker)
+			# Mantém rotação local = 0 para que apenas o marker controle a rotação
+			current_weapon_sprite.rotation = 0.0
 
 	# Calcula velocidade final
 	var final_velocity: Vector2
 	
-	if is_dashing:
+	if is_being_knocked_back:
+		# Durante knockback, usa a velocidade do empurrão
+		final_velocity = knockback_velocity
+	elif is_dashing:
 		# Durante dash, movimento rápido na direção do dash
 		final_velocity = dash_direction * dash_speed
 	else:
@@ -152,6 +188,49 @@ func end_dash() -> void:
 
 
 # -----------------------------
+# SISTEMA DE KNOCKBACK (EMPURRÃO)
+# -----------------------------
+func update_knockback_timer(delta: float) -> void:
+	"""Atualiza o timer do knockback"""
+	if is_being_knocked_back:
+		knockback_timer -= delta
+		if knockback_timer <= 0.0:
+			end_knockback()
+
+
+func apply_knockback(from_position: Vector2, force: float = 0.0, duration: float = 0.0) -> void:
+	"""Aplica empurrão na direção oposta ao atacante"""
+	if is_dead:
+		return
+	
+	# Usa força e duração customizadas ou valores padrão do player
+	var actual_force = force if force > 0.0 else knockback_force
+	var actual_duration = duration if duration > 0.0 else knockback_duration
+	
+	# Calcula direção do empurrão (do atacante para o player)
+	var knockback_direction = (global_position - from_position).normalized()
+	
+	# Define velocidade do empurrão
+	knockback_velocity = knockback_direction * actual_force
+	
+	# Ativa knockback
+	is_being_knocked_back = true
+	knockback_timer = actual_duration
+	
+	print("[PLAYER]    💥 Knockback aplicado!")
+	print("[PLAYER]       Direção: ", knockback_direction)
+	print("[PLAYER]       Força: %.1f" % actual_force)
+	print("[PLAYER]       Duração: %.2fs" % actual_duration)
+
+
+func end_knockback() -> void:
+	"""Finaliza o knockback"""
+	is_being_knocked_back = false
+	knockback_velocity = Vector2.ZERO
+	knockback_timer = 0.0
+
+
+# -----------------------------
 # ARMA / ATAQUE
 # -----------------------------
 # -----------------------------
@@ -164,8 +243,8 @@ var current_weapon_data: WeaponData
 @onready var weapon_marker: Node2D = $WeaponMarker2D
 @onready var projectile_spawn_marker: Marker2D = $WeaponMarker2D/ProjectileSpawnMarker2D
 @onready var weapon_timer: Timer = $WeaponMarker2D/Weapon_timer
-# WeaponAnimatedSprite2D está diretamente como filho do Player
-@onready var current_weapon_sprite: AnimatedSprite2D = $WeaponAnimatedSprite2D
+# O sprite da arma será criado dinamicamente como filho do WeaponMarker2D
+var current_weapon_sprite: AnimatedSprite2D = null
 @export var fire_rate: float = 3.0  # tiros por segundo (cd = 1 / fire_rate)
 var can_attack: bool = true
 
@@ -192,6 +271,36 @@ func _ready() -> void:
 	current_health = max_health
 	print("[PLAYER] Saúde inicializada: %.1f/%.1f" % [current_health, max_health])
 	
+	# Inicializa inventário (se existir na cena)
+	inventory = get_node_or_null("Inventory")
+	inventory_ui = get_node_or_null("InventoryUI")
+	hotbar = get_tree().get_first_node_in_group("hotbar_ui")  # Busca hotbar no grupo
+	
+	if inventory and inventory_ui:
+		inventory_ui.setup_inventory(inventory)
+		
+		# Conecta ao sinal de uso de itens
+		if not inventory.item_used.is_connected(_on_item_used):
+			inventory.item_used.connect(_on_item_used)
+			print("[PLAYER] ✅ Conectado ao sinal item_used do inventário")
+		
+		print("[PLAYER] ✅ Sistema de inventário inicializado")
+	else:
+		if not inventory:
+			print("[PLAYER] ⚠️ Nó 'Inventory' não encontrado - adicione à cena do player")
+		if not inventory_ui:
+			print("[PLAYER] ⚠️ Nó 'InventoryUI' não encontrado - adicione à cena do player")
+	
+	if hotbar and inventory:
+		hotbar.setup_inventory(inventory)
+		print("[PLAYER] ✅ Hotbar inicializada")
+	elif not hotbar:
+		print("[PLAYER] ⚠️ Nó 'Hotbar' não encontrado - adicione à cena do player")
+	
+	# 🧪 Adiciona itens de teste ao inventário
+	if inventory:
+		call_deferred("_add_test_items")
+	
 	# Inicia contagem de estatísticas
 	if has_node("/root/GameStats"):
 		get_node("/root/GameStats").start_game()
@@ -199,14 +308,19 @@ func _ready() -> void:
 	
 	# Configura timer de cooldown
 	if weapon_timer:
-		weapon_timer.wait_time = 1.0 / fire_rate
+		weapon_timer.wait_time = 1.0 / fire_rate  # Valor padrão (será sobrescrito pela arma)
 		weapon_timer.one_shot = true
 		weapon_timer.timeout.connect(_on_weapon_timer_timeout)
-		print("[PLAYER] Timer de ataque configurado: %.2fs cooldown" % weapon_timer.wait_time)
+		print("[PLAYER] Timer de ataque configurado (cooldown será definido pela arma equipada)")
 	# Armas melee não rotacionam para o mouse
 
 
 func _input(event: InputEvent) -> void:
+	# ⚠️ Bloqueia ataques se inventário estiver aberto
+	var inventory_is_open = inventory_ui and inventory_ui.is_open
+	if inventory_is_open:
+		return  # Ignora todos os inputs se inventário estiver aberto
+	
 	if event.is_action_pressed("attack"):
 		print("[PLAYER] Tecla de ataque pressionada")
 		if can_attack and weapon_timer.is_stopped():
@@ -225,7 +339,10 @@ func receive_weapon_data(weapon_data: WeaponData) -> void:
 	print("[PLAYER]    Tipo: ", weapon_data.weapon_type)
 	print("[PLAYER]    Dano: ", weapon_data.damage)
 	
-	# ⚠️ NOVO: Se já temos uma arma equipada, dropa ela no mundo
+	# TODO: Integração com inventário (precisa criar ItemData wrapper para WeaponData)
+	# Por enquanto, mantém comportamento antigo
+	
+	# Se já temos uma arma equipada, dropa ela no mundo
 	if current_weapon_data:
 		print("[PLAYER] 🔄 Já existe arma equipada! Dropando arma antiga...")
 		drop_current_weapon()
@@ -266,6 +383,12 @@ func drop_current_weapon() -> void:
 		print("[PLAYER]    ✅ Arma dropada na posição: ", dropped_item.global_position)
 	else:
 		push_error("[PLAYER] ❌ Falha ao instanciar item dropado")
+	
+	# Limpa o slot de equipamento no inventário
+	if inventory:
+		inventory.equipment_slots[ItemData.EquipmentSlot.WEAPON_PRIMARY] = null
+		inventory.equipment_changed.emit(ItemData.EquipmentSlot.WEAPON_PRIMARY)
+		print("[PLAYER] 🗑️ Slot de arma limpo no inventário")
 
 
 func setup_weapon() -> void:
@@ -280,7 +403,37 @@ func setup_weapon() -> void:
 	create_or_update_weapon_sprite()
 	setup_attack_area()
 	setup_projectile_spawn()
+	
+	# Adiciona arma ao slot de equipamento visual do inventário
+	update_weapon_in_equipment_slot()
+	
 	print("[PLAYER] ✅ Arma configurada com sucesso")
+
+
+func update_weapon_in_equipment_slot() -> void:
+	"""Atualiza o slot visual de equipamento WEAPON_PRIMARY com a arma atual"""
+	if not inventory:
+		return
+	
+	if current_weapon_data and current_weapon_data.icon:
+		# Cria um ItemData temporário para display visual apenas
+		var weapon_item = ItemData.new()
+		weapon_item.item_name = current_weapon_data.item_name
+		weapon_item.icon = current_weapon_data.icon
+		weapon_item.item_type = ItemData.ItemType.WEAPON
+		weapon_item.equipment_slot = ItemData.EquipmentSlot.WEAPON_PRIMARY
+		weapon_item.is_stackable = false
+		
+		# Atualiza o slot de equipamento
+		inventory.equipment_slots[ItemData.EquipmentSlot.WEAPON_PRIMARY] = weapon_item
+		inventory.equipment_changed.emit(ItemData.EquipmentSlot.WEAPON_PRIMARY)
+		
+		print("[PLAYER] 🗡️ Arma adicionada ao slot de equipamento: ", current_weapon_data.item_name)
+	else:
+		# Remove arma do slot se não houver arma equipada
+		inventory.equipment_slots[ItemData.EquipmentSlot.WEAPON_PRIMARY] = null
+		inventory.equipment_changed.emit(ItemData.EquipmentSlot.WEAPON_PRIMARY)
+		print("[PLAYER] ❌ Slot de arma limpo")
 
 
 func setup_weapon_marker_position() -> void:
@@ -293,25 +446,47 @@ func setup_weapon_marker_position() -> void:
 
 
 func create_or_update_weapon_sprite() -> void:
-	# Se por algum motivo não existir, criamos um novo e anexamos ao marker.
-	if current_weapon_sprite == null:
+	# Remove sprite antigo se existir
+	if current_weapon_sprite != null and is_instance_valid(current_weapon_sprite):
+		print("[PLAYER] Removendo sprite de arma anterior")
+		current_weapon_sprite.queue_free()
+		current_weapon_sprite = null
+	
+	# Cria novo sprite como filho do weapon_marker
+	if weapon_marker:
 		current_weapon_sprite = AnimatedSprite2D.new()
-		if weapon_marker:
-			weapon_marker.add_child(current_weapon_sprite)
+		weapon_marker.add_child(current_weapon_sprite)
+		print("[PLAYER] Novo sprite de arma criado como filho do WeaponMarker2D")
+	else:
+		push_error("[PLAYER] WeaponMarker2D não existe!")
+		return
+	
 	# Atualiza frames e animação
 	if current_weapon_data.sprite_frames:
 		current_weapon_sprite.sprite_frames = current_weapon_data.sprite_frames
+		print("[PLAYER]    Sprite frames configurados")
+	
 	if current_weapon_data.animation_name != "":
 		current_weapon_sprite.play(current_weapon_data.animation_name)
+		print("[PLAYER]    Tocando animação: ", current_weapon_data.animation_name)
 
-	# (Opcional) se seu Resource tiver um campo de escala da arma:
+	# Configura escala da arma (se definido no Resource)
 	if "Sprite_scale" in current_weapon_data and current_weapon_data.Sprite_scale != Vector2.ZERO:
 		current_weapon_sprite.scale = current_weapon_data.Sprite_scale
-		print("scale: ",current_weapon_sprite.scale)
-		
+		print("[PLAYER]    Scale: ", current_weapon_sprite.scale)
+	
+	# Configura posição local do sprite (offset relativo ao marker)
 	if "sprite_position" in current_weapon_data and current_weapon_data.sprite_position != Vector2.ZERO:
 		current_weapon_sprite.position = current_weapon_data.sprite_position
-	# Caso contrário, você pode continuar ajustando a escala desse nó no editor à vontade.
+		print("[PLAYER]    Position: ", current_weapon_sprite.position)
+	else:
+		# Posição padrão (centro do marker)
+		current_weapon_sprite.position = Vector2.ZERO
+		print("[PLAYER]    Position: Vector2.ZERO (padrão)")
+	
+	# IMPORTANTE: Rotação local sempre 0, o marker controla a rotação
+	current_weapon_sprite.rotation = 0.0
+	print("[PLAYER] ✅ Sprite da arma configurado e pronto para rotacionar com o mouse")
 	
 
 func setup_attack_area() -> void:
@@ -416,11 +591,12 @@ func perform_attack() -> void:
 			print("[PLAYER]    → Tipo desconhecido, usando melee como fallback")
 			melee_attack()  # fallback
 	
-	# Inicia cooldown
+	# Inicia cooldown usando o valor do WeaponData
 	if weapon_timer:
-		weapon_timer.wait_time = 1.0 / fire_rate
+		var cooldown_time = current_weapon_data.attack_cooldown if current_weapon_data else (1.0 / fire_rate)
+		weapon_timer.wait_time = cooldown_time
 		weapon_timer.start()
-		print("[PLAYER]    Cooldown iniciado: %.2fs" % weapon_timer.wait_time)
+		print("[PLAYER]    Cooldown iniciado: %.2fs (do WeaponData)" % weapon_timer.wait_time)
 
 
 func melee_attack() -> void:
@@ -554,22 +730,33 @@ func _ready_health() -> void:
 	current_health = max_health
 
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, attacker_position: Vector2 = Vector2.ZERO, kb_force: float = 0.0, kb_duration: float = 0.0, apply_kb: bool = true) -> void:
 	if is_dead:
 		print("[PLAYER] ⚠️ Dano ignorado: player já está morto")
 		return
 	
+	var previous_health = current_health
 	current_health -= amount
 	print("[PLAYER] 💔 DANO RECEBIDO: %.1f" % amount)
-	print("[PLAYER]    HP atual: %.1f/%.1f (%.1f%%)" % [current_health, max_health, (current_health/max_health)*100])
+	print("[PLAYER]    HP: %.1f → %.1f (%.1f%%)" % [previous_health, current_health, (current_health/max_health)*100])
 	
-	# Visual de dano (flash)
+	# Aplica flash vermelho (sempre, mesmo se morrer)
 	apply_hit_flash()
 	
-	# Verifica morte
+	# ⚠️ VERIFICA MORTE
 	if current_health <= 0:
-		print("[PLAYER] ☠️ HP chegou a 0, iniciando morte...")
+		print("[PLAYER] ══════════════════════════════════════")
+		print("[PLAYER] ⚠️⚠️⚠️  VIDA ZEROU!  ⚠️⚠️⚠️")
+		print("[PLAYER] HP FINAL: %.1f / %.1f" % [current_health, max_health])
+		print("[PLAYER] ══════════════════════════════════════")
+		# Aguarda o flash terminar antes de morrer
+		await get_tree().create_timer(0.1).timeout
 		die()
+		return
+	
+	# Aplica knockback se configurado (apenas se sobreviveu)
+	if apply_kb and attacker_position != Vector2.ZERO:
+		apply_knockback(attacker_position, kb_force, kb_duration)
 
 
 func apply_hit_flash() -> void:
@@ -583,8 +770,14 @@ func apply_hit_flash() -> void:
 
 func die() -> void:
 	is_dead = true
-	print("[PLAYER] ☠️☠️☠️ PLAYER MORREU! ☠️☠️☠️")
+	print("")
+	print("[PLAYER] ══════════════════════════════════════")
+	print("[PLAYER] ☠️☠️☠️  PLAYER MORREU!  ☠️☠️☠️")
+	print("[PLAYER] ══════════════════════════════════════")
+	print("[PLAYER]    HP Final: %.1f / %.1f" % [current_health, max_health])
 	print("[PLAYER]    Physics desativado")
+	print("[PLAYER] ══════════════════════════════════════")
+	print("")
 	
 	# Para o movimento
 	set_physics_process(false)
@@ -626,3 +819,169 @@ func show_game_over() -> void:
 	else:
 		push_error("Não foi possível encontrar: " + game_over_path)
 		print("[PLAYER] ❌ ERRO: Arquivo não encontrado!")
+
+
+# -----------------------------
+# 🧪 FUNÇÃO DE TESTE - ADICIONA ITENS AO INVENTÁRIO
+# -----------------------------
+func _add_test_items() -> void:
+	"""Adiciona items de teste ao inventário"""
+	print("\n[PLAYER] 🧪 _add_test_items() CHAMADA!")
+	print("[PLAYER]    Inventory existe? %s" % (inventory != null))
+	
+	if not inventory:
+		print("[PLAYER]    ❌ INVENTORY É NULL! Abortando...")
+		return
+	
+	print("[PLAYER]    ✅ Inventory OK, carregando items...")
+	
+	# Carrega todos os items
+	var health_potion = load("res://resources/items/health_potion.tres")
+	var mana_potion = load("res://resources/items/mana_potion.tres")
+	var stamina_potion = load("res://resources/items/stamina_potion.tres")
+	var speed_elixir = load("res://resources/items/speed_elixir.tres")
+	var strength_potion = load("res://resources/items/strength_potion.tres")
+	var mega_health = load("res://resources/items/mega_health_potion.tres")
+	
+	# Adiciona items variados
+	if health_potion:
+		inventory.add_item(health_potion, 5)
+		print("[PLAYER]    ✅ 5x Poção de Vida")
+	
+	if mana_potion:
+		inventory.add_item(mana_potion, 3)
+		print("[PLAYER]    ✅ 3x Poção de Mana")
+	
+	if stamina_potion:
+		inventory.add_item(stamina_potion, 4)
+		print("[PLAYER]    ✅ 4x Poção de Stamina")
+	
+	if speed_elixir:
+		inventory.add_item(speed_elixir, 2)
+		print("[PLAYER]    ✅ 2x Elixir de Velocidade")
+	
+	if strength_potion:
+		inventory.add_item(strength_potion, 2)
+		print("[PLAYER]    ✅ 2x Poção de Força")
+	
+	if mega_health:
+		inventory.add_item(mega_health, 1)
+		print("[PLAYER]    ✅ 1x Mega Poção de Vida")
+	
+	print("[PLAYER] ✅ _add_test_items() FINALIZADA!\n")
+
+
+# -----------------------------
+# 🍷 SISTEMA DE CONSUMÍVEIS
+# -----------------------------
+func _on_item_used(item: ItemData) -> void:
+	"""Callback quando um item é usado do inventário"""
+	print("\n[PLAYER] ═══════════════════════════════════")
+	print("[PLAYER] 🍷 USANDO CONSUMÍVEL")
+	print("[PLAYER] ═══════════════════════════════════")
+	
+	if not item:
+		print("[PLAYER] ❌ Item é NULL!")
+		return
+	
+	print("[PLAYER]    Item: %s" % item.item_name)
+	print("[PLAYER]    Tipo: %s" % ItemData.ItemType.keys()[item.item_type])
+	print("[PLAYER]    HP atual: %.1f / %.1f" % [current_health, max_health])
+	
+	# Restaura vida
+	if item.restore_health > 0:
+		var healed = min(item.restore_health, max_health - current_health)
+		var old_health = current_health
+		current_health += healed
+		print("[PLAYER]    💚 Restaurando vida:")
+		print("[PLAYER]       Antes: %.1f" % old_health)
+		print("[PLAYER]       Curado: +%.0f" % healed)
+		print("[PLAYER]       Depois: %.1f / %.1f" % [current_health, max_health])
+		
+		# Atualiza HUD se existir
+		if has_node("PlayerHUD"):
+			get_node("PlayerHUD").update_health(current_health, max_health)
+			print("[PLAYER]       HUD atualizado")
+		else:
+			print("[PLAYER]       ⚠️ PlayerHUD não encontrado")
+	else:
+		print("[PLAYER]    ⚪ Sem restauração de HP")
+	
+	# Restaura mana (se tiver sistema de mana)
+	if item.restore_mana > 0:
+		print("[PLAYER]    💙 +%.0f Mana (sistema não implementado)" % item.restore_mana)
+	
+	# Restaura stamina
+	if item.restore_stamina > 0:
+		print("[PLAYER]    💛 +%.0f Stamina (sistema não implementado)" % item.restore_stamina)
+	
+	# Aplica buff temporário
+	if item.apply_buff_duration > 0:
+		print("[PLAYER]    ✨ Aplicando buff temporário...")
+		apply_consumable_buff(item)
+	else:
+		print("[PLAYER]    ⚪ Sem buffs")
+	
+	print("[PLAYER] ═══════════════════════════════════")
+	print("[PLAYER] ✅ Consumível aplicado com sucesso!")
+	print("[PLAYER] ═══════════════════════════════════\n")
+
+
+func apply_consumable_buff(item: ItemData) -> void:
+	"""Aplica buff temporário de consumível"""
+	print("\n[PLAYER] ✨ ═══ INICIANDO BUFF ═══")
+	print("[PLAYER]    Duração: %.1fs" % item.apply_buff_duration)
+	
+	# Armazena velocidade original
+	var original_speed = speed
+	var original_damage = 0.0
+	if current_weapon_data:
+		original_damage = current_weapon_data.damage
+	
+	print("[PLAYER]    Stats ANTES do buff:")
+	print("[PLAYER]       Velocidade: %.0f" % original_speed)
+	if current_weapon_data:
+		print("[PLAYER]       Dano: %.0f" % original_damage)
+	
+	# Aplica multiplicadores
+	var buff_applied = false
+	
+	if item.buff_speed_multiplier != 1.0:
+		speed *= item.buff_speed_multiplier
+		print("[PLAYER]    🚀 BUFF DE VELOCIDADE:")
+		print("[PLAYER]       Multiplicador: x%.1f" % item.buff_speed_multiplier)
+		print("[PLAYER]       Nova velocidade: %.0f" % speed)
+		buff_applied = true
+	
+	if item.buff_damage_multiplier != 1.0:
+		# O dano vem da arma equipada, não do player diretamente
+		if current_weapon_data:
+			current_weapon_data.damage *= item.buff_damage_multiplier
+			print("[PLAYER]    ⚔️ BUFF DE DANO:")
+			print("[PLAYER]       Multiplicador: x%.1f" % item.buff_damage_multiplier)
+			print("[PLAYER]       Novo dano: %.0f" % current_weapon_data.damage)
+			buff_applied = true
+		else:
+			print("[PLAYER]    ⚠️ Buff de dano ignorado: sem arma equipada")
+	
+	if not buff_applied:
+		print("[PLAYER]    ⚠️ Nenhum buff foi aplicado (multiplicadores = 1.0)")
+	
+	print("[PLAYER] ═══ BUFF ATIVO ═══")
+	
+	# Aguarda duração do buff
+	await get_tree().create_timer(item.apply_buff_duration).timeout
+	
+	print("\n[PLAYER] ⏱️ ═══ BUFF EXPIROU ═══")
+	print("[PLAYER]    Restaurando valores originais...")
+	
+	# Restaura valores originais
+	speed = original_speed
+	if item.buff_damage_multiplier != 1.0 and current_weapon_data:
+		current_weapon_data.damage = original_damage
+	
+	print("[PLAYER]    Stats APÓS restauração:")
+	print("[PLAYER]       Velocidade: %.0f" % speed)
+	if current_weapon_data:
+		print("[PLAYER]       Dano: %.0f" % current_weapon_data.damage)
+	print("[PLAYER] ═══ BUFF REMOVIDO ═══\n")

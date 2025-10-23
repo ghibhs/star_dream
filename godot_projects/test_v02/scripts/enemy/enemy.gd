@@ -358,11 +358,15 @@ func take_damage(amount: float) -> void:
 	
 	# Aplica defesa
 	var damage_taken = max(amount - enemy_data.defense, 1.0)
+	var previous_health = current_health
 	current_health -= damage_taken
 	
 	print("[ENEMY] 💔 %s RECEBEU DANO!" % enemy_data.enemy_name)
 	print("[ENEMY]    Dano bruto: %.1f | Defesa: %.1f | Dano real: %.1f" % [amount, enemy_data.defense, damage_taken])
-	print("[ENEMY]    HP atual: %.1f/%.1f (%.1f%%)" % [current_health, enemy_data.max_health, (current_health/enemy_data.max_health)*100])
+	print("[ENEMY]    HP: %.1f → %.1f (%.1f%%)" % [previous_health, current_health, (current_health/enemy_data.max_health)*100])
+	
+	# ✅ SEMPRE aplica o flash vermelho primeiro (mesmo em morte)
+	apply_hit_flash()
 	
 	# Se for agressivo e não tiver alvo, procura o player
 	if enemy_data.behavior == "Aggressive" and not target:
@@ -377,17 +381,20 @@ func take_damage(amount: float) -> void:
 			if target.get_class() != "CharacterBody2D":
 				print("[ENEMY]    ⚠️ ALERTA: Alvo não é CharacterBody2D!")
 	
-	# Visual de dano (flash branco)
-	apply_hit_flash()
+	# ⚠️ Depois verifica morte
+	if current_health <= 0:
+		print("[ENEMY] ══════════════════════════════════════")
+		print("[ENEMY] ⚠️⚠️⚠️  VIDA ZEROU!  ⚠️⚠️⚠️")
+		print("[ENEMY] HP FINAL: %.1f / %.1f" % [current_health, enemy_data.max_health])
+		print("[ENEMY] ══════════════════════════════════════")
+		print("[ENEMY] ☠️ Aguardando flash antes de morrer...")
+		await get_tree().create_timer(0.1).timeout  # Aguarda o flash
+		die()
+		return
 	
-	# Muda para estado HURT
+	# Se não morreu, muda para estado HURT
 	print("[ENEMY] Estado: ", State.keys()[current_state], " → HURT")
 	current_state = State.HURT
-	
-	# Verifica morte
-	if current_health <= 0:
-		print("[ENEMY] ☠️ HP chegou a 0, iniciando morte...")
-		die()
 
 
 func apply_hit_flash() -> void:
@@ -407,8 +414,14 @@ func die() -> void:
 	is_dead = true
 	current_state = State.DEAD
 	
-	print("[ENEMY] ☠️☠️☠️ %s MORREU! ☠️☠️☠️" % enemy_data.enemy_name)
+	print("")
+	print("[ENEMY] ══════════════════════════════════════")
+	print("[ENEMY] ☠️☠️☠️  %s MORREU!  ☠️☠️☠️" % enemy_data.enemy_name)
+	print("[ENEMY] ══════════════════════════════════════")
+	print("[ENEMY]    HP Final: %.1f / %.1f" % [current_health, enemy_data.max_health])
 	print("[ENEMY]    Exp drop: %d | Coins drop: %d" % [enemy_data.experience_drop, enemy_data.coin_drop])
+	print("[ENEMY] ══════════════════════════════════════")
+	print("")
 	
 	# Contabiliza inimigo derrotado
 	if has_node("/root/GameStats"):
@@ -482,10 +495,19 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		print("[ENEMY]    💥 Player detectado na hitbox ATIVA!")
 		
-		# Aplica dano
+		# Aplica dano com knockback configurável do EnemyData
 		if body.has_method("take_damage"):
-			body.take_damage(enemy_data.damage)
-			print("[ENEMY]    ✅ Dano %.1f aplicado ao player!" % enemy_data.damage)
+			# Usa configurações do .tres
+			var applies_kb = enemy_data.applies_knockback if "applies_knockback" in enemy_data else true
+			var kb_force = enemy_data.knockback_force if "knockback_force" in enemy_data else 300.0
+			var kb_duration = enemy_data.knockback_duration if "knockback_duration" in enemy_data else 0.2
+			
+			body.take_damage(enemy_data.damage, global_position, kb_force, kb_duration, applies_kb)
+			
+			if applies_kb:
+				print("[ENEMY]    ✅ Dano %.1f aplicado (knockback: %.1f força, %.2fs duração)!" % [enemy_data.damage, kb_force, kb_duration])
+			else:
+				print("[ENEMY]    ✅ Dano %.1f aplicado (sem knockback)!" % enemy_data.damage)
 		else:
 			print("[ENEMY]    ❌ Player não tem método take_damage!")
 	else:

@@ -5,6 +5,7 @@ extends Resource
 @export var animation_name: String = "default"
 @export var collision_shape: Shape2D  # Para coleta do item
 @export var item_name: String
+@export var icon: Texture2D  # Ícone para inventário/hotbar
 @export var value: int
 @export var Sprite_scale: Vector2 = Vector2.ONE
 
@@ -18,6 +19,7 @@ extends Resource
 @export var weapon_type: String = "melee"  # "melee", "projectile"
 @export var damage: float = 10
 @export var attack_speed: float = 1.0
+@export var attack_cooldown: float = 0.5  # Tempo de cooldown entre ataques em segundos
 @export var weapon_range: float = 100.0
 
 # === HITBOX DE ATAQUE (Golpe) ===
