@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 [gd_scene load_steps=70 format=3 uid="uid://bpn8urq465wwh"]
+=======
+[gd_scene load_steps=73 format=3 uid="uid://deaodpc5w6ugl"]
+>>>>>>> 4ba061e1e467c070530c7e9c7470e53948e03d6e
 
 [ext_resource type="Texture2D" uid="uid://dlpljx24qqki4" path="res://art/Liron_Eye_rotation-Sheet.png" id="1_dqdjt"]
 [ext_resource type="Script" uid="uid://cx2msu62txboe" path="res://scripts/player/player.gd" id="1_yeshm"]
@@ -10,6 +14,9 @@
 [ext_resource type="Texture2D" uid="uid://uyd7l326x40r" path="res://art/Liron_Eye_rotation-Sheet-Esquerda-Baixo.png" id="8_8dt8t"]
 [ext_resource type="Texture2D" uid="uid://bgpy6677k0fki" path="res://art/Liron_Eye_rotation-Sheet-Baixo.png" id="9_kpxy1"]
 [ext_resource type="Texture2D" uid="uid://b4l2484ruwn5" path="res://art/Liron_Eye_rotation-Sheet-Direita-Baixo.png" id="10_3s4nu"]
+[ext_resource type="Script" uid="uid://hsiodn7wj2tb" path="res://scripts/inventory/inventory.gd" id="11_fm80t"]
+[ext_resource type="Script" uid="uid://bpcl8hotuoiwb" path="res://scripts/ui/inventory_ui.gd" id="12_gx1jg"]
+[ext_resource type="Script" uid="uid://fteo3svh6xql" path="res://scripts/ui/hotbar_ui.gd" id="13_gx1jg"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_8boi7"]
 radius = 16.0
@@ -477,3 +484,30 @@ animation = &"new_animation_6"
 one_shot = true
 
 [node name="WeaponAnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("11_fm80t")
+
+[node name="InventoryUI" type="CanvasLayer" parent="." node_paths=PackedStringArray("inventory")]
+script = ExtResource("12_gx1jg")
+inventory = NodePath("../Inventory")
+
+[node name="HotbarUI" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HotbarUI" node_paths=PackedStringArray("inventory")]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -84.0
+offset_right = 180.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+script = ExtResource("13_gx1jg")
+inventory = NodePath("../../Inventory")
+hotbar_size = 9

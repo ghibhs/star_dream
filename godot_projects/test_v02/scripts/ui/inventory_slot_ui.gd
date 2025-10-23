@@ -4,6 +4,7 @@ class_name InventorySlotUI
 ## UI para um slot individual do inventário com drag and drop
 
 signal slot_clicked(slot_index: int, mouse_button: int)
+signal slot_double_clicked(slot_index: int)
 signal slot_right_clicked(slot_index: int)
 signal drag_started(slot_index: int)
 signal drag_ended(slot_index: int)
@@ -14,19 +15,29 @@ signal drag_ended(slot_index: int)
 var inventory_slot: InventorySlot
 var is_dragging: bool = false
 
-@onready var icon_rect: TextureRect = $IconRect
-@onready var quantity_label: Label = $QuantityLabel
-@onready var durability_bar: ProgressBar = $DurabilityBar if has_node("DurabilityBar") else null
+var icon_rect: TextureRect
+var quantity_label: Label
+var durability_bar: ProgressBar
+
+# Double-click detection
+var last_click_time: float = 0.0
+var double_click_threshold: float = 0.3  # 300ms
 
 
 func _ready() -> void:
 	custom_minimum_size = slot_size
 	
-	# Configura tooltip
+	# Configura tooltip e input
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	
+	print("[SLOT UI] 🎯 Slot %d inicializado" % slot_index)
+	print("[SLOT UI]    Mouse filter: STOP")
+	print("[SLOT UI]    Size: ", slot_size)
+	
 	# Cria nós se não existirem
-	if not has_node("IconRect"):
+	if has_node("IconRect"):
+		icon_rect = $IconRect
+	else:
 		icon_rect = TextureRect.new()
 		icon_rect.name = "IconRect"
 		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -34,7 +45,14 @@ func _ready() -> void:
 		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(icon_rect)
 	
-	if not has_node("QuantityLabel"):
+	# Garante que o ícone preencha todo o slot mas ignora mouse
+	icon_rect.anchor_right = 1.0
+	icon_rect.anchor_bottom = 1.0
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	if has_node("QuantityLabel"):
+		quantity_label = $QuantityLabel
+	else:
 		quantity_label = Label.new()
 		quantity_label.name = "QuantityLabel"
 		quantity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -43,11 +61,32 @@ func _ready() -> void:
 		quantity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(quantity_label)
 	
-	update_visuals()
+	# Posiciona o label no canto inferior direito
+	quantity_label.anchor_left = 0.0
+	quantity_label.anchor_top = 0.0
+	quantity_label.anchor_right = 1.0
+	quantity_label.anchor_bottom = 1.0
+	quantity_label.offset_right = -4
+	quantity_label.offset_bottom = -2
+	quantity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	if has_node("DurabilityBar"):
+		durability_bar = $DurabilityBar
+	
+	print("[SLOT UI] ✅ Slot %d pronto para receber input" % slot_index)
+	
+	# Só atualiza visuais se tiver um slot configurado
+	if inventory_slot:
+		update_visuals()
 
 
 ## Atualiza a aparência do slot
 func update_visuals() -> void:
+	# Verifica se os nós existem
+	if not icon_rect or not quantity_label:
+		print("[SLOT UI] ⚠️ Slot %d: icon_rect ou quantity_label NULL!" % slot_index)
+		return
+	
 	if inventory_slot == null or inventory_slot.is_empty():
 		icon_rect.texture = null
 		quantity_label.text = ""
@@ -59,10 +98,11 @@ func update_visuals() -> void:
 	var item = inventory_slot.item_data
 	
 	# Ícone
-	icon_rect.texture = item.icon
+	icon_rect.texture = item.icon if item else null
+	print("[SLOT UI] 🎨 Slot %d: Aplicando textura %s" % [slot_index, "SIM" if item.icon else "NULL"])
 	
 	# Quantidade
-	if item.is_stackable and inventory_slot.quantity > 1:
+	if item and item.is_stackable and inventory_slot.quantity > 1:
 		quantity_label.text = str(inventory_slot.quantity)
 	else:
 		quantity_label.text = ""
@@ -88,18 +128,35 @@ func set_inventory_slot(slot: InventorySlot) -> void:
 
 ## Callback quando o slot de dados muda
 func _on_slot_changed() -> void:
+	print("[SLOT UI] 🔄 Slot %d mudou! Atualizando visual..." % slot_index)
+	if inventory_slot and not inventory_slot.is_empty():
+		print("[SLOT UI]    Item: %s x%d" % [inventory_slot.item_data.item_name, inventory_slot.quantity])
 	update_visuals()
 
 
 ## Input handling
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		if event.pressed:
-			if event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			# Detecta double-click
+			var current_time = Time.get_ticks_msec() / 1000.0
+			var time_since_last_click = current_time - last_click_time
+			
+			if time_since_last_click < double_click_threshold:
+				# DOUBLE CLICK!
+				print("[SLOT UI] ⚡ DOUBLE-CLICK no slot %d!" % slot_index)
+				slot_double_clicked.emit(slot_index)
+				last_click_time = 0.0  # Reset para evitar triple-click
+			else:
+				# Single click
+				print("[SLOT UI] 🖱️ Click no slot %d" % slot_index)
 				slot_clicked.emit(slot_index, MOUSE_BUTTON_LEFT)
-			elif event.button_index == MOUSE_BUTTON_RIGHT:
-				slot_right_clicked.emit(slot_index)
-				slot_clicked.emit(slot_index, MOUSE_BUTTON_RIGHT)
+				last_click_time = current_time
+				
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			print("[SLOT UI] 🖱️ Click direito no slot %d" % slot_index)
+			slot_right_clicked.emit(slot_index)
+			slot_clicked.emit(slot_index, MOUSE_BUTTON_RIGHT)
 
 
 ## Drag and drop
