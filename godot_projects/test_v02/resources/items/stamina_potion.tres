@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/classes/ItemData.gd" id="1_1"]
-[ext_resource type="Texture2D" path="res://art/icon.svg" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/moeda_game1.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_1")
@@ -29,6 +29,6 @@ apply_buff_duration = 0.0
 buff_speed_multiplier = 1.0
 buff_damage_multiplier = 1.0
 bonus_health = 0.0
-bonus_mana = 0.0
-bonus_stamina = 0.0
 bonus_defense = 0.0
+bonus_speed = 0.0
+bonus_damage = 0.0

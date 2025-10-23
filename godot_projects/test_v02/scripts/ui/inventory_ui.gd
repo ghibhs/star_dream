@@ -10,9 +10,11 @@ class_name InventoryUI
 
 var slot_uis: Array[InventorySlotUI] = []
 var is_open: bool = false
+var hotbar_ui: HotbarUI = null  # Referência ao hotbar para drag and drop
 
 # Drag state
 var dragging_from_slot: int = -1
+var dragging_to_hotbar: bool = false
 
 # Nós da UI
 var panel: Panel
@@ -35,6 +37,17 @@ var selected_slot_index: int = -1
 
 
 func _ready() -> void:
+	# Adiciona ao grupo para fácil acesso
+	add_to_group("inventory_ui")
+	
+	# Busca o hotbar na cena
+	await get_tree().process_frame
+	hotbar_ui = get_tree().get_first_node_in_group("hotbar_ui")
+	if hotbar_ui:
+		print("[INVENTORY UI] 🔗 Hotbar encontrado para drag and drop")
+	else:
+		print("[INVENTORY UI] ⚠️ Hotbar não encontrado")
+	
 	# Esconde por padrão
 	hide()
 	
@@ -249,6 +262,14 @@ func setup_inventory(inv: Inventory) -> void:
 		print("[INVENTORY UI] ❌ Inventário é NULL!")
 		return
 	
+	if not grid_container:
+		print("[INVENTORY UI] ⚠️ Grid container ainda não foi criado - aguardando...")
+		# Tenta novamente após um frame
+		await get_tree().process_frame
+		if not grid_container:
+			print("[INVENTORY UI] ❌ Grid container ainda não existe após wait!")
+			return
+	
 	print("[INVENTORY UI]    Slots: %d" % inventory.inventory_size)
 	
 	# Limpa slots existentes
@@ -265,7 +286,10 @@ func setup_inventory(inv: Inventory) -> void:
 		
 		# Conecta sinais
 		slot_ui.slot_clicked.connect(_on_slot_clicked)
+		slot_ui.slot_double_clicked.connect(_on_slot_double_clicked)
 		slot_ui.slot_right_clicked.connect(_on_slot_right_clicked)
+		slot_ui.drag_started.connect(_on_slot_drag_started)
+		slot_ui.drag_ended.connect(_on_slot_drag_ended)
 		
 		print("[INVENTORY UI]    Slot %d criado e conectado" % i)
 		
@@ -354,6 +378,31 @@ func _on_slot_clicked(slot_index: int, mouse_button: int) -> void:
 		highlight_selected_slot()
 
 
+## Callback quando slot recebe double-click
+func _on_slot_double_clicked(slot_index: int) -> void:
+	print("\n[INVENTORY UI] ⚡ DOUBLE-CLICK detectado no slot %d" % slot_index)
+	
+	if not inventory:
+		return
+	
+	var slot = inventory.slots[slot_index]
+	if slot.is_empty():
+		print("[INVENTORY UI] ❌ Slot vazio")
+		return
+	
+	print("[INVENTORY UI]    Item: %s" % slot.item_data.item_name)
+	
+	# Double-click = usar/equipar direto
+	if slot.item_data.is_usable():
+		print("[INVENTORY UI] 🍷 Usando consumível...")
+		inventory.use_item(slot_index)
+	elif slot.item_data.is_equippable:
+		print("[INVENTORY UI] 🎽 Equipando item...")
+		inventory.equip_item(slot_index)
+	else:
+		print("[INVENTORY UI] ⚠️ Item não é usável nem equipável")
+
+
 ## Callback quando um slot é clicado com botão direito
 func _on_slot_right_clicked(slot_index: int) -> void:
 	if not inventory:
@@ -363,11 +412,53 @@ func _on_slot_right_clicked(slot_index: int) -> void:
 	if slot.is_empty():
 		return
 	
-	# Botão direito = ação rápida
+	# Botão direito = ação rápida (mesmo que double-click)
 	if slot.item_data.is_usable():
 		inventory.use_item(slot_index)
 	elif slot.item_data.is_equippable:
 		inventory.equip_item(slot_index)
+
+
+## Callback quando começa a arrastar um slot
+func _on_slot_drag_started(slot_index: int) -> void:
+	print("[INVENTORY UI] 🖱️ Drag iniciado no slot %d" % slot_index)
+	dragging_from_slot = slot_index
+
+
+## Callback quando termina de arrastar um slot
+func _on_slot_drag_ended(target_slot_index: int) -> void:
+	print("[INVENTORY UI] 🖱️ Drag finalizado - origem: %d, destino: %d" % [dragging_from_slot, target_slot_index])
+	
+	if dragging_from_slot == -1:
+		return
+	
+	# Se arrastou para outro slot do inventário, troca itens
+	if target_slot_index >= 0 and target_slot_index < inventory.slots.size():
+		if dragging_from_slot != target_slot_index:
+			inventory.swap_items(dragging_from_slot, target_slot_index)
+			print("[INVENTORY UI] 🔄 Items trocados entre slots %d e %d" % [dragging_from_slot, target_slot_index])
+	
+	dragging_from_slot = -1
+
+
+## Adiciona item do inventário à hotbar (chamado quando arrasta para hotbar)
+func add_inventory_item_to_hotbar(inventory_slot_index: int, hotbar_slot_index: int) -> void:
+	if not hotbar_ui:
+		print("[INVENTORY UI] ❌ Hotbar não encontrado!")
+		return
+	
+	if inventory_slot_index < 0 or inventory_slot_index >= inventory.slots.size():
+		print("[INVENTORY UI] ❌ Índice de inventário inválido: %d" % inventory_slot_index)
+		return
+	
+	var slot = inventory.slots[inventory_slot_index]
+	if slot.is_empty():
+		print("[INVENTORY UI] ❌ Slot vazio - não pode adicionar à hotbar")
+		return
+	
+	# Adiciona à hotbar
+	hotbar_ui.add_to_hotbar(inventory_slot_index, hotbar_slot_index)
+	print("[INVENTORY UI] ✅ Item adicionado à hotbar: inventário[%d] -> hotbar[%d]" % [inventory_slot_index, hotbar_slot_index])
 
 
 ## Destaca visualmente o slot selecionado
@@ -486,7 +577,20 @@ func _on_split_button_pressed() -> void:
 	if selected_slot_index == -1 or not inventory:
 		return
 	
-	inventory.split_slot(selected_slot_index)
+	var slot = inventory.slots[selected_slot_index]
+	if slot.is_empty() or slot.quantity <= 1:
+		print("[INVENTORY UI] ❌ Não é possível dividir (quantidade: %d)" % slot.quantity)
+		return
+	
+	print("[INVENTORY UI] ✂️ Dividindo %s (quantidade: %d)" % [slot.item_data.item_name, slot.quantity])
+	
+	var new_slot_index = inventory.split_slot(selected_slot_index)
+	
+	if new_slot_index >= 0:
+		print("[INVENTORY UI] ✅ Item dividido! Novo slot: %d" % new_slot_index)
+	else:
+		print("[INVENTORY UI] ❌ Falha ao dividir - inventário pode estar cheio")
+	
 	selected_slot_index = -1
 	update_action_buttons()
 
@@ -496,13 +600,24 @@ func _on_drop_button_pressed() -> void:
 	if selected_slot_index == -1 or not inventory:
 		return
 	
-	# Remove o item do inventário (poderia criar no mundo)
 	var slot = inventory.slots[selected_slot_index]
-	if not slot.is_empty():
-		print("[INVENTORY UI] 📦 Dropando: ", slot.item_data.item_name)
-		slot.clear()
-		selected_slot_index = -1
-		update_action_buttons()
+	if slot.is_empty():
+		return
+	
+	print("[INVENTORY UI] 📦 Dropando: %s x%d" % [slot.item_data.item_name, slot.quantity])
+	
+	# Encontra o player para dropar na posição dele
+	var player = get_tree().get_first_node_in_group("player")
+	if player and player.has_method("drop_item"):
+		# Player tem função drop_item
+		player.drop_item(slot.item_data, slot.quantity)
+	else:
+		print("[INVENTORY UI] ⚠️ Player não encontrado ou não tem função drop_item")
+	
+	# Remove do inventário
+	slot.clear()
+	selected_slot_index = -1
+	update_action_buttons()
 
 
 ## Atualiza estado dos botões de ação

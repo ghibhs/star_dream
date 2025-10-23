@@ -271,6 +271,9 @@ func _ready() -> void:
 		print("[PLAYER]    ❌ InventoryUI NÃO encontrado")
 	
 	if inventory and inventory_ui:
+		# Aguarda a UI estar pronta
+		await get_tree().process_frame
+		
 		# Primeiro setup a UI
 		inventory_ui.setup_inventory(inventory)
 		
@@ -398,6 +401,25 @@ func receive_weapon_data(weapon_data: WeaponData) -> void:
 	# Equipa a nova arma
 	current_weapon_data = weapon_data
 	call_deferred("setup_weapon")
+
+
+func drop_item(item_data: ItemData, quantity: int = 1) -> void:
+	"""
+	Dropa um item genérico (consumível, etc) no mundo
+	"""
+	if not item_data:
+		print("[PLAYER] ❌ Tentou dropar item NULL")
+		return
+	
+	print("[PLAYER] 📦 Dropando item: %s x%d" % [item_data.item_name, quantity])
+	
+	# Por enquanto, items consumíveis não têm representação física no mundo
+	# Apenas exibe mensagem
+	print("[PLAYER] ⚠️ Items consumíveis não podem ser dropados no chão (ainda não implementado)")
+	print("[PLAYER]    Use o inventário para organizar ou vender items")
+	
+	# TODO: Implementar cena de item genérico para dropar no mundo
+	# Similar ao weapon_item_scene mas para consumíveis
 
 
 func drop_current_weapon() -> void:

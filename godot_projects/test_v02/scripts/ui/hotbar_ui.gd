@@ -17,6 +17,9 @@ func _ready() -> void:
 	print("\n[HOTBAR] 🎮 Inicializando hotbar...")
 	print("[HOTBAR]    Tamanho: %d slots" % hotbar_size)
 	
+	# Adiciona ao grupo para fácil acesso
+	add_to_group("hotbar_ui")
+	
 	create_hotbar()
 	
 	if inventory:
@@ -49,7 +52,10 @@ func create_hotbar() -> void:
 		number_label.position = Vector2(4, 4)
 		slot_ui.add_child(number_label)
 		
+		# Conecta sinais
 		slot_ui.slot_clicked.connect(_on_hotbar_slot_clicked)
+		slot_ui.drag_ended.connect(_on_hotbar_slot_drag_ended.bind(i))  # Bind do índice da hotbar
+		
 		add_child(slot_ui)
 		hotbar_slots.append(slot_ui)
 		hotbar_item_indices.append(-1)  # -1 = slot vazio
@@ -192,6 +198,18 @@ func _on_hotbar_slot_clicked(slot_index: int, mouse_button: int) -> void:
 	elif mouse_button == MOUSE_BUTTON_RIGHT:
 		# Botão direito remove da hotbar
 		remove_from_hotbar(slot_index)
+
+
+## Callback quando algo é arrastado para um slot da hotbar
+func _on_hotbar_slot_drag_ended(from_inventory_slot: int, to_hotbar_slot: int) -> void:
+	print("[HOTBAR] 🎯 Drag para hotbar - inventário[%d] -> hotbar[%d]" % [from_inventory_slot, to_hotbar_slot])
+	
+	# Adiciona o item do inventário à hotbar
+	if from_inventory_slot >= 0 and to_hotbar_slot >= 0:
+		add_to_hotbar(from_inventory_slot, to_hotbar_slot)
+		print("[HOTBAR] ✅ Item adicionado à hotbar!")
+	else:
+		print("[HOTBAR] ❌ Índices inválidos")
 
 
 ## Salva a configuração da hotbar

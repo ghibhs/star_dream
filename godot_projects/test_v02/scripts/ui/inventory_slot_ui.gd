@@ -4,6 +4,7 @@ class_name InventorySlotUI
 ## UI para um slot individual do inventário com drag and drop
 
 signal slot_clicked(slot_index: int, mouse_button: int)
+signal slot_double_clicked(slot_index: int)
 signal slot_right_clicked(slot_index: int)
 signal drag_started(slot_index: int)
 signal drag_ended(slot_index: int)
@@ -17,6 +18,10 @@ var is_dragging: bool = false
 var icon_rect: TextureRect
 var quantity_label: Label
 var durability_bar: ProgressBar
+
+# Double-click detection
+var last_click_time: float = 0.0
+var double_click_threshold: float = 0.3  # 300ms
 
 
 func _ready() -> void:
@@ -131,20 +136,27 @@ func _on_slot_changed() -> void:
 
 ## Input handling
 func _gui_input(event: InputEvent) -> void:
-	# Apenas processa clicks, não hover (removido logs de motion)
-	if event is InputEventMouseButton:
-		print("[SLOT UI] 🖱️ Mouse BUTTON event no slot %d" % slot_index)
-		print("[SLOT UI]    Botão: ", event.button_index)
-		print("[SLOT UI]    Pressionado: ", event.pressed)
-		
-		if event.pressed:
-			if event.button_index == MOUSE_BUTTON_LEFT:
-				print("[SLOT UI] ✅ CLIQUE ESQUERDO no slot %d" % slot_index)
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			# Detecta double-click
+			var current_time = Time.get_ticks_msec() / 1000.0
+			var time_since_last_click = current_time - last_click_time
+			
+			if time_since_last_click < double_click_threshold:
+				# DOUBLE CLICK!
+				print("[SLOT UI] ⚡ DOUBLE-CLICK no slot %d!" % slot_index)
+				slot_double_clicked.emit(slot_index)
+				last_click_time = 0.0  # Reset para evitar triple-click
+			else:
+				# Single click
+				print("[SLOT UI] 🖱️ Click no slot %d" % slot_index)
 				slot_clicked.emit(slot_index, MOUSE_BUTTON_LEFT)
-			elif event.button_index == MOUSE_BUTTON_RIGHT:
-				print("[SLOT UI] ✅ CLIQUE DIREITO no slot %d" % slot_index)
-				slot_right_clicked.emit(slot_index)
-				slot_clicked.emit(slot_index, MOUSE_BUTTON_RIGHT)
+				last_click_time = current_time
+				
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			print("[SLOT UI] 🖱️ Click direito no slot %d" % slot_index)
+			slot_right_clicked.emit(slot_index)
+			slot_clicked.emit(slot_index, MOUSE_BUTTON_RIGHT)
 
 
 ## Drag and drop
