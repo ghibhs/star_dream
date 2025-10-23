@@ -42,21 +42,30 @@ var knockback_timer: float = 0.0
 # -----------------------------
 var inventory: Inventory
 var inventory_ui: InventoryUI
+var hotbar: Hotbar
 
 func _physics_process(delta: float) -> void:
 	# Atualiza timers
 	update_dash_timers(delta)
 	update_knockback_timer(delta)
 	
-	# Input de movimento
-	direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	# ⚠️ Bloqueia movimento se inventário estiver aberto
+	var inventory_is_open = inventory_ui and inventory_ui.is_open
 	
-	# Sprint (segurar Shift)
-	is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO
-	
-	# Dash (pressionar Space)
-	if Input.is_action_just_pressed("dash") and can_dash and direction != Vector2.ZERO:
-		start_dash()
+	# Input de movimento (apenas se inventário estiver fechado)
+	if not inventory_is_open:
+		direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+		
+		# Sprint (segurar Shift)
+		is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO
+		
+		# Dash (pressionar Space)
+		if Input.is_action_just_pressed("dash") and can_dash and direction != Vector2.ZERO:
+			start_dash()
+	else:
+		# Inventário aberto: zera movimento
+		direction = Vector2.ZERO
+		is_sprinting = false
 	
 	# Animações
 	if direction != Vector2.ZERO and not is_dashing and not is_being_knocked_back:
@@ -256,94 +265,24 @@ func _ready() -> void:
 	print("[PLAYER] Saúde inicializada: %.1f/%.1f" % [current_health, max_health])
 	
 	# Inicializa inventário (se existir na cena)
-	print("\n[PLAYER] 🎒 Procurando sistema de inventário...")
 	inventory = get_node_or_null("Inventory")
 	inventory_ui = get_node_or_null("InventoryUI")
-	
-	if inventory:
-		print("[PLAYER]    ✅ Inventory encontrado")
-	else:
-		print("[PLAYER]    ❌ Inventory NÃO encontrado")
-	
-	if inventory_ui:
-		print("[PLAYER]    ✅ InventoryUI encontrado")
-	else:
-		print("[PLAYER]    ❌ InventoryUI NÃO encontrado")
+	hotbar = get_node_or_null("Hotbar")
 	
 	if inventory and inventory_ui:
-		# Aguarda a UI estar pronta
-		await get_tree().process_frame
-		
-		# Primeiro setup a UI
 		inventory_ui.setup_inventory(inventory)
-		
-		# Conecta sinal de uso de item
-		if inventory.has_signal("item_used"):
-			if not inventory.item_used.is_connected(_on_item_used):
-				inventory.item_used.connect(_on_item_used)
-				print("[PLAYER]    ✅ Sinal 'item_used' conectado")
-			else:
-				print("[PLAYER]    ⚠️ Sinal 'item_used' já estava conectado")
-		else:
-			print("[PLAYER]    ❌ Sinal 'item_used' NÃO existe no inventário!")
-		
 		print("[PLAYER] ✅ Sistema de inventário inicializado")
-		
-		# 🧪 TESTE: Adiciona items DEPOIS do setup
-		print("[PLAYER] 🔜 Agendando _add_test_items() com call_deferred...")
-		call_deferred("_add_test_items")
 	else:
 		if not inventory:
 			print("[PLAYER] ⚠️ Nó 'Inventory' não encontrado - adicione à cena do player")
 		if not inventory_ui:
 			print("[PLAYER] ⚠️ Nó 'InventoryUI' não encontrado - adicione à cena do player")
-
-
-func _add_test_items() -> void:
-	"""Adiciona items de teste ao inventário"""
-	print("\n[PLAYER] 🧪 _add_test_items() CHAMADA!")
-	print("[PLAYER]    Inventory existe? %s" % (inventory != null))
 	
-	if not inventory:
-		print("[PLAYER]    ❌ INVENTORY É NULL! Abortando...")
-		return
-	
-	print("[PLAYER]    ✅ Inventory OK, carregando items...")
-	
-	# Carrega todos os items
-	var health_potion = load("res://resources/items/health_potion.tres")
-	var mana_potion = load("res://resources/items/mana_potion.tres")
-	var stamina_potion = load("res://resources/items/stamina_potion.tres")
-	var speed_elixir = load("res://resources/items/speed_elixir.tres")
-	var strength_potion = load("res://resources/items/strength_potion.tres")
-	var mega_health = load("res://resources/items/mega_health_potion.tres")
-	
-	# Adiciona items variados
-	if health_potion:
-		inventory.add_item(health_potion, 5)
-		print("[PLAYER]    ✅ 5x Poção de Vida")
-	
-	if mana_potion:
-		inventory.add_item(mana_potion, 3)
-		print("[PLAYER]    ✅ 3x Poção de Mana")
-	
-	if stamina_potion:
-		inventory.add_item(stamina_potion, 4)
-		print("[PLAYER]    ✅ 4x Poção de Stamina")
-	
-	if speed_elixir:
-		inventory.add_item(speed_elixir, 2)
-		print("[PLAYER]    ✅ 2x Elixir de Velocidade")
-	
-	if strength_potion:
-		inventory.add_item(strength_potion, 2)
-		print("[PLAYER]    ✅ 2x Poção de Força")
-	
-	if mega_health:
-		inventory.add_item(mega_health, 1)
-		print("[PLAYER]    ✅ 1x Mega Poção de Vida")
-	
-	print("[PLAYER] ✅ _add_test_items() FINALIZADA!\n")
+	if hotbar and inventory:
+		hotbar.setup_inventory(inventory)
+		print("[PLAYER] ✅ Hotbar inicializada")
+	elif not hotbar:
+		print("[PLAYER] ⚠️ Nó 'Hotbar' não encontrado - adicione à cena do player")
 	
 	# Inicia contagem de estatísticas
 	if has_node("/root/GameStats"):
@@ -360,6 +299,11 @@ func _add_test_items() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# ⚠️ Bloqueia ataques se inventário estiver aberto
+	var inventory_is_open = inventory_ui and inventory_ui.is_open
+	if inventory_is_open:
+		return  # Ignora todos os inputs se inventário estiver aberto
+	
 	if event.is_action_pressed("attack"):
 		print("[PLAYER] Tecla de ataque pressionada")
 		if can_attack and weapon_timer.is_stopped():
@@ -378,10 +322,10 @@ func receive_weapon_data(weapon_data: WeaponData) -> void:
 	print("[PLAYER]    Tipo: ", weapon_data.weapon_type)
 	print("[PLAYER]    Dano: ", weapon_data.damage)
 	
-	# ⚠️ TODO: No futuro, fazer WeaponData herdar de ItemData para usar inventário
-	# Por enquanto, equipa direto
+	# TODO: Integração com inventário (precisa criar ItemData wrapper para WeaponData)
+	# Por enquanto, mantém comportamento antigo
 	
-	# ⚠️ NOVO: Se já temos uma arma equipada, dropa ela no mundo
+	# Se já temos uma arma equipada, dropa ela no mundo
 	if current_weapon_data:
 		print("[PLAYER] 🔄 Já existe arma equipada! Dropando arma antiga...")
 		drop_current_weapon()
@@ -389,37 +333,6 @@ func receive_weapon_data(weapon_data: WeaponData) -> void:
 	# Equipa a nova arma
 	current_weapon_data = weapon_data
 	call_deferred("setup_weapon")
-	
-	# Se não tiver inventário, equipa direto (legacy)
-	print("[PLAYER] ⚠️ Sem inventário - equipando direto")
-	
-	# ⚠️ NOVO: Se já temos uma arma equipada, dropa ela no mundo
-	if current_weapon_data:
-		print("[PLAYER] 🔄 Já existe arma equipada! Dropando arma antiga...")
-		drop_current_weapon()
-	
-	# Equipa a nova arma
-	current_weapon_data = weapon_data
-	call_deferred("setup_weapon")
-
-
-func drop_item(item_data: ItemData, quantity: int = 1) -> void:
-	"""
-	Dropa um item genérico (consumível, etc) no mundo
-	"""
-	if not item_data:
-		print("[PLAYER] ❌ Tentou dropar item NULL")
-		return
-	
-	print("[PLAYER] 📦 Dropando item: %s x%d" % [item_data.item_name, quantity])
-	
-	# Por enquanto, items consumíveis não têm representação física no mundo
-	# Apenas exibe mensagem
-	print("[PLAYER] ⚠️ Items consumíveis não podem ser dropados no chão (ainda não implementado)")
-	print("[PLAYER]    Use o inventário para organizar ou vender items")
-	
-	# TODO: Implementar cena de item genérico para dropar no mundo
-	# Similar ao weapon_item_scene mas para consumíveis
 
 
 func drop_current_weapon() -> void:
@@ -757,122 +670,6 @@ func apply_damage_to_target(target: Node) -> void:
 func _on_weapon_timer_timeout() -> void:
 	can_attack = true
 	print("[PLAYER] ⏱️ Cooldown terminado, can_attack = true")
-
-
-# -----------------------------
-# SISTEMA DE CONSUMÍVEIS
-# -----------------------------
-## Callback quando um item é usado do inventário
-func _on_item_used(item: ItemData) -> void:
-	print("\n[PLAYER] ═══════════════════════════════════")
-	print("[PLAYER] 🍷 USANDO CONSUMÍVEL")
-	print("[PLAYER] ═══════════════════════════════════")
-	
-	if not item:
-		print("[PLAYER] ❌ Item é NULL!")
-		return
-	
-	print("[PLAYER]    Item: %s" % item.item_name)
-	print("[PLAYER]    Tipo: %s" % ItemData.ItemType.keys()[item.item_type])
-	print("[PLAYER]    HP atual: %.1f / %.1f" % [current_health, max_health])
-	
-	# Restaura vida
-	if item.restore_health > 0:
-		var healed = min(item.restore_health, max_health - current_health)
-		var old_health = current_health
-		current_health += healed
-		print("[PLAYER]    💚 Restaurando vida:")
-		print("[PLAYER]       Antes: %.1f" % old_health)
-		print("[PLAYER]       Curado: +%.0f" % healed)
-		print("[PLAYER]       Depois: %.1f / %.1f" % [current_health, max_health])
-		
-		# Atualiza HUD se existir
-		if has_node("PlayerHUD"):
-			get_node("PlayerHUD").update_health(current_health, max_health)
-			print("[PLAYER]       HUD atualizado")
-		else:
-			print("[PLAYER]       ⚠️ PlayerHUD não encontrado")
-	else:
-		print("[PLAYER]    ⚪ Sem restauração de HP")
-	
-	# Restaura mana (se tiver sistema de mana)
-	if item.restore_mana > 0:
-		print("[PLAYER]    💙 +%.0f Mana (sistema não implementado)" % item.restore_mana)
-	
-	# Restaura stamina
-	if item.restore_stamina > 0:
-		print("[PLAYER]    💛 +%.0f Stamina (sistema não implementado)" % item.restore_stamina)
-	
-	# Aplica buff temporário
-	if item.apply_buff_duration > 0:
-		print("[PLAYER]    ✨ Aplicando buff temporário...")
-		apply_consumable_buff(item)
-	else:
-		print("[PLAYER]    ⚪ Sem buffs")
-	
-	print("[PLAYER] ═══════════════════════════════════")
-	print("[PLAYER] ✅ Consumível aplicado com sucesso!")
-	print("[PLAYER] ═══════════════════════════════════\n")
-
-
-## Aplica buff temporário de consumível
-func apply_consumable_buff(item: ItemData) -> void:
-	print("\n[PLAYER] ✨ ═══ INICIANDO BUFF ═══")
-	print("[PLAYER]    Duração: %.1fs" % item.apply_buff_duration)
-	
-	# Armazena velocidade original
-	var original_speed = speed
-	var original_damage = 0.0
-	if current_weapon_data:
-		original_damage = current_weapon_data.damage
-	
-	print("[PLAYER]    Stats ANTES do buff:")
-	print("[PLAYER]       Velocidade: %.0f" % original_speed)
-	if current_weapon_data:
-		print("[PLAYER]       Dano: %.0f" % original_damage)
-	
-	# Aplica multiplicadores
-	var buff_applied = false
-	
-	if item.buff_speed_multiplier != 1.0:
-		speed *= item.buff_speed_multiplier
-		print("[PLAYER]    🚀 BUFF DE VELOCIDADE:")
-		print("[PLAYER]       Multiplicador: x%.1f" % item.buff_speed_multiplier)
-		print("[PLAYER]       Nova velocidade: %.0f" % speed)
-		buff_applied = true
-	
-	if item.buff_damage_multiplier != 1.0:
-		# O dano vem da arma equipada, não do player diretamente
-		if current_weapon_data:
-			current_weapon_data.damage *= item.buff_damage_multiplier
-			print("[PLAYER]    ⚔️ BUFF DE DANO:")
-			print("[PLAYER]       Multiplicador: x%.1f" % item.buff_damage_multiplier)
-			print("[PLAYER]       Novo dano: %.0f" % current_weapon_data.damage)
-			buff_applied = true
-		else:
-			print("[PLAYER]    ⚠️ Buff de dano ignorado: sem arma equipada")
-	
-	if not buff_applied:
-		print("[PLAYER]    ⚠️ Nenhum buff foi aplicado (multiplicadores = 1.0)")
-	
-	print("[PLAYER] ═══ BUFF ATIVO ═══")
-	
-	# Aguarda duração do buff
-	await get_tree().create_timer(item.apply_buff_duration).timeout
-	
-	print("\n[PLAYER] ⏱️ ═══ BUFF EXPIROU ═══")
-	print("[PLAYER]    Restaurando valores originais...")
-	
-	# Restaura valores originais
-	speed = original_speed
-	if item.buff_damage_multiplier != 1.0 and current_weapon_data:
-		current_weapon_data.damage = original_damage
-	
-	print("[PLAYER]    Stats APÓS restauração:")
-	print("[PLAYER]       Velocidade: %.0f" % speed)
-	if current_weapon_data:
-		print("[PLAYER]       Dano: %.0f" % current_weapon_data.damage)
-	print("[PLAYER] ═══ BUFF REMOVIDO ═══\n")
 
 
 # ===== SISTEMA DE SAÚDE =====
