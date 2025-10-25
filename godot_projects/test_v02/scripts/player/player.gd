@@ -306,6 +306,8 @@ func _ready() -> void:
 	hotbar = get_tree().get_first_node_in_group("hotbar_ui")  # Busca hotbar no grupo
 	
 	if inventory and inventory_ui:
+		# Aguarda a UI estar pronta antes de configurar
+		await get_tree().process_frame
 		inventory_ui.setup_inventory(inventory)
 		
 		# Conecta ao sinal de uso de itens

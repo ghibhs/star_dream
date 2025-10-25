@@ -181,6 +181,11 @@ func _input(event: InputEvent) -> void:
 	if not visible:
 		return
 	
+	# ⚠️ NÃO processa teclas se inventário principal estiver aberto
+	var inventory_ui = get_tree().get_first_node_in_group("inventory_ui")
+	if inventory_ui and inventory_ui.is_open:
+		return
+	
 	# Teclas numéricas 1-9
 	for i in range(min(9, hotbar_size)):
 		var key = KEY_1 + i

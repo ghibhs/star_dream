@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-[gd_scene load_steps=70 format=3 uid="uid://bpn8urq465wwh"]
-=======
 [gd_scene load_steps=73 format=3 uid="uid://deaodpc5w6ugl"]
->>>>>>> 4ba061e1e467c070530c7e9c7470e53948e03d6e
 
 [ext_resource type="Texture2D" uid="uid://dlpljx24qqki4" path="res://art/Liron_Eye_rotation-Sheet.png" id="1_dqdjt"]
 [ext_resource type="Script" uid="uid://cx2msu62txboe" path="res://scripts/player/player.gd" id="1_yeshm"]
