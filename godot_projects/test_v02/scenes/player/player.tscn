@@ -508,16 +508,19 @@ alignment = 1
 script = ExtResource("13_gx1jg")
 inventory = NodePath("../../Inventory")
 
-[node name="ProgressBar" type="ProgressBar" parent="."]
+[node name="ManaBarUI" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="ManaBar" type="ProgressBar" parent="ManaBarUI"]
 anchors_preset = 1
-anchor_left = 0.0
+anchor_left = 1.0
 anchor_top = 0.0
-anchor_right = 0.0
+anchor_right = 1.0
 anchor_bottom = 0.0
-offset_left = 10.0
+offset_left = -210.0
 offset_top = 10.0
-offset_right = 210.0
+offset_right = -10.0
 offset_bottom = 30.0
-grow_horizontal = 1
+grow_horizontal = 0
 grow_vertical = 1
 script = ExtResource("14_ugbui")
