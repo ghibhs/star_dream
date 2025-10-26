@@ -71,16 +71,6 @@ func _input(event: InputEvent) -> void:
 		toggle_inventory()
 		get_viewport().set_input_as_handled()
 		return
-	
-	# Se inventário estiver aberto, bloqueia TODOS os inputs de movimento
-	if is_open:
-		if event.is_action_pressed("ui_left") or event.is_action_pressed("move_left") or \
-		   event.is_action_pressed("ui_right") or event.is_action_pressed("move_right") or \
-		   event.is_action_pressed("ui_up") or event.is_action_pressed("move_up") or \
-		   event.is_action_pressed("ui_down") or event.is_action_pressed("move_down") or \
-		   event.is_action_pressed("sprint") or event.is_action_pressed("dash"):
-			get_viewport().set_input_as_handled()
-			return
 
 
 ## Cria toda a estrutura da UI
