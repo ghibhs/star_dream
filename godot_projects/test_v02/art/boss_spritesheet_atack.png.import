@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c5bh2xxldtvvc"
-path="res://.godot/imported/arco4.png-0e925f4548ad9ec951ff42b1361eb255.ctex"
+uid="uid://djcopuglv0cas"
+path="res://.godot/imported/boss_spritesheet_atack.png-14913b56bbf52b6cb002d55df13b53d8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/arco4.png"
-dest_files=["res://.godot/imported/arco4.png-0e925f4548ad9ec951ff42b1361eb255.ctex"]
+source_file="res://art/boss_spritesheet_atack.png"
+dest_files=["res://.godot/imported/boss_spritesheet_atack.png-14913b56bbf52b6cb002d55df13b53d8.ctex"]
 
 [params]
 
