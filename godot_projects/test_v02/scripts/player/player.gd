@@ -66,20 +66,28 @@ func _physics_process(delta: float) -> void:
 		update_charge(delta)
 		update_charge_indicator()
 	
-	# Input de movimento
-	# Só aceita input se não estiver com mouse sobre UI
-	var mouse_over_ui = inventory_ui and inventory_ui.visible and inventory_ui.is_mouse_over_ui()
+	# ⚠️ Bloqueia movimento se inventário estiver aberto
+	var inventory_is_open = inventory_ui and inventory_ui.is_open
 	
-	if not mouse_over_ui:
-		direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	# Input de movimento (apenas se inventário estiver fechado)
+	if not inventory_is_open:
+		# Só aceita input se não estiver com mouse sobre UI
+		var mouse_over_ui = inventory_ui and inventory_ui.visible and inventory_ui.is_mouse_over_ui()
 		
-		# Sprint (segurar Shift)
-		is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO
-		
-		# Dash (pressionar Space)
-		if Input.is_action_just_pressed("dash") and can_dash and direction != Vector2.ZERO:
-			start_dash()
+		if not mouse_over_ui:
+			direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+			
+			# Sprint (segurar Shift)
+			is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO
+			
+			# Dash (pressionar Space)
+			if Input.is_action_just_pressed("dash") and can_dash and direction != Vector2.ZERO:
+				start_dash()
+		else:
+			direction = Vector2.ZERO
+			is_sprinting = false
 	else:
+		# Inventário aberto: zera movimento
 		direction = Vector2.ZERO
 		is_sprinting = false
 	
