@@ -788,7 +788,8 @@ func create_charge_indicator() -> void:
 	charge_indicator = sprite
 	
 	# === 🎨 PARTÍCULAS DE ENERGIA ===
-	create_charge_particles()
+	# DESABILITADO TEMPORARIAMENTE - Causava travamentos
+	# create_charge_particles()
 	
 	# === 🎵 SONS DE CARREGAMENTO ===
 	create_charge_audio()
@@ -900,14 +901,15 @@ func end_charge() -> void:
 		charge_indicator = null
 	
 	# Remove partículas
-	if is_instance_valid(charge_particles):
-		charge_particles.emitting = false
-		# Remove após as partículas terminarem
-		get_tree().create_timer(2.0).timeout.connect(func():
-			if is_instance_valid(charge_particles):
-				charge_particles.queue_free()
-		)
-		charge_particles = null
+	# DESABILITADO TEMPORARIAMENTE - Partículas não estão sendo criadas
+	# if is_instance_valid(charge_particles):
+	# 	charge_particles.emitting = false
+	# 	# Remove após as partículas terminarem
+	# 	get_tree().create_timer(2.0).timeout.connect(func():
+	# 		if is_instance_valid(charge_particles):
+	# 			charge_particles.queue_free()
+	# 	)
+	# 	charge_particles = null
 	
 	# Para o som de carregamento
 	if is_instance_valid(charge_audio):
@@ -950,12 +952,13 @@ func update_charge_indicator() -> void:
 		has_played_max_sound = true
 	
 	# === 🎨 PARTÍCULAS AUMENTAM COM PROGRESSO ===
-	if charge_particles and charge_particles.process_material:
-		charge_particles.amount = int(lerp(10, 50, progress))
-		var mat = charge_particles.process_material as ParticleProcessMaterial
-		if mat:
-			mat.initial_velocity_min = lerp(50, 150, progress)
-			mat.initial_velocity_max = lerp(100, 200, progress)
+	# DESABILITADO TEMPORARIAMENTE - Causava travamentos
+	# if charge_particles and charge_particles.process_material:
+	# 	charge_particles.amount = int(lerp(10, 50, progress))
+	# 	var mat = charge_particles.process_material as ParticleProcessMaterial
+	# 	if mat:
+	# 		mat.initial_velocity_min = lerp(50, 150, progress)
+	# 		mat.initial_velocity_max = lerp(100, 200, progress)
 	
 	# Adiciona brilho quando carga está completa
 	if progress >= 1.0:
