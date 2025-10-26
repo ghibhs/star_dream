@@ -64,6 +64,83 @@ func _ready() -> void:
 		setup_inventory(inventory)
 
 
+## Navegação por teclado no inventário
+func _input(event: InputEvent) -> void:
+	# Toggle inventário
+	if event.is_action_pressed("inventory"):
+		toggle_inventory()
+		get_viewport().set_input_as_handled()
+		return
+	
+	# Só processa navegação se o inventário estiver aberto
+	if not is_open:
+		return
+	
+	# Navegação com WASD ou setas
+	if event.is_action_pressed("ui_left") or event.is_action_pressed("move_left"):
+		navigate_inventory(-1, 0)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_right") or event.is_action_pressed("move_right"):
+		navigate_inventory(1, 0)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_up") or event.is_action_pressed("move_up"):
+		navigate_inventory(0, -1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_down") or event.is_action_pressed("move_down"):
+		navigate_inventory(0, 1)
+		get_viewport().set_input_as_handled()
+	# Enter ou Espaço para usar item
+	elif event.is_action_pressed("ui_accept"):
+		if selected_slot_index >= 0 and selected_slot_index < slot_uis.size():
+			_on_slot_double_clicked(selected_slot_index)
+		get_viewport().set_input_as_handled()
+
+
+## Navega entre os slots do inventário
+func navigate_inventory(dx: int, dy: int) -> void:
+	# Se nenhum slot está selecionado, seleciona o primeiro
+	if selected_slot_index < 0:
+		selected_slot_index = 0
+		highlight_selected_slot()
+		update_action_buttons()
+		return
+	
+	# Calcula posição atual em grid
+	var current_row = int(selected_slot_index / grid_columns)
+	var current_col = selected_slot_index % grid_columns
+	
+	# Nova posição
+	var new_col = current_col + dx
+	var new_row = current_row + dy
+	
+	# Calcula total de linhas
+	var total_rows = ceili(float(slot_uis.size()) / float(grid_columns))
+	
+	# Wrap horizontal
+	if new_col < 0:
+		new_col = grid_columns - 1
+		new_row -= 1
+	elif new_col >= grid_columns:
+		new_col = 0
+		new_row += 1
+	
+	# Wrap vertical
+	if new_row < 0:
+		new_row = total_rows - 1
+	elif new_row >= total_rows:
+		new_row = 0
+	
+	# Calcula novo índice
+	var new_index = new_row * grid_columns + new_col
+	
+	# Verifica se o índice é válido
+	if new_index >= 0 and new_index < slot_uis.size():
+		selected_slot_index = new_index
+		highlight_selected_slot()
+		update_action_buttons()
+		print("[INVENTORY UI] 🎮 Navegado para slot %d" % selected_slot_index)
+
+
 ## Cria toda a estrutura da UI
 func create_ui() -> void:
 	print("[INVENTORY UI] 🎨 Criando UI do inventário...")
@@ -647,15 +724,6 @@ func update_action_buttons() -> void:
 	
 	# Dropar: sempre disponível se tem item
 	drop_button.disabled = false
-
-
-## Input handler
-func _input(event: InputEvent) -> void:
-	# Toggle inventário
-	if event.is_action_pressed("inventory"):
-		toggle_inventory()
-		get_viewport().set_input_as_handled()
-		return
 
 
 ## Verifica se o mouse está sobre a UI do inventário
