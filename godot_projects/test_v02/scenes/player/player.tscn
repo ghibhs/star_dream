@@ -1,4 +1,4 @@
-[gd_scene load_steps=73 format=3 uid="uid://deaodpc5w6ugl"]
+[gd_scene load_steps=74 format=3 uid="uid://deaodpc5w6ugl"]
 
 [ext_resource type="Texture2D" uid="uid://dlpljx24qqki4" path="res://art/Liron_Eye_rotation-Sheet.png" id="1_dqdjt"]
 [ext_resource type="Script" uid="uid://cx2msu62txboe" path="res://scripts/player/player.gd" id="1_yeshm"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://hsiodn7wj2tb" path="res://scripts/inventory/inventory.gd" id="11_fm80t"]
 [ext_resource type="Script" uid="uid://bpcl8hotuoiwb" path="res://scripts/ui/inventory_ui.gd" id="12_gx1jg"]
 [ext_resource type="Script" uid="uid://fteo3svh6xql" path="res://scripts/ui/hotbar_ui.gd" id="13_gx1jg"]
+[ext_resource type="Script" uid="uid://ci3m0csvsqux3" path="res://scripts/ui/mana_bar.gd" id="14_ugbui"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_8boi7"]
 radius = 16.0
@@ -506,4 +507,17 @@ grow_vertical = 0
 alignment = 1
 script = ExtResource("13_gx1jg")
 inventory = NodePath("../../Inventory")
-hotbar_size = 9
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+anchors_preset = 1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 210.0
+offset_bottom = 30.0
+grow_horizontal = 1
+grow_vertical = 1
+script = ExtResource("14_ugbui")
