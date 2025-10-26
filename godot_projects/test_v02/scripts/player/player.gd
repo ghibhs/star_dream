@@ -1,6 +1,14 @@
 extends CharacterBody2D
 
 # -----------------------------
+# SINAIS
+# -----------------------------
+signal health_changed(new_health: float)
+signal max_health_changed(new_max_health: float)
+signal mana_changed(new_mana: float)
+signal max_mana_changed(new_max_mana: float)
+
+# -----------------------------
 # MOVIMENTO / ANIMAÇÃO DO PLAYER
 # -----------------------------
 @export var speed: float = 150.0
@@ -27,6 +35,13 @@ var current_health: float
 var is_dead: bool = false
 
 # -----------------------------
+# SISTEMA DE MANA DO PLAYER
+# -----------------------------
+@export var max_mana: float = 100.0
+@export var mana_regen_rate: float = 5.0  # Mana por segundo
+var current_mana: float
+
+# -----------------------------
 # SISTEMA DE KNOCKBACK (EMPURRÃO)
 # -----------------------------
 @export var knockback_force: float = 300.0  # Força do empurrão
@@ -48,6 +63,9 @@ func _physics_process(delta: float) -> void:
 	# Atualiza timers
 	update_dash_timers(delta)
 	update_knockback_timer(delta)
+	
+	# Regenera mana
+	regenerate_mana(delta)
 	
 	# === SISTEMA DE ATAQUE COM CLIQUE/SEGURAR ===
 	# Se o botão de ataque está sendo segurado, conta o tempo
@@ -284,6 +302,14 @@ func _ready() -> void:
 	# Inicializa saúde
 	current_health = max_health
 	print("[PLAYER] Saúde inicializada: %.1f/%.1f" % [current_health, max_health])
+	emit_signal("health_changed", current_health)
+	emit_signal("max_health_changed", max_health)
+	
+	# Inicializa mana
+	current_mana = max_mana
+	print("[PLAYER] Mana inicializada: %.1f/%.1f" % [current_mana, max_mana])
+	emit_signal("mana_changed", current_mana)
+	emit_signal("max_mana_changed", max_mana)
 	
 	# Inicializa inventário (se existir na cena)
 	inventory = get_node_or_null("Inventory")
@@ -1398,3 +1424,47 @@ func apply_consumable_buff(item: ItemData) -> void:
 	if current_weapon_data:
 		print("[PLAYER]       Dano: %.0f" % current_weapon_data.damage)
 	print("[PLAYER] ═══ BUFF REMOVIDO ═══\n")
+
+
+# ═════════════════════════════════════════════════════════════
+# SISTEMA DE MANA
+# ═════════════════════════════════════════════════════════════
+
+## Regenera mana ao longo do tempo
+func regenerate_mana(delta: float) -> void:
+	if current_mana < max_mana:
+		current_mana = min(current_mana + mana_regen_rate * delta, max_mana)
+		emit_signal("mana_changed", current_mana)
+
+
+## Usa mana (retorna true se teve mana suficiente)
+func use_mana(amount: float) -> bool:
+	if current_mana >= amount:
+		current_mana -= amount
+		emit_signal("mana_changed", current_mana)
+		print("[PLAYER] 🔮 Mana usada: %.1f (Restante: %.1f/%.1f)" % [amount, current_mana, max_mana])
+		return true
+	else:
+		print("[PLAYER] ⚠️ Mana insuficiente! (Atual: %.1f / Necessário: %.1f)" % [current_mana, amount])
+		return false
+
+
+## Define mana atual
+func set_mana(amount: float) -> void:
+	current_mana = clamp(amount, 0, max_mana)
+	emit_signal("mana_changed", current_mana)
+
+
+## Define mana máxima
+func set_max_mana(amount: float) -> void:
+	max_mana = amount
+	current_mana = min(current_mana, max_mana)
+	emit_signal("max_mana_changed", max_mana)
+	emit_signal("mana_changed", current_mana)
+
+
+## Restaura mana completamente
+func restore_mana() -> void:
+	current_mana = max_mana
+	emit_signal("mana_changed", current_mana)
+	print("[PLAYER] ✨ Mana restaurada completamente!")

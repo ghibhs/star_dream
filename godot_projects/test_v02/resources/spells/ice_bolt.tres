@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="SpellData" load_steps=2 format=3 uid="uid://c3m8h9q5nf8ql"]
+
+[ext_resource type="Script" path="res://resources/classes/SpellData.gd" id="1_icebolt"]
+
+[resource]
+script = ExtResource("1_icebolt")
+spell_id = "ice_bolt"
+spell_name = "Raio Gélido"
+description = "Dispara um raio de gelo que causa 25 de dano e reduz a velocidade do inimigo"
+spell_type = 0
+element = 2
+mana_cost = 12.0
+cast_time = 0.4
+cooldown = 1.2
+damage = 25.0
+spell_range = 350.0
+projectile_speed = 450.0
+projectile_scale = Vector2(1.2, 1.2)
+pierce = false
+homing = false
+area_radius = 30.0
+area_duration = 3.0
+damage_over_time = false
+tick_interval = 0.5
+duration = 3.0
+speed_modifier = 0.5
+damage_modifier = 1.0
+defense_modifier = 1.0
+heal_amount = 0.0
+heal_over_time = false
+heal_duration = 0.0
+spell_color = Color(0.2, 0.7, 1, 1)
+can_be_interrupted = true
+requires_target = false
+max_targets = 1
+knockback_force = 50.0
