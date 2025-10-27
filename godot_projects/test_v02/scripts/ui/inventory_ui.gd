@@ -771,7 +771,7 @@ func _on_slot_drag_ended(target_slot_index: int) -> void:
 						return
 			
 			# Caso contrário, troca os itens
-			inventory.swap_items(dragging_from_slot, target_slot_index)
+			inventory.swap_slots(dragging_from_slot, target_slot_index)
 			print("[INVENTORY UI] 🔄 Items trocados entre slots %d e %d" % [dragging_from_slot, target_slot_index])
 	
 	dragging_from_slot = -1
