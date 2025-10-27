@@ -42,6 +42,13 @@ var is_dead: bool = false
 var current_mana: float
 
 # -----------------------------
+# SISTEMA DE MAGIAS
+# -----------------------------
+var available_spells: Array[SpellData] = []  # SpellData resources
+var current_spell_index: int = 0
+var spell_selector_ui: Control = null  # Referência ao UI de seleção
+
+# -----------------------------
 # SISTEMA DE KNOCKBACK (EMPURRÃO)
 # -----------------------------
 @export var knockback_force: float = 300.0  # Força do empurrão
@@ -66,6 +73,19 @@ func _physics_process(delta: float) -> void:
 	
 	# Regenera mana
 	regenerate_mana(delta)
+	
+	# === SISTEMA DE SELEÇÃO DE MAGIAS ===
+	# Q - Magia anterior
+	if Input.is_action_just_pressed("spell_previous"):
+		select_previous_spell()
+	
+	# E - Próxima magia
+	if Input.is_action_just_pressed("spell_next"):
+		select_next_spell()
+	
+	# Botão direito do mouse - Lançar magia
+	if Input.is_action_just_pressed("cast_spell"):
+		cast_current_spell()
 	
 	# === SISTEMA DE ATAQUE COM CLIQUE/SEGURAR ===
 	# Se o botão de ataque está sendo segurado, conta o tempo
@@ -307,9 +327,17 @@ func _ready() -> void:
 	
 	# Inicializa mana
 	current_mana = max_mana
-	print("[PLAYER] Mana inicializada: %.1f/%.1f" % [current_mana, max_mana])
+	print("[PLAYER] 🔮 ═══ INICIALIZANDO MANA ═══")
+	print("[PLAYER]    Max Mana: %.1f" % max_mana)
+	print("[PLAYER]    Current Mana: %.1f" % current_mana)
+	print("[PLAYER]    Emitindo sinal mana_changed...")
 	emit_signal("mana_changed", current_mana)
+	print("[PLAYER]    Emitindo sinal max_mana_changed...")
 	emit_signal("max_mana_changed", max_mana)
+	print("[PLAYER] ═══════════════════════════════\n")
+	
+	# Inicializa sistema de magias
+	setup_spell_system()
 	
 	# Inicializa inventário (se existir na cena)
 	inventory = get_node_or_null("Inventory")
@@ -1468,3 +1496,234 @@ func restore_mana() -> void:
 	current_mana = max_mana
 	emit_signal("mana_changed", current_mana)
 	print("[PLAYER] ✨ Mana restaurada completamente!")
+
+
+# ========================================
+# SISTEMA DE MAGIAS
+# ========================================
+
+func setup_spell_system() -> void:
+	"""Inicializa o sistema de magias e carrega magias disponíveis"""
+	print("\n[PLAYER] 🔮 ═══ INICIANDO SISTEMA DE MAGIAS ═══")
+	
+	# Carrega as magias disponíveis
+	load_available_spells()
+	
+	# Busca o spell selector UI (pode estar dentro de um CanvasLayer)
+	spell_selector_ui = get_node_or_null("SpellSelectorUI")
+	
+	# Se não encontrou diretamente, tenta dentro do CanvasLayer
+	if not spell_selector_ui:
+		spell_selector_ui = get_node_or_null("SpellSelectorCanvasLayer/SpellSelectorUI")
+	
+	print("[PLAYER]    Procurando SpellSelectorUI...")
+	
+	if spell_selector_ui:
+		print("[PLAYER]    ✅ SpellSelectorUI encontrado em: ", spell_selector_ui.get_path())
+		
+		# Configura as magias no UI
+		if not available_spells.is_empty():
+			spell_selector_ui.setup_spells(available_spells)
+			spell_selector_ui.spell_selected.connect(_on_spell_selected)
+			print("[PLAYER] ✅ Spell Selector UI configurado com %d magias" % available_spells.size())
+		else:
+			print("[PLAYER] ⚠️ Nenhuma magia disponível para configurar")
+	else:
+		print("[PLAYER] ❌ SpellSelectorUI NÃO ENCONTRADO!")
+		print("[PLAYER]    Verifique se o nó existe na cena em:")
+		print("[PLAYER]    - Player/SpellSelectorUI")
+		print("[PLAYER]    - Player/SpellSelectorCanvasLayer/SpellSelectorUI")
+	
+	print("[PLAYER] ═══════════════════════════════════\n")
+
+
+func load_available_spells() -> void:
+	"""Carrega as magias disponíveis dos recursos"""
+	available_spells.clear()
+	
+	# Carrega as magias de exemplo
+	var fireball = load("res://resources/spells/fireball.tres")
+	var ice_bolt = load("res://resources/spells/ice_bolt.tres")
+	var heal = load("res://resources/spells/heal.tres")
+	var speed_boost = load("res://resources/spells/speed_boost.tres")
+	
+	if fireball:
+		available_spells.append(fireball)
+		print("[PLAYER]    🔥 Fireball carregada")
+	
+	if ice_bolt:
+		available_spells.append(ice_bolt)
+		print("[PLAYER]    ❄️ Ice Bolt carregada")
+	
+	if heal:
+		available_spells.append(heal)
+		print("[PLAYER]    💚 Heal carregada")
+	
+	if speed_boost:
+		available_spells.append(speed_boost)
+		print("[PLAYER]    ⚡ Speed Boost carregada")
+	
+	print("[PLAYER] 📚 Total de magias carregadas: %d" % available_spells.size())
+
+
+func cast_current_spell() -> void:
+	"""Lança a magia atualmente selecionada"""
+	if available_spells.is_empty():
+		print("[PLAYER] ⚠️ Nenhuma magia disponível!")
+		return
+	
+	var spell = available_spells[current_spell_index]
+	
+	# Verifica se tem mana suficiente
+	if current_mana < spell.mana_cost:
+		print("[PLAYER] ❌ Mana insuficiente para lançar %s! (Necessário: %.1f, Atual: %.1f)" % [spell.spell_name, spell.mana_cost, current_mana])
+		return
+	
+	# Consome mana
+	print("[PLAYER] 🔮 ANTES de consumir - Mana: %.1f" % current_mana)
+	current_mana -= spell.mana_cost
+	print("[PLAYER] 🔮 DEPOIS de consumir - Mana: %.1f" % current_mana)
+	print("[PLAYER] 🔮 Emitindo sinal mana_changed com valor: %.1f" % current_mana)
+	emit_signal("mana_changed", current_mana)
+	print("[PLAYER] 🔮 Sinal emitido!")
+	
+	print("\n[PLAYER] 🔮 ═══ LANÇANDO MAGIA ═══")
+	print("[PLAYER]    Nome: %s" % spell.spell_name)
+	print("[PLAYER]    Custo: %.1f mana (Restante: %.1f)" % [spell.mana_cost, current_mana])
+	print("[PLAYER]    Tipo: %s" % get_spell_type_name(spell.spell_type))
+	
+	# Lança a magia baseado no tipo
+	match spell.spell_type:
+		0:  # PROJECTILE
+			cast_projectile_spell(spell)
+		1:  # AREA
+			cast_area_spell(spell)
+		2:  # BUFF
+			cast_buff_spell(spell)
+		4:  # HEAL
+			cast_heal_spell(spell)
+	
+	print("[PLAYER] ═══════════════════════════════════\n")
+
+
+func cast_projectile_spell(spell: SpellData) -> void:
+	"""Lança uma magia de projétil"""
+	print("[PLAYER]    🔫 Lançando projétil mágico!")
+	print("[PLAYER]    Dano: %.1f" % spell.damage)
+	print("[PLAYER]    Velocidade: %.1f" % spell.projectile_speed)
+	
+	# Carrega a cena do projétil mágico
+	var projectile_scene = preload("res://scenes/projectiles/magic_projectile.tscn")
+	var projectile = projectile_scene.instantiate()
+	
+	# Adiciona ao mundo
+	get_parent().add_child(projectile)
+	
+	# Pega a direção do mouse
+	var mouse_pos = get_global_mouse_position()
+	var spell_direction = (mouse_pos - global_position).normalized()
+	
+	# Configura o projétil
+	projectile.setup(spell, spell_direction, global_position)
+	
+	print("[PLAYER]    ✅ Projétil criado e lançado!")
+
+
+func cast_area_spell(spell: SpellData) -> void:
+	"""Lança uma magia de área"""
+	print("[PLAYER]    💥 Lançando magia de área!")
+	print("[PLAYER]    Dano: %.1f" % spell.damage)
+	print("[PLAYER]    Raio: %.1f" % spell.area_radius)
+	
+	# Carrega a cena da área mágica
+	var area_scene = preload("res://scenes/spells/magic_area.tscn")
+	var area = area_scene.instantiate()
+	
+	# Adiciona ao mundo
+	get_parent().add_child(area)
+	
+	# Posiciona na posição do mouse ou do jogador
+	var spawn_pos = get_global_mouse_position() if spell.requires_target else global_position
+	
+	# Configura a área
+	area.setup(spell, spawn_pos)
+	
+	print("[PLAYER]    ✅ Área mágica criada!")
+
+
+func cast_buff_spell(spell: SpellData) -> void:
+	"""Lança uma magia de buff"""
+	print("[PLAYER]    ✨ Aplicando buff!")
+	print("[PLAYER]    Duração: %.1fs" % spell.duration)
+	print("[PLAYER]    Speed: %.2fx | Damage: %.2fx | Defense: %.2fx" % [spell.speed_modifier, spell.damage_modifier, spell.defense_modifier])
+	
+	# Salva os valores originais se ainda não estão salvos
+	if not has_meta("original_speed"):
+		set_meta("original_speed", speed)
+	if not has_meta("original_damage_multiplier"):
+		set_meta("original_damage_multiplier", 1.0)
+	
+	# Aplica os modificadores
+	speed *= spell.speed_modifier
+	var damage_multiplier = get_meta("original_damage_multiplier", 1.0) * spell.damage_modifier
+	set_meta("current_damage_multiplier", damage_multiplier)
+	
+	print("[PLAYER]    Nova velocidade: %.1f" % speed)
+	
+	# Remove o buff após a duração
+	await get_tree().create_timer(spell.duration).timeout
+	
+	# Restaura valores originais
+	speed = get_meta("original_speed")
+	set_meta("current_damage_multiplier", get_meta("original_damage_multiplier"))
+	
+	print("[PLAYER]    ⏰ Buff expirou! Valores restaurados.")
+
+
+func cast_heal_spell(spell: SpellData) -> void:
+	"""Lança uma magia de cura"""
+	var heal_amount = spell.heal_amount
+	var old_health = current_health
+	current_health = min(current_health + heal_amount, max_health)
+	var actual_heal = current_health - old_health
+	emit_signal("health_changed", current_health)
+	
+	print("[PLAYER]    💚 Cura aplicada: +%.1f HP" % actual_heal)
+	print("[PLAYER]    HP: %.1f/%.1f" % [current_health, max_health])
+	
+	# TODO: Adicionar efeito visual de cura
+	# if spell.cast_particle:
+	#     spawn_heal_effect()
+
+
+
+func get_spell_type_name(type: int) -> String:
+	"""Retorna o nome do tipo de magia"""
+	match type:
+		0: return "PROJECTILE"
+		1: return "AREA"
+		2: return "BUFF"
+		3: return "HEAL"
+		_: return "UNKNOWN"
+
+
+func select_next_spell() -> void:
+	"""Seleciona a próxima magia (tecla E)"""
+	if spell_selector_ui:
+		spell_selector_ui.select_next_spell()
+
+
+func select_previous_spell() -> void:
+	"""Seleciona a magia anterior (tecla Q)"""
+	if spell_selector_ui:
+		spell_selector_ui.select_previous_spell()
+
+
+func _on_spell_selected(spell: Resource) -> void:
+	"""Callback quando uma magia é selecionada"""
+	for i in range(available_spells.size()):
+		if available_spells[i] == spell:
+			current_spell_index = i
+			break
+	
+	print("[PLAYER] 🎯 Magia selecionada: %s" % spell.spell_name)

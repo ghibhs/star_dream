@@ -1,4 +1,4 @@
-[gd_scene load_steps=74 format=3 uid="uid://deaodpc5w6ugl"]
+[gd_scene load_steps=75 format=3 uid="uid://deaodpc5w6ugl"]
 
 [ext_resource type="Texture2D" uid="uid://dlpljx24qqki4" path="res://art/Liron_Eye_rotation-Sheet.png" id="1_dqdjt"]
 [ext_resource type="Script" uid="uid://cx2msu62txboe" path="res://scripts/player/player.gd" id="1_yeshm"]
@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://bpcl8hotuoiwb" path="res://scripts/ui/inventory_ui.gd" id="12_gx1jg"]
 [ext_resource type="Script" uid="uid://fteo3svh6xql" path="res://scripts/ui/hotbar_ui.gd" id="13_gx1jg"]
 [ext_resource type="Script" uid="uid://ci3m0csvsqux3" path="res://scripts/ui/mana_bar.gd" id="14_ugbui"]
+[ext_resource type="Script" uid="uid://ck8tsucl6i0g6" path="res://scripts/ui/spell_selector_ui.gd" id="15_fcs02"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_8boi7"]
 radius = 16.0
@@ -514,13 +515,23 @@ layer = 100
 [node name="ManaBar" type="ProgressBar" parent="ManaBarUI"]
 anchors_preset = 1
 anchor_left = 1.0
-anchor_top = 0.0
 anchor_right = 1.0
-anchor_bottom = 0.0
 offset_left = -210.0
 offset_top = 10.0
 offset_right = -10.0
 offset_bottom = 30.0
 grow_horizontal = 0
-grow_vertical = 1
 script = ExtResource("14_ugbui")
+
+[node name="SpellSelectorCanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="SpellSelectorUI" type="HBoxContainer" parent="SpellSelectorCanvasLayer"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -110.0
+offset_right = 410.0
+offset_bottom = -10.0
+grow_vertical = 0
+script = ExtResource("15_fcs02")
