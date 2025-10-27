@@ -642,8 +642,9 @@ func close_inventory() -> void:
 	is_open = false
 	hide()
 	
-	# Remove todos os highlights ao fechar
-	refresh_highlight()  # Remove highlight dos slots
+	# Remove todos os highlights ao fechar (com verificações)
+	if slot_uis.size() > 0:
+		refresh_highlight()  # Remove highlight dos slots
 	remove_button_highlights()  # Remove highlight dos botões
 	remove_filter_highlights()  # Remove highlight dos filtros
 	
@@ -658,6 +659,7 @@ func close_inventory() -> void:
 
 ## Toggle do inventário
 func toggle_inventory() -> void:
+	print("[INVENTORY UI] 🔄 Toggle inventário chamado - is_open atual: %s" % is_open)
 	if is_open:
 		close_inventory()
 	else:
