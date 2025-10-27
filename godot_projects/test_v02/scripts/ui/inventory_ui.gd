@@ -16,10 +16,15 @@ var hotbar_ui: HotbarUI = null  # Referência ao hotbar para drag and drop
 var dragging_from_slot: int = -1
 var dragging_to_hotbar: bool = false
 
-# Keyboard navigation - NAVEGAÇÃO UNIFICADA (slots + botões + filtros)
+# Keyboard navigation - NAVEGAÇÃO UNIFICADA ESPACIAL (camadas verticais)
 var navigation_enabled: bool = true
 var navigable_elements: Array = []  # Lista unificada: slots, botões, filtros
 var current_nav_index: int = 0  # Índice atual na lista unificada
+
+# Camadas de navegação (organização espacial vertical)
+var filter_indices: Array = []   # Índices dos filtros na lista unificada
+var slot_indices: Array = []     # Índices dos slots na lista unificada
+var button_indices: Array = []   # Índices dos botões na lista unificada
 
 ## Helper: Retorna o índice do slot atualmente selecionado (ou -1)
 func get_selected_slot_index() -> int:
@@ -165,7 +170,10 @@ func build_navigable_list() -> void:
 	print("[INVENTORY UI]    - Filtros: %d" % filter_buttons_order.size())
 
 
-## Navegação unificada - funciona para tudo
+## Navegação unificada - sistema de CAMADAS VERTICAIS
+## Camadas: Filtros (topo) → Slots (meio) → Botões (baixo)
+## Setas horizontais (←→): navegam DENTRO da camada atual
+## Setas verticais (↑↓): mudam de camada (só sai dos slots pelas bordas)
 func navigate_unified(direction: int, is_vertical: bool) -> void:
 	if navigable_elements.is_empty():
 		build_navigable_list()
@@ -175,42 +183,146 @@ func navigate_unified(direction: int, is_vertical: bool) -> void:
 	# Remove highlight do elemento atual
 	remove_all_highlights()
 	
-	# Se navegação vertical E estamos em slots, usa navegação em grid
 	var current_elem = navigable_elements[current_nav_index]
-	if is_vertical and current_elem.type == "slot":
-		# Navegação vertical em grid (colunas)
-		var slot_index = current_elem.index
-		var new_slot_index = slot_index + (direction * grid_columns)
-		
-		# Se ainda está dentro dos slots, mantém em slots
-		if new_slot_index >= 0 and new_slot_index < slot_uis.size():
-			# Encontra o índice na lista unificada
-			for i in range(navigable_elements.size()):
-				if navigable_elements[i].type == "slot" and navigable_elements[i].index == new_slot_index:
-					current_nav_index = i
-					break
-		else:
-			# Saiu dos slots, vai para próxima categoria (botões ou filtros)
-			if direction > 0:  # Para baixo
-				# Procura primeiro botão ou filtro
-				for i in range(navigable_elements.size()):
-					if navigable_elements[i].type != "slot":
-						current_nav_index = i
-						break
-			else:  # Para cima
-				# Procura último slot
-				for i in range(navigable_elements.size() - 1, -1, -1):
-					if navigable_elements[i].type == "slot":
-						current_nav_index = i
-						break
+	
+	# ═══ NAVEGAÇÃO VERTICAL (↑↓) - Muda de camada ═══
+	if is_vertical:
+		match current_elem.type:
+			"filter":
+				# Está nos FILTROS (topo)
+				if direction > 0:  # ↓ Para baixo: vai para SLOTS (primeira linha)
+					_go_to_first_slot()
+				else:  # ↑ Para cima: fica nos filtros (wrap horizontal)
+					_navigate_within_layer("filter", direction)
+			
+			"slot":
+				# Está nos SLOTS (meio) - navegação em GRID
+				var slot_index = current_elem.index
+				var current_col = slot_index % grid_columns
+				var new_slot_index = slot_index + (direction * grid_columns)
+				
+				# Verifica se vai sair do grid
+				if new_slot_index >= 0 and new_slot_index < slot_uis.size():
+					# Ainda dentro dos slots - navega normalmente
+					_select_slot_by_index(new_slot_index)
+				else:
+					# Saiu do grid - muda de camada
+					if direction > 0:  # ↓ Para baixo: vai para BOTÕES
+						_go_to_first_button()
+					else:  # ↑ Para cima: vai para FILTROS (mesma coluna se possível)
+						_go_to_filter_at_column(current_col)
+			
+			"button":
+				# Está nos BOTÕES (baixo)
+				if direction > 0:  # ↓ Para baixo: fica nos botões (wrap horizontal)
+					_navigate_within_layer("button", direction)
+				else:  # ↑ Para cima: vai para SLOTS (última linha)
+					_go_to_last_slot_row()
+	
+	# ═══ NAVEGAÇÃO HORIZONTAL (←→) - Dentro da camada atual ═══
 	else:
-		# Navegação horizontal ou não-slots (linear simples)
-		current_nav_index = (current_nav_index + direction) % navigable_elements.size()
-		if current_nav_index < 0:
-			current_nav_index = navigable_elements.size() + current_nav_index
+		match current_elem.type:
+			"filter":
+				# Navega entre filtros horizontalmente
+				_navigate_within_layer("filter", direction)
+			
+			"slot":
+				# Navega entre slots horizontalmente (mesma linha)
+				var slot_index = current_elem.index
+				var current_row = slot_index / grid_columns
+				var current_col = slot_index % grid_columns
+				var new_col = (current_col + direction) % grid_columns
+				if new_col < 0:
+					new_col = grid_columns + new_col
+				
+				var new_slot_index = (current_row * grid_columns) + new_col
+				if new_slot_index < slot_uis.size():
+					_select_slot_by_index(new_slot_index)
+			
+			"button":
+				# Navega entre botões horizontalmente
+				_navigate_within_layer("button", direction)
 	
 	# Aplica highlight no novo elemento
 	highlight_current_element()
+
+
+## Helper: Navega dentro da mesma camada (filtros ou botões)
+func _navigate_within_layer(layer_type: String, direction: int) -> void:
+	var layer_elements = []
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == layer_type:
+			layer_elements.append(i)
+	
+	if layer_elements.is_empty():
+		return
+	
+	# Encontra posição atual na camada
+	var current_pos = layer_elements.find(current_nav_index)
+	if current_pos == -1:
+		current_nav_index = layer_elements[0]
+		return
+	
+	# Navega com wrap
+	var new_pos = (current_pos + direction) % layer_elements.size()
+	if new_pos < 0:
+		new_pos = layer_elements.size() + new_pos
+	current_nav_index = layer_elements[new_pos]
+
+
+## Helper: Vai para o primeiro slot
+func _go_to_first_slot() -> void:
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "slot" and navigable_elements[i].index == 0:
+			current_nav_index = i
+			return
+
+
+## Helper: Vai para a última linha de slots
+func _go_to_last_slot_row() -> void:
+	var last_row_start: int = int(floor(float(slot_uis.size() - 1) / float(grid_columns))) * grid_columns
+	_select_slot_by_index(last_row_start)
+
+
+## Helper: Vai para o primeiro botão
+func _go_to_first_button() -> void:
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "button":
+			current_nav_index = i
+			return
+	# Se não tem botões, vai para primeiro filtro
+	_go_to_first_filter()
+
+
+## Helper: Vai para filtro na coluna especificada (ou primeiro)
+func _go_to_filter_at_column(column: int) -> void:
+	var available_filters = []
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "filter":
+			available_filters.append(i)
+	
+	if available_filters.is_empty():
+		return
+	
+	# Tenta manter mesma coluna, senão usa primeira
+	var target_index = min(column, available_filters.size() - 1)
+	current_nav_index = available_filters[target_index]
+
+
+## Helper: Vai para o primeiro filtro
+func _go_to_first_filter() -> void:
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "filter":
+			current_nav_index = i
+			return
+
+
+## Helper: Seleciona slot por índice (atualiza current_nav_index)
+func _select_slot_by_index(slot_index: int) -> void:
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "slot" and navigable_elements[i].index == slot_index:
+			current_nav_index = i
+			return
 
 
 ## Ativa o elemento atualmente selecionado
