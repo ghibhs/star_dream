@@ -26,14 +26,14 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	# Navegação com SETAS (inventory_up/down)
-	if event.is_action_pressed("inventory_up"):
+	# Navegação com SETAS (navigate_up/down) - universal
+	if event.is_action_pressed("navigate_up"):
 		navigate(-1)
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("inventory_down"):
+	elif event.is_action_pressed("navigate_down"):
 		navigate(1)
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("inventory_select") or event.is_action_pressed("ui_accept"):
+	elif event.is_action_pressed("navigate_select") or event.is_action_pressed("ui_accept"):
 		activate_current_button()
 		get_viewport().set_input_as_handled()
 

@@ -79,49 +79,49 @@ func _input(event: InputEvent) -> void:
 	
 	# Navegação por teclado (apenas quando inventário aberto)
 	if is_open and navigation_enabled:
-		# Tab para mudar entre modos de foco (usando inventory_cycle)
-		if event.is_action_pressed("inventory_cycle"):
+		# Tab para mudar entre modos de foco
+		if event.is_action_pressed("navigate_cycle"):
 			cycle_focus_mode()
 			get_viewport().set_input_as_handled()
 			return
 		
 		# Navegação baseada no modo de foco
 		if focus_mode == "slots":
-			if event.is_action_pressed("inventory_left"):
+			if event.is_action_pressed("navigate_left"):
 				navigate_slots(-1)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_right"):
+			elif event.is_action_pressed("navigate_right"):
 				navigate_slots(1)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_up"):
+			elif event.is_action_pressed("navigate_up"):
 				navigate_slots(-grid_columns)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_down"):
+			elif event.is_action_pressed("navigate_down"):
 				navigate_slots(grid_columns)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_select"):
+			elif event.is_action_pressed("navigate_select"):
 				select_current_slot()
 				get_viewport().set_input_as_handled()
 		
 		elif focus_mode == "buttons":
-			if event.is_action_pressed("inventory_left"):
+			if event.is_action_pressed("navigate_left"):
 				navigate_buttons(-1)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_right"):
+			elif event.is_action_pressed("navigate_right"):
 				navigate_buttons(1)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_select"):
+			elif event.is_action_pressed("navigate_select"):
 				activate_current_button()
 				get_viewport().set_input_as_handled()
 		
 		elif focus_mode == "filters":
-			if event.is_action_pressed("inventory_left"):
+			if event.is_action_pressed("navigate_left"):
 				navigate_filters(-1)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_right"):
+			elif event.is_action_pressed("navigate_right"):
 				navigate_filters(1)
 				get_viewport().set_input_as_handled()
-			elif event.is_action_pressed("inventory_select"):
+			elif event.is_action_pressed("navigate_select"):
 				activate_current_filter()
 				get_viewport().set_input_as_handled()
 		
