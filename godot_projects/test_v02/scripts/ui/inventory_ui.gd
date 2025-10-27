@@ -77,13 +77,6 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	
-	# Bloqueia inputs de movimento do player quando inventário está aberto
-	if is_open:
-		if event.is_action("ui_left") or event.is_action("ui_right") or \
-		   event.is_action("ui_up") or event.is_action("ui_down"):
-			get_viewport().set_input_as_handled()
-			return
-	
 	# Navegação por teclado (apenas quando inventário aberto)
 	if is_open and navigation_enabled:
 		# Tab para mudar entre modos de foco
