@@ -16,6 +16,10 @@ var hotbar_ui: HotbarUI = null  # Referência ao hotbar para drag and drop
 var dragging_from_slot: int = -1
 var dragging_to_hotbar: bool = false
 
+# Keyboard navigation
+var selected_slot_index: int = 0
+var navigation_enabled: bool = true
+
 # Nós da UI
 var panel: Panel
 var grid_container: GridContainer
@@ -31,9 +35,6 @@ var current_filter: int = -1  # -1 = Todos, ou ItemData.ItemType
 
 # Equipment slot UIs
 var equipment_slot_uis: Dictionary = {}
-
-# Slot selecionado
-var selected_slot_index: int = -1
 
 
 func _ready() -> void:
@@ -71,6 +72,58 @@ func _input(event: InputEvent) -> void:
 		toggle_inventory()
 		get_viewport().set_input_as_handled()
 		return
+	
+	# Navegação por teclado (apenas quando inventário aberto)
+	if is_open and navigation_enabled:
+		if event.is_action_pressed("inventory_left"):
+			navigate_slots(-1)
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory_right"):
+			navigate_slots(1)
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory_up"):
+			navigate_slots(-grid_columns)
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory_down"):
+			navigate_slots(grid_columns)
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory_select"):
+			select_current_slot()
+			get_viewport().set_input_as_handled()
+
+
+## Navega pelos slots do inventário
+func navigate_slots(direction: int) -> void:
+	if slot_uis.is_empty():
+		return
+	
+	# Remove highlight do slot atual
+	if selected_slot_index >= 0 and selected_slot_index < slot_uis.size():
+		slot_uis[selected_slot_index].set_highlighted(false)
+	
+	# Calcula novo índice com wrap-around
+	selected_slot_index = (selected_slot_index + direction) % slot_uis.size()
+	if selected_slot_index < 0:
+		selected_slot_index = slot_uis.size() + selected_slot_index
+	
+	# Aplica highlight no novo slot
+	if selected_slot_index >= 0 and selected_slot_index < slot_uis.size():
+		slot_uis[selected_slot_index].set_highlighted(true)
+		print("[INVENTORY UI] 🎯 Navegando para slot %d" % selected_slot_index)
+
+
+## Seleciona/usa o slot atual
+func select_current_slot() -> void:
+	if selected_slot_index < 0 or selected_slot_index >= slot_uis.size():
+		return
+	
+	var item = inventory.get_item_at(selected_slot_index)
+	
+	if item:
+		print("[INVENTORY UI] ✅ Usando item: %s" % item.item_name)
+		inventory.use_item_at(selected_slot_index)
+	else:
+		print("[INVENTORY UI] ⚠️ Slot vazio")
 
 
 ## Cria toda a estrutura da UI

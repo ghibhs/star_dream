@@ -211,3 +211,23 @@ func _notification(what: int) -> void:
 			modulate = Color(1.2, 1.2, 1.2)
 	elif what == NOTIFICATION_MOUSE_EXIT:
 		update_visuals()
+
+
+## Destaca o slot (para navegação por teclado)
+func set_highlighted(highlighted: bool) -> void:
+	if highlighted:
+		# Amarelo brilhante para indicar seleção
+		modulate = Color(1.5, 1.5, 0.5)
+		# Adiciona borda amarela
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.2, 0.2, 0.2, 0.8)
+		style.border_color = Color.YELLOW
+		style.border_width_left = 3
+		style.border_width_right = 3
+		style.border_width_top = 3
+		style.border_width_bottom = 3
+		add_theme_stylebox_override("panel", style)
+	else:
+		# Restaura visual normal
+		remove_theme_stylebox_override("panel")
+		update_visuals()
