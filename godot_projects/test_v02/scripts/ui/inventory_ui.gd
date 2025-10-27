@@ -90,6 +90,12 @@ func _input(event: InputEvent) -> void:
 		elif event.is_action_pressed("inventory_select"):
 			select_current_slot()
 			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory_stack"):
+			stack_items()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("inventory_organize"):
+			organize_inventory()
+			get_viewport().set_input_as_handled()
 
 
 ## Navega pelos slots do inventário
@@ -122,8 +128,94 @@ func select_current_slot() -> void:
 	if item:
 		print("[INVENTORY UI] ✅ Usando item: %s" % item.item_name)
 		inventory.use_item_at(selected_slot_index)
+		# Mantém a seleção no mesmo slot após usar
+		await get_tree().process_frame
+		refresh_highlight()
 	else:
 		print("[INVENTORY UI] ⚠️ Slot vazio")
+
+
+## Atualiza o highlight do slot selecionado
+func refresh_highlight() -> void:
+	# Remove highlight de todos os slots
+	for i in range(slot_uis.size()):
+		slot_uis[i].set_highlighted(false)
+	
+	# Aplica highlight no slot selecionado
+	if selected_slot_index >= 0 and selected_slot_index < slot_uis.size():
+		slot_uis[selected_slot_index].set_highlighted(true)
+
+
+## Atualiza a UI de todos os slots
+func refresh_ui() -> void:
+	for i in range(slot_uis.size()):
+		if i < inventory.slots.size():
+			slot_uis[i].set_inventory_slot(inventory.slots[i])
+
+
+## Agrupa itens stackáveis do mesmo tipo
+func stack_items() -> void:
+	print("[INVENTORY UI] 📦 Agrupando itens stackáveis...")
+	
+	for i in range(inventory.slots.size()):
+		var slot_i = inventory.slots[i]
+		if slot_i.is_empty() or not slot_i.item.is_stackable:
+			continue
+		
+		# Procura outros slots com o mesmo item
+		for j in range(i + 1, inventory.slots.size()):
+			var slot_j = inventory.slots[j]
+			if slot_j.is_empty():
+				continue
+			
+			# Se é o mesmo item e stackável
+			if slot_j.item.item_id == slot_i.item.item_id and slot_j.item.is_stackable:
+				var space_available = slot_i.item.max_stack_size - slot_i.quantity
+				
+				if space_available > 0:
+					var amount_to_move = min(slot_j.quantity, space_available)
+					slot_i.quantity += amount_to_move
+					slot_j.quantity -= amount_to_move
+					
+					if slot_j.quantity <= 0:
+						slot_j.clear()
+					
+					print("[INVENTORY UI]    Agrupado %d x %s" % [amount_to_move, slot_i.item.item_name])
+	
+	refresh_ui()
+	refresh_highlight()
+	print("[INVENTORY UI] ✅ Agrupamento concluído!")
+
+
+## Organiza o inventário (remove espaços vazios)
+func organize_inventory() -> void:
+	print("[INVENTORY UI] 🗂️ Organizando inventário...")
+	
+	var non_empty_slots: Array = []
+	
+	# Coleta todos os slots não vazios
+	for slot in inventory.slots:
+		if not slot.is_empty():
+			non_empty_slots.append({
+				"item": slot.item,
+				"quantity": slot.quantity
+			})
+	
+	# Limpa todos os slots
+	for slot in inventory.slots:
+		slot.clear()
+	
+	# Recoloca os itens nos primeiros slots
+	for i in range(non_empty_slots.size()):
+		inventory.slots[i].item = non_empty_slots[i].item
+		inventory.slots[i].quantity = non_empty_slots[i].quantity
+	
+	refresh_ui()
+	# Ajusta selected_slot_index para não apontar para slot vazio
+	if selected_slot_index >= non_empty_slots.size():
+		selected_slot_index = max(0, non_empty_slots.size() - 1)
+	refresh_highlight()
+	print("[INVENTORY UI] ✅ Inventário organizado!")
 
 
 ## Cria toda a estrutura da UI
@@ -497,9 +589,32 @@ func _on_slot_drag_ended(target_slot_index: int) -> void:
 	if dragging_from_slot == -1:
 		return
 	
-	# Se arrastou para outro slot do inventário, troca itens
+	# Se arrastou para outro slot do inventário
 	if target_slot_index >= 0 and target_slot_index < inventory.slots.size():
 		if dragging_from_slot != target_slot_index:
+			var from_slot = inventory.slots[dragging_from_slot]
+			var to_slot = inventory.slots[target_slot_index]
+			
+			# Se ambos têm o mesmo item e são stackáveis, agrupa
+			if not from_slot.is_empty() and not to_slot.is_empty():
+				if from_slot.item.item_id == to_slot.item.item_id and from_slot.item.is_stackable:
+					var space_available = to_slot.item.max_stack_size - to_slot.quantity
+					
+					if space_available > 0:
+						var amount_to_move = min(from_slot.quantity, space_available)
+						to_slot.quantity += amount_to_move
+						from_slot.quantity -= amount_to_move
+						
+						if from_slot.quantity <= 0:
+							from_slot.clear()
+						
+						print("[INVENTORY UI] 📦 Itens agrupados: %d x %s" % [amount_to_move, to_slot.item.item_name])
+						refresh_ui()
+						refresh_highlight()
+						dragging_from_slot = -1
+						return
+			
+			# Caso contrário, troca os itens
 			inventory.swap_items(dragging_from_slot, target_slot_index)
 			print("[INVENTORY UI] 🔄 Items trocados entre slots %d e %d" % [dragging_from_slot, target_slot_index])
 	
