@@ -418,6 +418,7 @@ func create_ui() -> void:
 	close_button = Button.new()
 	close_button.text = "X"
 	close_button.custom_minimum_size = Vector2(30, 30)
+	close_button.focus_mode = Control.FOCUS_NONE  # Desabilita navegação por teclado (WASD)
 	close_button.pressed.connect(close_inventory)
 	header.add_child(close_button)
 	
@@ -440,6 +441,7 @@ func create_ui() -> void:
 	all_button.text = "Todos"
 	all_button.toggle_mode = true
 	all_button.button_pressed = true
+	all_button.focus_mode = Control.FOCUS_NONE  # Desabilita navegação por teclado (WASD)
 	all_button.pressed.connect(_on_filter_changed.bind(-1))
 	filters_hbox.add_child(all_button)
 	filter_buttons[-1] = all_button
@@ -457,6 +459,7 @@ func create_ui() -> void:
 		var btn = Button.new()
 		btn.text = filter_data[0]
 		btn.toggle_mode = true
+		btn.focus_mode = Control.FOCUS_NONE  # Desabilita navegação por teclado (WASD)
 		btn.pressed.connect(_on_filter_changed.bind(filter_data[1]))
 		filters_hbox.add_child(btn)
 		filter_buttons[filter_data[1]] = btn
@@ -504,18 +507,21 @@ func create_ui() -> void:
 	use_button = Button.new()
 	use_button.text = "Usar"
 	use_button.disabled = true
+	use_button.focus_mode = Control.FOCUS_NONE  # Desabilita navegação por teclado (WASD)
 	use_button.pressed.connect(_on_use_button_pressed)
 	actions_hbox.add_child(use_button)
 	
 	split_button = Button.new()
 	split_button.text = "Dividir"
 	split_button.disabled = true
+	split_button.focus_mode = Control.FOCUS_NONE  # Desabilita navegação por teclado (WASD)
 	split_button.pressed.connect(_on_split_button_pressed)
 	actions_hbox.add_child(split_button)
 	
 	drop_button = Button.new()
 	drop_button.text = "Dropar"
 	drop_button.disabled = true
+	drop_button.focus_mode = Control.FOCUS_NONE  # Desabilita navegação por teclado (WASD)
 	drop_button.pressed.connect(_on_drop_button_pressed)
 	actions_hbox.add_child(drop_button)
 	
