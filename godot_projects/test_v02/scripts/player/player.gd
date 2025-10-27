@@ -104,12 +104,8 @@ func _physics_process(delta: float) -> void:
 		update_charge(delta)
 		update_charge_indicator()
 	
-	# Input de movimento (bloqueado quando inventário está aberto)
-	var inventory_is_blocking = inventory_ui and inventory_ui.is_open
-	if not inventory_is_blocking:
-		direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	else:
-		direction = Vector2.ZERO
+	# Input de movimento (SEMPRE funciona, mesmo com inventário aberto)
+	direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	
 	# Sprint (segurar Shift)
 	is_sprinting = Input.is_action_pressed("sprint") and direction != Vector2.ZERO

@@ -77,17 +77,6 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	
-	# Bloqueia COMPLETAMENTE os inputs ui_* (WASD) quando inventário está aberto
-	# Isso impede WASD de navegar em filtros, botões, slots, etc
-	if is_open:
-		if event.is_action("ui_left") or event.is_action("ui_right") or \
-		   event.is_action("ui_up") or event.is_action("ui_down") or \
-		   event.is_action("ui_accept") or event.is_action("ui_select") or \
-		   event.is_action("ui_cancel") or event.is_action("ui_focus_next") or \
-		   event.is_action("ui_focus_prev"):
-			get_viewport().set_input_as_handled()
-			return
-	
 	# Navegação por teclado (apenas quando inventário aberto)
 	if is_open and navigation_enabled:
 		# Tab para mudar entre modos de foco (usando inventory_cycle)
