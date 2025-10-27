@@ -5,27 +5,32 @@
 ```
 test_v02/
 ├── 📁 art/                      # Sprites, texturas e recursos visuais
-│   ├── arco1.png ~ arco4.png   # Sprites do arco
-│   ├── flecha.png              # Sprite da flecha
-│   ├── Liron_*.png             # Sprites do personagem principal
-│   └── ...                     # Outros assets visuais
+│   ├── 📁 characters/          # Sprites de personagens
+│   │   ├── player/             # Liron (personagem principal)
+│   │   └── enemies/            # Lobos, golems, goblins
+│   ├── 📁 weapons/             # Arcos, espadas, flechas
+│   ├── 📁 environment/         # Árvores, mesas, cenário
+│   └── 📁 ui/                  # Ícones, moedas, interface
 │
-├── 📁 data_gd/                  # Classes de dados (Resources)
-│   ├── EnemyData.gd            # Classe base para dados de inimigos
-│   ├── ItemData.gd             # Classe base para dados de items
-│   └── WeaponData.gd           # Classe base para dados de armas
-│
-├── 📁 EnemyData/                # Recursos de inimigos específicos
-│   └── wolf_fast.tres          # Dados do lobo veloz
-│
-├── 📁 ItemData/                 # Recursos de items específicos
-│   ├── bow.tres                # Dados do arco
-│   └── sword.tres              # Dados da espada
+├── 📁 resources/                # Resources (.tres) e classes base
+│   ├── 📁 classes/             # Classes de dados (Resources)
+│   │   ├── EnemyData.gd        # Classe base para dados de inimigos
+│   │   ├── ItemData.gd         # Classe base para dados de items
+│   │   └── WeaponData.gd       # Classe base para dados de armas
+│   ├── 📁 enemies/             # Recursos de inimigos específicos
+│   │   ├── wolf_fast.tres      # Lobo veloz
+│   │   ├── wolf_normal.tres    # Lobo normal
+│   │   ├── wolf_tank.tres      # Lobo tanque
+│   │   ├── goblin_basic.tres   # Goblin básico
+│   │   └── golem_tank.tres     # Golem tanque
+│   └── 📁 weapons/             # Recursos de armas específicas
+│       ├── bow.tres            # Arco
+│       └── sword.tres          # Espada
 │
 ├── 📁 scripts/                  # Scripts GDScript organizados
 │   ├── 📁 player/              # Scripts do jogador
-│   │   ├── entidades.gd        # Controle do player
-│   │   └── entidades.gd.uid    # ID único do Godot
+│   │   ├── player.gd           # Controle do player
+│   │   └── player.gd.uid       # ID único do Godot
 │   │
 │   ├── 📁 enemy/               # Scripts dos inimigos
 │   │   ├── enemy.gd            # Lógica de IA e comportamento
@@ -45,14 +50,21 @@ test_v02/
 │   │   ├── game_over.gd        # Tela de game over
 │   │   └── *.gd.uid
 │   │
-│   └── 📁 game/                # Scripts gerais do jogo
-│       ├── the_game.gd         # Gerenciamento da cena principal
-│       ├── game_stats.gd       # Estatísticas globais (Autoload)
-│       └── *.gd.uid
+│   ├── 📁 game/                # Scripts gerais do jogo
+│   │   ├── the_game.gd         # Gerenciamento da cena principal
+│   │   ├── game_stats.gd       # Estatísticas globais (Autoload)
+│   │   └── *.gd.uid
+│   │
+│   ├── 📁 components/          # Componentes reutilizáveis (NOVO!)
+│   │   ├── HealthComponent.gd  # Sistema de saúde compartilhado
+│   │   └── HitboxComponent.gd  # Sistema de hitbox/ataque
+│   │
+│   └── 📁 utils/               # Utilitários (NOVO!)
+│       └── DebugLog.gd         # Sistema de logging configurável
 │
 ├── 📁 scenes/                   # Cenas .tscn organizadas
 │   ├── 📁 player/              # Cenas do jogador
-│   │   └── entidades.tscn      # Cena do personagem principal
+│   │   └── player.tscn         # Cena do personagem principal
 │   │
 │   ├── 📁 enemy/               # Cenas de inimigos
 │   │   └── enemy.tscn          # Cena base do inimigo
@@ -72,6 +84,7 @@ test_v02/
 │       └── the_game.tscn       # Cena do mundo/level
 │
 ├── 📁 docs/                     # Documentação do projeto
+│   ├── REFACTORING_REPORT.md   # Relatório de refatoração (NOVO!)
 │   ├── BUG_FIX_*.md            # Correções de bugs documentadas
 │   ├── CHECKUP_*.md            # Relatórios de verificação
 │   ├── COLLISION_SETUP.md      # Sistema de colisão
@@ -84,11 +97,17 @@ test_v02/
 │   ├── QUICK_START_ENEMIES.md  # Guia rápido de inimigos
 │   └── SISTEMA_EMPURRAO.md     # Sistema de empurrão
 │
+├── 📁 dev/                      # Arquivos de desenvolvimento (NOVO!)
+│   ├── 📁 aseprite/            # Arquivos .aseprite de edição
+│   └── 📁 screenshots/         # Capturas de tela e testes
+│
 ├── 📁 .godot/                   # Cache e arquivos do Godot (gerado automaticamente)
 ├── 📁 .vscode/                  # Configurações do VS Code
 │
 ├── project.godot                # Arquivo principal do projeto Godot
 ├── icon.svg                     # Ícone do projeto
+├── cleanup_duplicates.bat       # Script de limpeza (NOVO!)
+├── organize_assets.bat          # Script para organizar assets (NOVO!)
 └── README.md                    # Este arquivo
 
 ```
@@ -108,15 +127,15 @@ test_v02/
 - **Descritivos**: Indicam o tipo de recurso
 
 ### Classes (class_name)
-- **PascalCase**: `Enemy_Data`, `Weapon_Data`, `Item_Data`
-- **Sufixo _Data**: Para classes de recursos
+- **PascalCase**: `EnemyData`, `WeaponData`, `ItemData`
+- **Sem underscores**: Classes seguem padrão Godot puro
 
 ## 🔍 Localização Rápida
 
 ### Quer modificar...
 
 **Movimento do jogador?**
-→ `scripts/player/entidades.gd`
+→ `scripts/player/player.gd`
 
 **IA do inimigo?**
 → `scripts/enemy/enemy.gd`
@@ -125,7 +144,16 @@ test_v02/
 → `scripts/ui/main_menu.gd` + `scenes/ui/main_menu.tscn`
 
 **Stats de um inimigo?**
-→ `EnemyData/wolf_fast.tres`
+→ `resources/enemies/wolf_fast.tres`
+
+**Stats de uma arma?**
+→ `resources/weapons/bow.tres`
+
+**Criar novo componente?**
+→ `scripts/components/` (HealthComponent, HitboxComponent)
+
+**Sistema de debug?**
+→ `scripts/utils/DebugLog.gd`
 
 **Sistema de colisão?**
 → `docs/COLLISION_SETUP.md`
@@ -193,24 +221,34 @@ test_v02/
 
 ## 🔄 Atualizações Recentes
 
-- ✅ Organização em pastas scripts/ e scenes/
-- ✅ Documentação movida para docs/
+- ✅ **REFATORAÇÃO COMPLETA** (20/10/2025)
+  - Arquivos duplicados removidos
+  - Player renomeado (entidades → player)
+  - Resources reorganizados (resources/classes, resources/enemies, resources/weapons)
+  - Nomenclatura padronizada (EnemyData, WeaponData)
+  - Sistema de debug criado (DebugLog)
+  - Componentes reutilizáveis (HealthComponent, HitboxComponent)
+  - Assets organizados em subpastas
+  - **📖 Ver:** `docs/REFACTORING_REPORT.md`
 - ✅ Sistema de empurrão implementado
 - ✅ Menu system completo
 - ✅ Correção de bugs de colisão
 
 ## 📞 Referência Rápida de Pastas
 
-| Tipo | Pasta | Descrição |
-|------|-------|-----------|
 | Scripts | `scripts/` | Todos os arquivos .gd |
 | Cenas | `scenes/` | Todos os arquivos .tscn |
 | Docs | `docs/` | Toda documentação .md |
-| Assets | `art/` | Sprites e texturas |
-| Dados | `data_gd/` | Classes de recursos |
-| Recursos | `*Data/` | Arquivos .tres específicos |
+| Assets | `art/` | Sprites e texturas (organizados em subpastas) |
+| Resources | `resources/` | Classes base e instâncias .tres |
+| Components | `scripts/components/` | Componentes reutilizáveis |
+| Utils | `scripts/utils/` | Utilitários e helpers |
+| Dev | `dev/` | Arquivos de desenvolvimento (.aseprite, screenshots) |
 
 ---
 
-**Última atualização**: Organização completa do projeto
-**Versão**: test_v02 (thirdversion)
+**Última atualização**: Refatoração completa do projeto  
+**Versão**: test_v02 (thirdversion)  
+**Data**: 20 de Outubro de 2025
+
+**📖 Leia o relatório completo:** `docs/REFACTORING_REPORT.md`

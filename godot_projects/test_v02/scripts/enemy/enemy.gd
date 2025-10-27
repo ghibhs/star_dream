@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 # ===== DADOS DO INIMIGO =====
-@export var enemy_data: Enemy_Data
+@export var enemy_data: EnemyData
 
 # ===== COMPONENTES =====
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -30,8 +30,8 @@ func _ready() -> void:
 		print("[ENEMY] Carregando dados: ", enemy_data.enemy_name)
 		setup_enemy()
 	else:
-		push_error("Enemy_Data not assigned!")
-		print("[ENEMY] ❌ ERRO: Enemy_Data não atribuído!")
+		push_error("EnemyData not assigned!")
+		print("[ENEMY] ❌ ERRO: EnemyData não atribuído!")
 		queue_free()
 
 
@@ -90,11 +90,15 @@ func setup_enemy() -> void:
 		hitbox_area.add_child(hitbox_collision)
 		hitbox_area.body_entered.connect(_on_hitbox_body_entered)
 		
-		# 🎨 DEBUG VISUAL: Usa cor do .tres
+		# 🎨 VISUAL: Hitbox SEMPRE VISÍVEL com cor configurável
+		var hitbox_color = Color(1, 0, 0, 0.6)  # Vermelho semi-transparente (Enemy = Vermelho)
 		if "attack_hitbox_color" in enemy_data:
-			hitbox_collision.debug_color = enemy_data.attack_hitbox_color
-		else:
-			hitbox_collision.debug_color = Color(1, 0, 0, 0.8)
+			hitbox_color = enemy_data.attack_hitbox_color
+			# Garante visibilidade mínima
+			hitbox_color.a = max(hitbox_color.a, 0.5)
+		
+		hitbox_collision.debug_color = hitbox_color
+		print("[ENEMY]       🎨 Hitbox cor: ", hitbox_color)
 		
 		# 🛑 IMPORTANTE: Hitbox começa DESATIVADA
 		hitbox_area.monitoring = false
@@ -292,7 +296,7 @@ func process_hurt() -> void:
 
 func perform_attack() -> void:
 	can_attack = false
-	print("[ENEMY] ⚔️ ATACANDO! (can_attack = false)")
+	print("[ENEMY] ⚔️ PREPARANDO ATAQUE! (can_attack = false)")
 	
 	# 🎯 DIRECIONA a hitbox para o player
 	if hitbox_area and target and is_instance_valid(target):
@@ -303,20 +307,27 @@ func perform_attack() -> void:
 		# Rotaciona a hitbox para apontar ao player
 		hitbox_area.rotation = angle_to_player
 		print("[ENEMY]    🎯 Hitbox rotacionada para o player (%.1f graus)" % rad_to_deg(angle_to_player))
-		
-		# ATIVA a hitbox temporariamente
-		hitbox_area.monitoring = true
-		print("[ENEMY]    ⚡ Hitbox de GOLPE ATIVADA!")
-		
-		# 🎨 VISUAL: Deixa o retângulo de golpe BEM visível
-		for child in hitbox_area.get_children():
-			if child is CollisionShape2D:
-				child.debug_color = Color(1, 0, 0, 0.9)  # Vermelho muito visível
 	
 	# Toca animação de ataque se existir
 	if sprite and enemy_data.sprite_frames.has_animation("attack"):
 		sprite.play("attack")
 		print("[ENEMY]    🎬 Animação 'attack' tocando")
+	
+	# ⏰ DELAY DE AVISO: Tempo para o player esquivar
+	var warning_delay = 0.3  # Padrão de 0.3 segundos
+	if "attack_warning_delay" in enemy_data:
+		warning_delay = enemy_data.attack_warning_delay
+		print("[ENEMY]    ⚠️ Delay de aviso: %.2fs (do .tres)" % warning_delay)
+	else:
+		print("[ENEMY]    ⚠️ Delay de aviso: %.2fs (padrão)" % warning_delay)
+	
+	# 🟡 Durante o delay, a hitbox fica visível mas NÃO causa dano (aviso visual)
+	await get_tree().create_timer(warning_delay).timeout
+	
+	# ⚡ AGORA SIM ATIVA a hitbox para causar dano
+	if hitbox_area:
+		hitbox_area.monitoring = true
+		print("[ENEMY]    ⚡ Hitbox de GOLPE ATIVADA!")
 	
 	# Inicia cooldown
 	if attack_timer:
@@ -337,11 +348,7 @@ func perform_attack() -> void:
 	if hitbox_area:
 		hitbox_area.monitoring = false
 		print("[ENEMY]    🛑 Hitbox de GOLPE DESATIVADA!")
-		
-		# Esconde o visual novamente
-		for child in hitbox_area.get_children():
-			if child is CollisionShape2D:
-				child.debug_color = Color(1, 0, 0, 0.0)  # Invisível
+
 
 
 func take_damage(amount: float) -> void:
@@ -351,11 +358,15 @@ func take_damage(amount: float) -> void:
 	
 	# Aplica defesa
 	var damage_taken = max(amount - enemy_data.defense, 1.0)
+	var previous_health = current_health
 	current_health -= damage_taken
 	
 	print("[ENEMY] 💔 %s RECEBEU DANO!" % enemy_data.enemy_name)
 	print("[ENEMY]    Dano bruto: %.1f | Defesa: %.1f | Dano real: %.1f" % [amount, enemy_data.defense, damage_taken])
-	print("[ENEMY]    HP atual: %.1f/%.1f (%.1f%%)" % [current_health, enemy_data.max_health, (current_health/enemy_data.max_health)*100])
+	print("[ENEMY]    HP: %.1f → %.1f (%.1f%%)" % [previous_health, current_health, (current_health/enemy_data.max_health)*100])
+	
+	# ✅ SEMPRE aplica o flash vermelho primeiro (mesmo em morte)
+	apply_hit_flash()
 	
 	# Se for agressivo e não tiver alvo, procura o player
 	if enemy_data.behavior == "Aggressive" and not target:
@@ -370,17 +381,20 @@ func take_damage(amount: float) -> void:
 			if target.get_class() != "CharacterBody2D":
 				print("[ENEMY]    ⚠️ ALERTA: Alvo não é CharacterBody2D!")
 	
-	# Visual de dano (flash branco)
-	apply_hit_flash()
+	# ⚠️ Depois verifica morte
+	if current_health <= 0:
+		print("[ENEMY] ══════════════════════════════════════")
+		print("[ENEMY] ⚠️⚠️⚠️  VIDA ZEROU!  ⚠️⚠️⚠️")
+		print("[ENEMY] HP FINAL: %.1f / %.1f" % [current_health, enemy_data.max_health])
+		print("[ENEMY] ══════════════════════════════════════")
+		print("[ENEMY] ☠️ Aguardando flash antes de morrer...")
+		await get_tree().create_timer(0.1).timeout  # Aguarda o flash
+		die()
+		return
 	
-	# Muda para estado HURT
+	# Se não morreu, muda para estado HURT
 	print("[ENEMY] Estado: ", State.keys()[current_state], " → HURT")
 	current_state = State.HURT
-	
-	# Verifica morte
-	if current_health <= 0:
-		print("[ENEMY] ☠️ HP chegou a 0, iniciando morte...")
-		die()
 
 
 func apply_hit_flash() -> void:
@@ -400,8 +414,14 @@ func die() -> void:
 	is_dead = true
 	current_state = State.DEAD
 	
-	print("[ENEMY] ☠️☠️☠️ %s MORREU! ☠️☠️☠️" % enemy_data.enemy_name)
+	print("")
+	print("[ENEMY] ══════════════════════════════════════")
+	print("[ENEMY] ☠️☠️☠️  %s MORREU!  ☠️☠️☠️" % enemy_data.enemy_name)
+	print("[ENEMY] ══════════════════════════════════════")
+	print("[ENEMY]    HP Final: %.1f / %.1f" % [current_health, enemy_data.max_health])
 	print("[ENEMY]    Exp drop: %d | Coins drop: %d" % [enemy_data.experience_drop, enemy_data.coin_drop])
+	print("[ENEMY] ══════════════════════════════════════")
+	print("")
 	
 	# Contabiliza inimigo derrotado
 	if has_node("/root/GameStats"):
@@ -475,10 +495,19 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		print("[ENEMY]    💥 Player detectado na hitbox ATIVA!")
 		
-		# Aplica dano
+		# Aplica dano com knockback configurável do EnemyData
 		if body.has_method("take_damage"):
-			body.take_damage(enemy_data.damage)
-			print("[ENEMY]    ✅ Dano %.1f aplicado ao player!" % enemy_data.damage)
+			# Usa configurações do .tres
+			var applies_kb = enemy_data.applies_knockback if "applies_knockback" in enemy_data else true
+			var kb_force = enemy_data.knockback_force if "knockback_force" in enemy_data else 300.0
+			var kb_duration = enemy_data.knockback_duration if "knockback_duration" in enemy_data else 0.2
+			
+			body.take_damage(enemy_data.damage, global_position, kb_force, kb_duration, applies_kb)
+			
+			if applies_kb:
+				print("[ENEMY]    ✅ Dano %.1f aplicado (knockback: %.1f força, %.2fs duração)!" % [enemy_data.damage, kb_force, kb_duration])
+			else:
+				print("[ENEMY]    ✅ Dano %.1f aplicado (sem knockback)!" % enemy_data.damage)
 		else:
 			print("[ENEMY]    ❌ Player não tem método take_damage!")
 	else:

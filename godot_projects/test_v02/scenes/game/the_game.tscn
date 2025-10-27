@@ -1,14 +1,18 @@
-[gd_scene load_steps=12 format=4 uid="uid://bvsl6cdtgjpj1"]
+[gd_scene load_steps=16 format=4 uid="uid://bvsl6cdtgjpj1"]
 
-[ext_resource type="PackedScene" uid="uid://deaodpc5w6ugl" path="res://scenes/player/entidades.tscn" id="1_bxlh1"]
+[ext_resource type="PackedScene" uid="uid://deaodpc5w6ugl" path="res://scenes/player/player.tscn" id="1_bxlh1"]
 [ext_resource type="Script" uid="uid://dbv8kgf0ywdkl" path="res://scripts/game/the_game.gd" id="1_rwqnc"]
 [ext_resource type="Texture2D" uid="uid://cj3vou3sokp62" path="res://art/pixil-frame-0.png" id="2_sbril"]
 [ext_resource type="PackedScene" uid="uid://c0f1607nsdg0m" path="res://scenes/items/bow.tscn" id="4_rwqnc"]
-[ext_resource type="Resource" uid="uid://kwure8xvbiuo" path="res://ItemData/bow.tres" id="5_o5p78"]
-[ext_resource type="Resource" uid="uid://dtdjb3sh6ot1b" path="res://ItemData/sword.tres" id="6_wg70j"]
+[ext_resource type="Resource" uid="uid://kwure8xvbiuo" path="res://resources/weapons/bow.tres" id="5_o5p78"]
+[ext_resource type="Resource" uid="uid://dtdjb3sh6ot1b" path="res://resources/weapons/sword.tres" id="6_wg70j"]
 [ext_resource type="PackedScene" uid="uid://bubo78mrq757p" path="res://scenes/enemy/enemy.tscn" id="7_ep5gg"]
-[ext_resource type="Resource" uid="uid://b83hlcfidew6m" path="res://EnemyData/wolf_fast.tres" id="8_82yl5"]
+[ext_resource type="Resource" uid="uid://b83hlcfidew6m" path="res://resources/enemies/wolf_fast.tres" id="8_82yl5"]
 [ext_resource type="PackedScene" uid="uid://dy5k2x8m3oaqr" path="res://scenes/ui/pause_menu.tscn" id="9_pause"]
+[ext_resource type="PackedScene" uid="uid://cdm7ln1ks4f43" path="res://scenes/ui/player_hud.tscn" id="10_player_hud"]
+[ext_resource type="PackedScene" uid="uid://c7waw2x5y801a" path="res://scenes/game/enemy_spawner.tscn" id="11_spawner"]
+[ext_resource type="Resource" uid="uid://cqw8v7h2mnl5a" path="res://resources/enemies/wolf_normal.tres" id="12_wolf_normal"]
+[ext_resource type="Resource" uid="uid://b5h4lal2pqr8m" path="res://resources/enemies/wolf_tank.tres" id="13_wolf_tank"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ir4x8"]
 texture = ExtResource("2_sbril")
@@ -20,9 +24,9 @@ sources/0 = SubResource("TileSetAtlasSource_ir4x8")
 [node name="The_game" type="Node2D"]
 script = ExtResource("1_rwqnc")
 
-[node name="Entidades" parent="." instance=ExtResource("1_bxlh1")]
+[node name="Player" parent="." instance=ExtResource("1_bxlh1")]
 
-[node name="Camera2D" type="Camera2D" parent="Entidades"]
+[node name="Camera2D" type="Camera2D" parent="Player"]
 zoom = Vector2(2.91, 2.91)
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
@@ -42,6 +46,12 @@ item_data = ExtResource("6_wg70j")
 
 [node name="PauseMenu" parent="." instance=ExtResource("9_pause")]
 
+[node name="PlayerHUD" parent="." instance=ExtResource("10_player_hud")]
+
+[node name="EnemySpawner" parent="." instance=ExtResource("11_spawner")]
+enemy_scene = ExtResource("7_ep5gg")
+enemy_data_list = Array[Resource]([ExtResource("8_82yl5"), ExtResource("12_wolf_normal"), ExtResource("13_wolf_tank")])
+
 [node name="Enemy" parent="." instance=ExtResource("7_ep5gg")]
-position = Vector2(129, 14)
+position = Vector2(203, -59)
 enemy_data = ExtResource("8_82yl5")

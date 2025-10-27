@@ -18,7 +18,7 @@ func _ready():
 	if screen_notifier:
 		screen_notifier.screen_exited.connect(queue_free)
 
-func setup_from_weapon_data(weapon_data: Weapon_Data, dir: Vector2):
+func setup_from_weapon_data(weapon_data: WeaponData, dir: Vector2):
 	print("[PROJECTILE] Configurando projétil...")
 	print("[PROJECTILE]    Arma: ", weapon_data.item_name)
 	print("[PROJECTILE]    Direção: ", dir)
