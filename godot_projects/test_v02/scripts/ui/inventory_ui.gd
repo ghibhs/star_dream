@@ -34,6 +34,7 @@ var drop_button: Button
 
 # Filtros
 var filter_buttons: Dictionary = {}
+var filter_buttons_order: Array = []  # Ordem dos filtros para navegação
 var current_filter: int = -1  # -1 = Todos, ou ItemData.ItemType
 
 # Equipment slot UIs
@@ -75,6 +76,13 @@ func _input(event: InputEvent) -> void:
 		toggle_inventory()
 		get_viewport().set_input_as_handled()
 		return
+	
+	# Bloqueia inputs de movimento do player quando inventário está aberto
+	if is_open:
+		if event.is_action("ui_left") or event.is_action("ui_right") or \
+		   event.is_action("ui_up") or event.is_action("ui_down"):
+			get_viewport().set_input_as_handled()
+			return
 	
 	# Navegação por teclado (apenas quando inventário aberto)
 	if is_open and navigation_enabled:
@@ -253,35 +261,34 @@ func remove_button_highlights() -> void:
 
 ## Navega entre filtros
 func navigate_filters(direction: int) -> void:
-	var filter_list = filter_buttons.values()
-	
-	if filter_list.is_empty():
+	if filter_buttons_order.is_empty():
+		print("[INVENTORY UI] ⚠️ Lista de filtros vazia")
 		return
 	
 	remove_filter_highlights()
-	selected_filter_index = (selected_filter_index + direction) % filter_list.size()
+	selected_filter_index = (selected_filter_index + direction) % filter_buttons_order.size()
 	if selected_filter_index < 0:
-		selected_filter_index = filter_list.size() + selected_filter_index
+		selected_filter_index = filter_buttons_order.size() + selected_filter_index
 	
 	highlight_current_filter()
+	print("[INVENTORY UI] 🎯 Navegando para filtro %d/%d" % [selected_filter_index, filter_buttons_order.size()])
 
 
 ## Ativa o filtro atual
 func activate_current_filter() -> void:
-	var filter_list = filter_buttons.keys()
-	
-	if selected_filter_index >= 0 and selected_filter_index < filter_list.size():
-		var filter_type = filter_list[selected_filter_index]
+	if selected_filter_index >= 0 and selected_filter_index < filter_buttons_order.size():
+		var filter_type = filter_buttons_order[selected_filter_index]
 		_on_filter_changed(filter_type)
 		print("[INVENTORY UI] ✅ Filtro ativado: %s" % filter_type)
 
 
 ## Destaca o filtro atual
 func highlight_current_filter() -> void:
-	var filter_list = filter_buttons.values()
-	
-	if selected_filter_index >= 0 and selected_filter_index < filter_list.size():
-		filter_list[selected_filter_index].modulate = Color(1.5, 1.5, 0.5)
+	if selected_filter_index >= 0 and selected_filter_index < filter_buttons_order.size():
+		var filter_type = filter_buttons_order[selected_filter_index]
+		if filter_buttons.has(filter_type):
+			filter_buttons[filter_type].modulate = Color(1.5, 1.5, 0.5)
+			print("[INVENTORY UI] 🌟 Destacando filtro: %s" % filter_type)
 
 
 ## Remove highlight dos filtros
@@ -443,6 +450,7 @@ func create_ui() -> void:
 	all_button.pressed.connect(_on_filter_changed.bind(-1))
 	filters_hbox.add_child(all_button)
 	filter_buttons[-1] = all_button
+	filter_buttons_order.append(-1)  # Adiciona à ordem
 	
 	# Botões para cada tipo
 	var filter_types = [
@@ -459,6 +467,7 @@ func create_ui() -> void:
 		btn.pressed.connect(_on_filter_changed.bind(filter_data[1]))
 		filters_hbox.add_child(btn)
 		filter_buttons[filter_data[1]] = btn
+		filter_buttons_order.append(filter_data[1])  # Adiciona à ordem
 	
 	var separator_filter = HSeparator.new()
 	vbox.add_child(separator_filter)
@@ -698,6 +707,16 @@ func _on_slot_double_clicked(slot_index: int) -> void:
 	if not inventory:
 		return
 	
+	# Ignora double-click se estiver arrastando
+	if dragging_from_slot != -1:
+		print("[INVENTORY UI] ⚠️ Ignorando double-click durante drag")
+		return
+	
+	# Verifica se o slot específico está sendo arrastado
+	if slot_index >= 0 and slot_index < slot_uis.size() and slot_uis[slot_index].is_dragging:
+		print("[INVENTORY UI] ⚠️ Ignorando double-click - slot está sendo arrastado")
+		return
+	
 	var slot = inventory.slots[slot_index]
 	if slot.is_empty():
 		print("[INVENTORY UI] ❌ Slot vazio")
@@ -719,6 +738,14 @@ func _on_slot_double_clicked(slot_index: int) -> void:
 ## Callback quando um slot é clicado com botão direito
 func _on_slot_right_clicked(slot_index: int) -> void:
 	if not inventory:
+		return
+	
+	# Ignora right-click se estiver arrastando
+	if dragging_from_slot != -1:
+		return
+	
+	# Verifica se o slot específico está sendo arrastado
+	if slot_index >= 0 and slot_index < slot_uis.size() and slot_uis[slot_index].is_dragging:
 		return
 	
 	var slot = inventory.slots[slot_index]
