@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://djcopuglv0cas"
+uid="uid://b3ajswv5jt566"
 path="res://.godot/imported/boss_spritesheet_atack.png-14913b56bbf52b6cb002d55df13b53d8.ctex"
 metadata={
 "vram_texture": false
@@ -27,13 +27,10 @@ mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
-<<<<<<< Updated upstream
-=======
 process/channel_remap/red=0
 process/channel_remap/green=1
 process/channel_remap/blue=2
 process/channel_remap/alpha=3
->>>>>>> Stashed changes
 process/fix_alpha_border=true
 process/premult_alpha=false
 process/normal_map_invert_y=false
