@@ -19,6 +19,9 @@ var dragging_to_hotbar: bool = false
 # Keyboard navigation
 var selected_slot_index: int = 0
 var navigation_enabled: bool = true
+var focus_mode: String = "slots"  # "slots", "buttons", "filters"
+var selected_button_index: int = 0
+var selected_filter_index: int = 0
 
 # Nós da UI
 var panel: Panel
@@ -75,22 +78,54 @@ func _input(event: InputEvent) -> void:
 	
 	# Navegação por teclado (apenas quando inventário aberto)
 	if is_open and navigation_enabled:
-		if event.is_action_pressed("inventory_left"):
-			navigate_slots(-1)
+		# Tab para mudar entre modos de foco
+		if event.is_action_pressed("ui_focus_next"):
+			cycle_focus_mode()
 			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("inventory_right"):
-			navigate_slots(1)
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("inventory_up"):
-			navigate_slots(-grid_columns)
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("inventory_down"):
-			navigate_slots(grid_columns)
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("inventory_select"):
-			select_current_slot()
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("inventory_stack"):
+			return
+		
+		# Navegação baseada no modo de foco
+		if focus_mode == "slots":
+			if event.is_action_pressed("inventory_left"):
+				navigate_slots(-1)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_right"):
+				navigate_slots(1)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_up"):
+				navigate_slots(-grid_columns)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_down"):
+				navigate_slots(grid_columns)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_select"):
+				select_current_slot()
+				get_viewport().set_input_as_handled()
+		
+		elif focus_mode == "buttons":
+			if event.is_action_pressed("inventory_left"):
+				navigate_buttons(-1)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_right"):
+				navigate_buttons(1)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_select"):
+				activate_current_button()
+				get_viewport().set_input_as_handled()
+		
+		elif focus_mode == "filters":
+			if event.is_action_pressed("inventory_left"):
+				navigate_filters(-1)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_right"):
+				navigate_filters(1)
+				get_viewport().set_input_as_handled()
+			elif event.is_action_pressed("inventory_select"):
+				activate_current_filter()
+				get_viewport().set_input_as_handled()
+		
+		# Comandos globais (funcionam em qualquer modo)
+		if event.is_action_pressed("inventory_stack"):
 			stack_items()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("inventory_organize"):
@@ -133,6 +168,127 @@ func select_current_slot() -> void:
 		refresh_highlight()
 	else:
 		print("[INVENTORY UI] ⚠️ Slot vazio")
+
+
+## Alterna entre modos de foco (slots, botões, filtros)
+func cycle_focus_mode() -> void:
+	# Remove highlights antigos
+	refresh_highlight()
+	remove_button_highlights()
+	remove_filter_highlights()
+	
+	# Cicla entre modos
+	if focus_mode == "slots":
+		focus_mode = "buttons"
+		selected_button_index = 0
+		highlight_current_button()
+		print("[INVENTORY UI] 🎯 Foco: BOTÕES")
+	elif focus_mode == "buttons":
+		focus_mode = "filters"
+		selected_filter_index = 0
+		highlight_current_filter()
+		print("[INVENTORY UI] 🎯 Foco: FILTROS")
+	else:  # filters
+		focus_mode = "slots"
+		selected_slot_index = 0
+		refresh_highlight()
+		print("[INVENTORY UI] 🎯 Foco: SLOTS")
+
+
+## Navega entre botões
+func navigate_buttons(direction: int) -> void:
+	var buttons = [use_button, split_button, drop_button]
+	var enabled_buttons = []
+	
+	# Filtra apenas botões habilitados
+	for btn in buttons:
+		if btn and not btn.disabled:
+			enabled_buttons.append(btn)
+	
+	if enabled_buttons.is_empty():
+		return
+	
+	remove_button_highlights()
+	selected_button_index = (selected_button_index + direction) % enabled_buttons.size()
+	if selected_button_index < 0:
+		selected_button_index = enabled_buttons.size() + selected_button_index
+	
+	highlight_current_button()
+
+
+## Ativa o botão atual
+func activate_current_button() -> void:
+	var buttons = [use_button, split_button, drop_button]
+	var enabled_buttons = []
+	
+	for btn in buttons:
+		if btn and not btn.disabled:
+			enabled_buttons.append(btn)
+	
+	if selected_button_index >= 0 and selected_button_index < enabled_buttons.size():
+		enabled_buttons[selected_button_index].emit_signal("pressed")
+		print("[INVENTORY UI] ✅ Botão ativado: %s" % enabled_buttons[selected_button_index].text)
+
+
+## Destaca o botão atual
+func highlight_current_button() -> void:
+	var buttons = [use_button, split_button, drop_button]
+	var enabled_buttons = []
+	
+	for btn in buttons:
+		if btn and not btn.disabled:
+			enabled_buttons.append(btn)
+	
+	if selected_button_index >= 0 and selected_button_index < enabled_buttons.size():
+		enabled_buttons[selected_button_index].modulate = Color(1.5, 1.5, 0.5)
+
+
+## Remove highlight dos botões
+func remove_button_highlights() -> void:
+	var buttons = [use_button, split_button, drop_button]
+	for btn in buttons:
+		if btn:
+			btn.modulate = Color.WHITE
+
+
+## Navega entre filtros
+func navigate_filters(direction: int) -> void:
+	var filter_list = filter_buttons.values()
+	
+	if filter_list.is_empty():
+		return
+	
+	remove_filter_highlights()
+	selected_filter_index = (selected_filter_index + direction) % filter_list.size()
+	if selected_filter_index < 0:
+		selected_filter_index = filter_list.size() + selected_filter_index
+	
+	highlight_current_filter()
+
+
+## Ativa o filtro atual
+func activate_current_filter() -> void:
+	var filter_list = filter_buttons.keys()
+	
+	if selected_filter_index >= 0 and selected_filter_index < filter_list.size():
+		var filter_type = filter_list[selected_filter_index]
+		_on_filter_changed(filter_type)
+		print("[INVENTORY UI] ✅ Filtro ativado: %s" % filter_type)
+
+
+## Destaca o filtro atual
+func highlight_current_filter() -> void:
+	var filter_list = filter_buttons.values()
+	
+	if selected_filter_index >= 0 and selected_filter_index < filter_list.size():
+		filter_list[selected_filter_index].modulate = Color(1.5, 1.5, 0.5)
+
+
+## Remove highlight dos filtros
+func remove_filter_highlights() -> void:
+	for btn in filter_buttons.values():
+		if btn:
+			btn.modulate = Color.WHITE
 
 
 ## Atualiza o highlight do slot selecionado

@@ -198,10 +198,9 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if not _can_drop_data(at_position, data):
 		return
 	
-	drag_ended.emit(data.slot_index)
-	
-	# Emite evento de que houve drop (a UI principal vai lidar com a lógica)
-	slot_clicked.emit(slot_index, MOUSE_BUTTON_LEFT)
+	# Emite o índice do slot de DESTINO (onde foi solto)
+	drag_ended.emit(slot_index)
+	is_dragging = false
 
 
 ## Visual feedback quando hovering
