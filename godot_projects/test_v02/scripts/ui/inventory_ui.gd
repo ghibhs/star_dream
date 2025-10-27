@@ -641,7 +641,17 @@ func close_inventory() -> void:
 	print("[INVENTORY UI] 📁 Fechando inventário...")
 	is_open = false
 	hide()
+	
+	# Remove todos os highlights ao fechar
+	refresh_highlight()  # Remove highlight dos slots
+	remove_button_highlights()  # Remove highlight dos botões
+	remove_filter_highlights()  # Remove highlight dos filtros
+	
 	selected_slot_index = -1
+	selected_button_index = 0
+	selected_filter_index = 0
+	focus_mode = "slots"  # Reseta para modo slots
+	
 	update_action_buttons()
 	print("[INVENTORY UI] ✅ Inventário fechado")
 
