@@ -985,6 +985,10 @@ func _on_drop_button_pressed() -> void:
 
 ## Atualiza estado dos botões de ação
 func update_action_buttons() -> void:
+	# Verifica se os botões existem
+	if not use_button or not split_button or not drop_button:
+		return
+	
 	if selected_slot_index == -1 or not inventory:
 		use_button.disabled = true
 		split_button.disabled = true
