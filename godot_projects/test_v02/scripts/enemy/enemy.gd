@@ -567,4 +567,4 @@ func _on_slow_timeout() -> void:
 
 func get_current_speed() -> float:
 	"""Retorna a velocidade atual considerando slow"""
-	return enemy_data.speed * slow_multiplier
+	return enemy_data.move_speed * slow_multiplier
