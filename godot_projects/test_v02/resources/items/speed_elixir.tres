@@ -1,27 +1,22 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://csbd1klyimy8h"]
 
-[ext_resource type="Script" path="res://resources/classes/ItemData.gd" id="1_1"]
-[ext_resource type="Texture2D" path="res://art/moeda_game1.png" id="2_icon"]
+[ext_resource type="Script" uid="uid://bq4vfahxytipk" path="res://resources/classes/ItemData.gd" id="1_1"]
+[ext_resource type="Texture2D" uid="uid://dh4cadtlmsd2b" path="res://art/poção_velocidade.png" id="1_kl5fm"]
 
 [resource]
 script = ExtResource("1_1")
 item_id = "speed_elixir"
 item_name = "Elixir de Velocidade"
 description = "Aumenta velocidade de movimento em 50% por 10 segundos"
-icon = ExtResource("2_icon")
+icon = ExtResource("1_kl5fm")
 item_type = 0
-sprite_frames = null
 animation_name = "default"
-collision_shape = null
 is_stackable = true
 max_stack_size = 10
 is_equippable = false
 equipment_slot = 0
-weapon_data = null
 value = 100
 weight = 0.3
-sound_effect = null
-hit_effect = null
 restore_health = 0.0
 restore_mana = 0.0
 restore_stamina = 0.0

@@ -104,9 +104,9 @@ Sistema já existente:
 
 Exemplo:
 hotbar_item_indices = [5, -1, 12, -1, 0]
-                       ↑   ↑   ↑    ↑   ↑
-                       1   2   3    4   5
-                       
+					   ↑   ↑   ↑    ↑   ↑
+					   1   2   3    4   5
+					   
 Significa:
 - Slot 1: Item do inventário[5]
 - Slot 2: Vazio

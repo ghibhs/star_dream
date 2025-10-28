@@ -80,7 +80,7 @@ func _on_quit_button_pressed() -> void:
 func start_game() -> void:
 	print("[MAIN_MENU] Iniciando jogo...")
 	print("[MAIN_MENU]    Carregando cena: res://scenes/game/the_game.tscn")
-    
+	
 	# Carrega a cena do jogo (novo local após reorganização)
 	var game_scene_path = "res://scenes/game/the_game.tscn"
 	

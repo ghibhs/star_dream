@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="SpellData" load_steps=2 format=3 uid="uid://bwx8y5q3nf7pk"]
 
-[ext_resource type="Script" path="res://resources/classes/SpellData.gd" id="1_fireball"]
+[ext_resource type="Script" uid="uid://c4e31tj8hxk5h" path="res://resources/classes/SpellData.gd" id="1_fireball"]
 
 [resource]
 script = ExtResource("1_fireball")
@@ -15,6 +15,7 @@ cooldown = 1.5
 damage = 30.0
 spell_range = 400.0
 projectile_speed = 500.0
+projectile_animation = "default"
 projectile_scale = Vector2(1.5, 1.5)
 pierce = false
 homing = false

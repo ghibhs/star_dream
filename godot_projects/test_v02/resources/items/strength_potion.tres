@@ -1,27 +1,22 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://i2xkip8l72ko"]
 
-[ext_resource type="Script" path="res://resources/classes/ItemData.gd" id="1_1"]
-[ext_resource type="Texture2D" path="res://art/moeda_game1.png" id="2_icon"]
+[ext_resource type="Script" uid="uid://bq4vfahxytipk" path="res://resources/classes/ItemData.gd" id="1_1"]
+[ext_resource type="Texture2D" uid="uid://dvj8mawvbewti" path="res://art/poção_força.png" id="1_xuxt5"]
 
 [resource]
 script = ExtResource("1_1")
 item_id = "strength_potion"
 item_name = "Poção de Força"
 description = "Aumenta dano em 30% por 15 segundos"
-icon = ExtResource("2_icon")
+icon = ExtResource("1_xuxt5")
 item_type = 0
-sprite_frames = null
 animation_name = "default"
-collision_shape = null
 is_stackable = true
 max_stack_size = 10
 is_equippable = false
 equipment_slot = 0
-weapon_data = null
 value = 120
 weight = 0.3
-sound_effect = null
-hit_effect = null
 restore_health = 0.0
 restore_mana = 0.0
 restore_stamina = 0.0
