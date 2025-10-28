@@ -172,7 +172,7 @@ func apply_damage_to_enemies() -> void:
 	
 	for enemy in enemies_in_beam:
 		if is_instance_valid(enemy) and enemy.has_method("take_damage"):
-			enemy.take_damage(damage_this_tick, Vector2.ZERO, 0.0)  # Sem knockback no raio contínuo
+			enemy.take_damage(damage_this_tick)  # Apenas o dano
 			
 			# Aplica slow
 			if enemy.has_method("apply_slow"):

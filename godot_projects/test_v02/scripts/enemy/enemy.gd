@@ -225,8 +225,8 @@ func process_chase(_delta: float) -> void:
 	# Calcula direção para o alvo
 	var direction = (target.global_position - global_position).normalized()
 	
-	# Move em direção ao alvo
-	velocity = direction * enemy_data.move_speed
+	# Move em direção ao alvo (usando velocidade com slow aplicado)
+	velocity = direction * get_current_speed()
 	
 	# Flip horizontal baseado na direção
 	if direction.x < 0:
@@ -257,7 +257,7 @@ func process_attack() -> void:
 	
 	# 🏃 CONTINUA SE MOVENDO em direção ao player
 	var direction = (target.global_position - global_position).normalized()
-	velocity = direction * enemy_data.move_speed
+	velocity = direction * get_current_speed()
 	
 	# Flip horizontal baseado na direção
 	if direction.x < 0:
@@ -522,3 +522,49 @@ func _on_attack_timer_timeout() -> void:
 	if sprite and enemy_data.animation_name != "":
 		sprite.play(enemy_data.animation_name)
 		print("[ENEMY]    Voltando para animação: ", enemy_data.animation_name)
+
+
+# -----------------------------
+# SISTEMA DE SLOW (REDUÇÃO DE VELOCIDADE)
+# -----------------------------
+
+var is_slowed: bool = false
+var slow_multiplier: float = 1.0
+var slow_timer: Timer = null
+
+func apply_slow(slow_percent: float, duration: float) -> void:
+	"""Aplica redução de velocidade ao inimigo"""
+	if not is_slowed:
+		is_slowed = true
+		slow_multiplier = slow_percent  # Ex: 0.5 = 50% da velocidade
+		
+		# Cria timer se não existe
+		if not slow_timer:
+			slow_timer = Timer.new()
+			add_child(slow_timer)
+			slow_timer.timeout.connect(_on_slow_timeout)
+		
+		print("[ENEMY] ❄️ Slow aplicado: %.0f%% de velocidade por %.1fs" % [slow_percent * 100, duration])
+	
+	# Renova o timer
+	slow_timer.start(duration)
+
+
+func remove_slow() -> void:
+	"""Remove o efeito de slow"""
+	if is_slowed:
+		is_slowed = false
+		slow_multiplier = 1.0
+		if slow_timer:
+			slow_timer.stop()
+		print("[ENEMY] ✅ Slow removido")
+
+
+func _on_slow_timeout() -> void:
+	"""Callback quando o slow expira"""
+	remove_slow()
+
+
+func get_current_speed() -> float:
+	"""Retorna a velocidade atual considerando slow"""
+	return enemy_data.speed * slow_multiplier
