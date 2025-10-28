@@ -95,10 +95,6 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("cast_spell"):
 		cast_current_spell()
 	
-	# Mantém raio contínuo ativo enquanto segura o botão
-	if Input.is_action_pressed("cast_spell") and is_casting_beam and active_beam:
-		update_beam_direction()
-	
 	# Desativa raio quando solta o botão
 	if Input.is_action_just_released("cast_spell") and is_casting_beam:
 		stop_beam()
@@ -1801,6 +1797,11 @@ func cast_ice_beam(spell: SpellData) -> void:
 	if is_casting_beam and active_beam:
 		return
 	
+	# Verifica se tem weapon_marker
+	if not weapon_marker:
+		print("[PLAYER] ⚠️ weapon_marker não encontrado!")
+		return
+	
 	# Verifica mana mínima para iniciar (custo inicial)
 	if current_mana < 5.0:  # Requer pelo menos 5 de mana para iniciar
 		print("[PLAYER] ❌ Mana insuficiente para iniciar Ice Beam!")
@@ -1812,18 +1813,18 @@ func cast_ice_beam(spell: SpellData) -> void:
 	var beam_scene = preload("res://scenes/spells/ice_beam.tscn")
 	active_beam = beam_scene.instantiate()
 	
-	# Adiciona ao mundo
-	get_parent().add_child(active_beam)
+	# Adiciona como FILHO do weapon_marker (gira junto com a mira)
+	weapon_marker.add_child(active_beam)
 	
-	# Pega a direção do mouse
-	var mouse_pos = get_global_mouse_position()
-	var beam_direction = (mouse_pos - global_position).normalized()
+	# Posição local (sai da ponta da arma/mão)
+	active_beam.position = Vector2.ZERO  # Ajuste se necessário
 	
-	# Configura o raio
-	active_beam.setup(spell, beam_direction, global_position, self)
+	# Configura o raio (sem direção, pois weapon_marker já aponta)
+	active_beam.setup(spell, self)
 	
 	is_casting_beam = true
 	print("[PLAYER]    ⚡ Raio ativo! Segure o botão para manter!")
+	print("[PLAYER]    🎯 Raio segue a mira automaticamente!")
 	print("[PLAYER] ═══════════════════════════════════\n")
 
 
@@ -1831,17 +1832,6 @@ func update_beam_direction() -> void:
 	"""Atualiza a direção do raio para seguir o mouse"""
 	if not active_beam or not is_instance_valid(active_beam):
 		is_casting_beam = false
-		return
-	
-	# Atualiza posição do raio para seguir o player
-	active_beam.global_position = global_position
-	
-	# Atualiza direção para o mouse
-	var mouse_pos = get_global_mouse_position()
-	var beam_direction = (mouse_pos - global_position).normalized()
-	active_beam.update_direction(beam_direction)
-
-
 func stop_beam() -> void:
 	"""Para o raio contínuo"""
 	if not is_casting_beam:

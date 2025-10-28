@@ -534,19 +534,24 @@ var slow_timer: Timer = null
 
 func apply_slow(slow_percent: float, duration: float) -> void:
 	"""Aplica redução de velocidade ao inimigo"""
+	# slow_percent: 0.5 = mantém 50% da velocidade (reduz 50%)
 	if not is_slowed:
 		is_slowed = true
-		slow_multiplier = slow_percent  # Ex: 0.5 = 50% da velocidade
+		slow_multiplier = slow_percent  # Ex: 0.5 = mantém 50% da velocidade
 		
 		# Cria timer se não existe
 		if not slow_timer:
 			slow_timer = Timer.new()
 			add_child(slow_timer)
 			slow_timer.timeout.connect(_on_slow_timeout)
+			slow_timer.one_shot = false  # Permite renovação
 		
-		print("[ENEMY] ❄️ Slow aplicado: %.0f%% de velocidade por %.1fs" % [slow_percent * 100, duration])
+		print("[ENEMY] ❄️ Slow aplicado: velocidade reduzida para %.0f%% por %.1fs" % [slow_percent * 100, duration])
+	else:
+		# Já estava com slow, apenas renova
+		pass
 	
-	# Renova o timer
+	# Renova o timer (sempre que é atingido pelo raio)
 	slow_timer.start(duration)
 
 

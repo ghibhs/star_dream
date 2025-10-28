@@ -84,10 +84,8 @@ func _ready() -> void:
 	print("[ICE BEAM] 🧊 Raio laser de gelo criado")
 
 
-func setup(spell: Resource, beam_direction: Vector2, start_position: Vector2, player: Node2D) -> void:
+func setup(spell: Resource, player: Node2D) -> void:
 	"""Configura o raio com os dados da magia"""
-	global_position = start_position
-	direction = beam_direction.normalized()
 	owner_player = player
 	spell_data = spell
 	
@@ -96,9 +94,15 @@ func setup(spell: Resource, beam_direction: Vector2, start_position: Vector2, pl
 		max_range = spell.spell_range
 		mana_cost_per_second = spell.mana_cost
 		slow_amount = spell.speed_modifier
+		
+		# Configura cor do raio baseado no spell
+		if beam_line:
+			beam_line.default_color = spell.spell_color
+		if beam_particles:
+			beam_particles.color = spell.spell_color
 	
-	# Rotaciona o raio na direção correta
-	rotation = direction.angle()
+	# NÃO define posição ou rotação aqui
+	# O raio será filho do weapon_marker, então usa posição/rotação relativa
 	
 	activate()
 
@@ -131,8 +135,11 @@ func _process(delta: float) -> void:
 	if not is_active:
 		return
 	
+	# Direction é sempre para direita (o weapon_marker gira o raio inteiro)
+	var beam_direction = Vector2.RIGHT
+	
 	# Atualiza o raycast para detectar obstáculos
-	raycast.target_position = direction * max_range
+	raycast.target_position = beam_direction * max_range
 	raycast.force_raycast_update()
 	
 	# Calcula o ponto final do raio (parede ou alcance máximo)
@@ -140,7 +147,7 @@ func _process(delta: float) -> void:
 	if raycast.is_colliding():
 		end_point = raycast.get_collision_point() - global_position
 	else:
-		end_point = direction * max_range
+		end_point = beam_direction * max_range
 	
 	# Atualiza visual do raio
 	beam_line.set_point_position(1, end_point)
@@ -198,9 +205,3 @@ func _on_body_exited(body: Node2D) -> void:
 			body.remove_slow()
 		
 		print("[ICE BEAM] 🚪 Inimigo saiu do raio: %s" % body.name)
-
-
-func update_direction(new_direction: Vector2) -> void:
-	"""Atualiza a direção do raio (segue o mouse)"""
-	direction = new_direction.normalized()
-	rotation = direction.angle()
