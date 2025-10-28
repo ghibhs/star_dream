@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/classes/ItemData.gd" id="1_1"]
+[ext_resource type="Texture2D" path="res://art/flecha.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_1")
+item_id = "wood_arrow"
+item_name = "Flecha de Madeira"
+description = "Munição básica para arcos"
+icon = ExtResource("2_icon")
+item_type = 4
+sprite_frames = null
+animation_name = "default"
+collision_shape = null
+is_stackable = true
+max_stack_size = 99
+is_equippable = false
+equipment_slot = 0
+weapon_data = null
+value = 5
+weight = 0.05
+sound_effect = null
+hit_effect = null
+bonus_health = 0.0
+bonus_defense = 0.0
+bonus_speed = 0.0
+bonus_damage = 0.0

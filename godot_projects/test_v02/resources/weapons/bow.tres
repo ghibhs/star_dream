@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=9 format=3 uid="uid://kwure8xvbiuo"]
+
+[ext_resource type="Texture2D" uid="uid://2pfdr2jhcrqv" path="res://art/flecha.png" id="1_jpofd"]
+[ext_resource type="Script" uid="uid://bs5wps23xnbhp" path="res://resources/classes/WeaponData.gd" id="1_kx51b"]
+[ext_resource type="Texture2D" uid="uid://dw5v78b8evqbs" path="res://art/arco1.png" id="2_jpofd"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_kx51b"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_jpofd"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_jpofd"]
+radius = 5.0
+height = 20.0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_lu6ex"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_jpofd")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_q81a1"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_jpofd")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[resource]
+script = ExtResource("1_kx51b")
+sprite_frames = SubResource("SpriteFrames_q81a1")
+collision_shape = SubResource("CircleShape2D_jpofd")
+item_name = "bow"
+icon = ExtResource("2_jpofd")
+Sprite_scale = Vector2(0.8, 0.8)
+attack_collision = SubResource("CircleShape2D_kx51b")
+weapon_type = "projectile"
+projectile_sprite_frames = SubResource("SpriteFrames_lu6ex")
+projectile_collision = SubResource("CapsuleShape2D_jpofd")
+can_charge = true
