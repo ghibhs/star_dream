@@ -47,6 +47,7 @@ var current_mana: float
 var available_spells: Array[SpellData] = []  # SpellData resources
 var current_spell_index: int = 0
 var spell_selector_ui: Control = null  # Referência ao UI de seleção
+var spell_cooldowns: Dictionary = {}  # {spell_id: tempo_restante}
 
 # -----------------------------
 # SISTEMA DE KNOCKBACK (EMPURRÃO)
@@ -73,6 +74,9 @@ func _physics_process(delta: float) -> void:
 	
 	# Regenera mana
 	regenerate_mana(delta)
+	
+	# Atualiza cooldowns de magias
+	update_spell_cooldowns(delta)
 	
 	# === SISTEMA DE SELEÇÃO DE MAGIAS ===
 	# Q - Magia anterior
@@ -1574,6 +1578,12 @@ func cast_current_spell() -> void:
 	
 	var spell = available_spells[current_spell_index]
 	
+	# Verifica se a magia está em cooldown
+	if is_spell_on_cooldown(spell.spell_id):
+		var remaining = spell_cooldowns[spell.spell_id]
+		print("[PLAYER] ⏱️ %s ainda em cooldown! (%.1fs restantes)" % [spell.spell_name, remaining])
+		return
+	
 	# Verifica se tem mana suficiente
 	if current_mana < spell.mana_cost:
 		print("[PLAYER] ❌ Mana insuficiente para lançar %s! (Necessário: %.1f, Atual: %.1f)" % [spell.spell_name, spell.mana_cost, current_mana])
@@ -1587,9 +1597,13 @@ func cast_current_spell() -> void:
 	emit_signal("mana_changed", current_mana)
 	print("[PLAYER] 🔮 Sinal emitido!")
 	
+	# Inicia cooldown
+	start_spell_cooldown(spell.spell_id, spell.cooldown)
+	
 	print("\n[PLAYER] 🔮 ═══ LANÇANDO MAGIA ═══")
 	print("[PLAYER]    Nome: %s" % spell.spell_name)
 	print("[PLAYER]    Custo: %.1f mana (Restante: %.1f)" % [spell.mana_cost, current_mana])
+	print("[PLAYER]    Cooldown: %.1fs" % spell.cooldown)
 	print("[PLAYER]    Tipo: %s" % get_spell_type_name(spell.spell_type))
 	
 	# Lança a magia baseado no tipo
@@ -1727,3 +1741,35 @@ func _on_spell_selected(spell: Resource) -> void:
 			break
 	
 	print("[PLAYER] 🎯 Magia selecionada: %s" % spell.spell_name)
+
+
+# -----------------------------
+# SISTEMA DE COOLDOWN DE MAGIAS
+# -----------------------------
+
+func update_spell_cooldowns(delta: float) -> void:
+	"""Atualiza os cooldowns de todas as magias"""
+	for spell_id in spell_cooldowns.keys():
+		spell_cooldowns[spell_id] -= delta
+		if spell_cooldowns[spell_id] <= 0:
+			spell_cooldowns.erase(spell_id)
+			print("[PLAYER] ✅ %s pronta para uso!" % spell_id)
+
+
+func start_spell_cooldown(spell_id: String, cooldown_time: float) -> void:
+	"""Inicia o cooldown de uma magia"""
+	spell_cooldowns[spell_id] = cooldown_time
+	print("[PLAYER] ⏱️ Cooldown iniciado: %s (%.1fs)" % [spell_id, cooldown_time])
+
+
+func is_spell_on_cooldown(spell_id: String) -> bool:
+	"""Verifica se uma magia está em cooldown"""
+	return spell_cooldowns.has(spell_id)
+
+
+func get_spell_cooldown_remaining(spell_id: String) -> float:
+	"""Retorna o tempo restante de cooldown de uma magia"""
+	if spell_cooldowns.has(spell_id):
+		return spell_cooldowns[spell_id]
+	return 0.0
+
