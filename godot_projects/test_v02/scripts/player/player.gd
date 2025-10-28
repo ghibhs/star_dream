@@ -49,6 +49,10 @@ var current_spell_index: int = 0
 var spell_selector_ui: Control = null  # Referência ao UI de seleção
 var spell_cooldowns: Dictionary = {}  # {spell_id: tempo_restante}
 
+# Raio contínuo (Ice Beam)
+var active_beam: Node2D = null  # Referência ao raio ativo
+var is_casting_beam: bool = false
+
 # -----------------------------
 # SISTEMA DE KNOCKBACK (EMPURRÃO)
 # -----------------------------
@@ -90,6 +94,14 @@ func _physics_process(delta: float) -> void:
 	# Botão direito do mouse - Lançar magia
 	if Input.is_action_just_pressed("cast_spell"):
 		cast_current_spell()
+	
+	# Mantém raio contínuo ativo enquanto segura o botão
+	if Input.is_action_pressed("cast_spell") and is_casting_beam and active_beam:
+		update_beam_direction()
+	
+	# Desativa raio quando solta o botão
+	if Input.is_action_just_released("cast_spell") and is_casting_beam:
+		stop_beam()
 	
 	# === SISTEMA DE ATAQUE COM CLIQUE/SEGURAR ===
 	# Se o botão de ataque está sendo segurado, conta o tempo
@@ -1578,6 +1590,11 @@ func cast_current_spell() -> void:
 	
 	var spell = available_spells[current_spell_index]
 	
+	# Ice Bolt é especial: raio contínuo (não verifica cooldown inicial)
+	if spell.spell_id == "ice_bolt":
+		cast_ice_beam(spell)
+		return
+	
 	# Verifica se a magia está em cooldown
 	if is_spell_on_cooldown(spell.spell_id):
 		var remaining = spell_cooldowns[spell.spell_id]
@@ -1772,4 +1789,85 @@ func get_spell_cooldown_remaining(spell_id: String) -> float:
 	if spell_cooldowns.has(spell_id):
 		return spell_cooldowns[spell_id]
 	return 0.0
+
+
+# -----------------------------
+# SISTEMA DE RAIO CONTÍNUO (ICE BEAM)
+# -----------------------------
+
+func cast_ice_beam(spell: SpellData) -> void:
+	"""Lança o raio contínuo de gelo"""
+	# Se já está lançando, ignora
+	if is_casting_beam and active_beam:
+		return
+	
+	# Verifica mana mínima para iniciar (custo inicial)
+	if current_mana < 5.0:  # Requer pelo menos 5 de mana para iniciar
+		print("[PLAYER] ❌ Mana insuficiente para iniciar Ice Beam!")
+		return
+	
+	print("\n[PLAYER] 🧊 ═══ ATIVANDO RAIO GÉLIDO ═══")
+	
+	# Carrega a cena do raio
+	var beam_scene = preload("res://scenes/spells/ice_beam.tscn")
+	active_beam = beam_scene.instantiate()
+	
+	# Adiciona ao mundo
+	get_parent().add_child(active_beam)
+	
+	# Pega a direção do mouse
+	var mouse_pos = get_global_mouse_position()
+	var beam_direction = (mouse_pos - global_position).normalized()
+	
+	# Configura o raio
+	active_beam.setup(spell, beam_direction, global_position, self)
+	
+	is_casting_beam = true
+	print("[PLAYER]    ⚡ Raio ativo! Segure o botão para manter!")
+	print("[PLAYER] ═══════════════════════════════════\n")
+
+
+func update_beam_direction() -> void:
+	"""Atualiza a direção do raio para seguir o mouse"""
+	if not active_beam or not is_instance_valid(active_beam):
+		is_casting_beam = false
+		return
+	
+	# Atualiza posição do raio para seguir o player
+	active_beam.global_position = global_position
+	
+	# Atualiza direção para o mouse
+	var mouse_pos = get_global_mouse_position()
+	var beam_direction = (mouse_pos - global_position).normalized()
+	active_beam.update_direction(beam_direction)
+
+
+func stop_beam() -> void:
+	"""Para o raio contínuo"""
+	if not is_casting_beam:
+		return
+	
+	print("[PLAYER] 🛑 Parando raio gélido...")
+	
+	if active_beam and is_instance_valid(active_beam):
+		active_beam.deactivate()
+	
+	active_beam = null
+	is_casting_beam = false
+	
+	# Inicia cooldown após soltar
+	var spell = available_spells[current_spell_index]
+	if spell.spell_id == "ice_bolt":
+		start_spell_cooldown(spell.spell_id, spell.cooldown)
+
+
+func consume_mana_continuous(amount: float) -> bool:
+	"""Consome mana continuamente (chamado pelo raio)"""
+	if current_mana >= amount:
+		current_mana -= amount
+		emit_signal("mana_changed", current_mana)
+		return true
+	else:
+		# Mana acabou
+		return false
 
