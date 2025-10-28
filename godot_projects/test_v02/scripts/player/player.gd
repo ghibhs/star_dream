@@ -1797,11 +1797,6 @@ func cast_ice_beam(spell: SpellData) -> void:
 	if is_casting_beam and active_beam:
 		return
 	
-	# Verifica se tem weapon_marker
-	if not weapon_marker:
-		print("[PLAYER] ⚠️ weapon_marker não encontrado!")
-		return
-	
 	# Verifica mana mínima para iniciar (custo inicial)
 	if current_mana < 5.0:  # Requer pelo menos 5 de mana para iniciar
 		print("[PLAYER] ❌ Mana insuficiente para iniciar Ice Beam!")
@@ -1813,18 +1808,18 @@ func cast_ice_beam(spell: SpellData) -> void:
 	var beam_scene = preload("res://scenes/spells/ice_beam.tscn")
 	active_beam = beam_scene.instantiate()
 	
-	# Adiciona como FILHO do weapon_marker (gira junto com a mira)
-	weapon_marker.add_child(active_beam)
+	# Adiciona ao mundo (não como filho)
+	get_parent().add_child(active_beam)
 	
-	# Posição local (sai da ponta da arma/mão)
-	active_beam.position = Vector2.ZERO  # Ajuste se necessário
+	# Define posição global do player
+	active_beam.global_position = global_position
 	
-	# Configura o raio (sem direção, pois weapon_marker já aponta)
+	# Configura o raio (rotação será feita no _process do ice_beam)
 	active_beam.setup(spell, self)
 	
 	is_casting_beam = true
-	print("[PLAYER]    ⚡ Raio ativo! Segure o botão para manter!")
-	print("[PLAYER]    🎯 Raio segue a mira automaticamente!")
+	print("[PLAYER]    ⚡ Raio ativo! Segue o mouse automaticamente!")
+	print("[PLAYER]    🎯 Segure o botão para manter!")
 	print("[PLAYER] ═══════════════════════════════════\n")
 
 

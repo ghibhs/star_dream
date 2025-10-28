@@ -135,7 +135,16 @@ func _process(delta: float) -> void:
 	if not is_active:
 		return
 	
-	# Direction é sempre para direita (o weapon_marker gira o raio inteiro)
+	# Acompanha a posição do player
+	if owner_player:
+		global_position = owner_player.global_position
+		
+		# Rotaciona o raio para apontar para o mouse
+		var mouse_pos = owner_player.get_global_mouse_position()
+		var direction_to_mouse = (mouse_pos - global_position).normalized()
+		global_rotation = direction_to_mouse.angle()
+	
+	# Direction é sempre para direita (depois da rotação)
 	var beam_direction = Vector2.RIGHT
 	
 	# Atualiza o raycast para detectar obstáculos
@@ -177,15 +186,21 @@ func apply_damage_to_enemies() -> void:
 	"""Aplica dano a todos os inimigos no raio"""
 	var damage_this_tick = (damage_per_second * damage_interval)
 	
+	if enemies_in_beam.size() > 0:
+		print("[ICE BEAM] ⚡ Aplicando dano a %d inimigos (dano: %.1f, slow: %.0f%%)" % [
+			enemies_in_beam.size(),
+			damage_this_tick,
+			slow_amount * 100
+		])
+	
 	for enemy in enemies_in_beam:
 		if is_instance_valid(enemy) and enemy.has_method("take_damage"):
-			enemy.take_damage(damage_this_tick)  # Apenas o dano
+			# Aplica dano SEM stun (false) - Ice Beam só causa slow, não paralisa
+			enemy.take_damage(damage_this_tick, false)
 			
 			# Aplica slow
 			if enemy.has_method("apply_slow"):
 				enemy.apply_slow(slow_amount, 0.5)  # Slow por 0.5s (renovado constantemente)
-			
-			print("[ICE BEAM] ❄️ Dano aplicado: %.1f (total: %.1f/s)" % [damage_this_tick, damage_per_second])
 
 
 func _on_body_entered(body: Node2D) -> void:

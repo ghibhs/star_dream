@@ -351,7 +351,7 @@ func perform_attack() -> void:
 
 
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, apply_stun: bool = true) -> void:
 	if is_dead:
 		print("[ENEMY] ⚠️ Dano ignorado: inimigo já está morto")
 		return
@@ -365,8 +365,9 @@ func take_damage(amount: float) -> void:
 	print("[ENEMY]    Dano bruto: %.1f | Defesa: %.1f | Dano real: %.1f" % [amount, enemy_data.defense, damage_taken])
 	print("[ENEMY]    HP: %.1f → %.1f (%.1f%%)" % [previous_health, current_health, (current_health/enemy_data.max_health)*100])
 	
-	# ✅ SEMPRE aplica o flash vermelho primeiro (mesmo em morte)
-	apply_hit_flash()
+	# ✅ SEMPRE aplica o flash vermelho primeiro (mesmo em morte) - MAS SÓ SE apply_stun = true
+	if apply_stun:
+		apply_hit_flash()
 	
 	# Se for agressivo e não tiver alvo, procura o player
 	if enemy_data.behavior == "Aggressive" and not target:
@@ -392,9 +393,10 @@ func take_damage(amount: float) -> void:
 		die()
 		return
 	
-	# Se não morreu, muda para estado HURT
-	print("[ENEMY] Estado: ", State.keys()[current_state], " → HURT")
-	current_state = State.HURT
+	# Se não morreu E apply_stun = true, muda para estado HURT
+	if apply_stun:
+		print("[ENEMY] Estado: ", State.keys()[current_state], " → HURT")
+		current_state = State.HURT
 
 
 func apply_hit_flash() -> void:
@@ -535,24 +537,29 @@ var slow_timer: Timer = null
 func apply_slow(slow_percent: float, duration: float) -> void:
 	"""Aplica redução de velocidade ao inimigo"""
 	# slow_percent: 0.5 = mantém 50% da velocidade (reduz 50%)
-	if not is_slowed:
-		is_slowed = true
-		slow_multiplier = slow_percent  # Ex: 0.5 = mantém 50% da velocidade
-		
-		# Cria timer se não existe
-		if not slow_timer:
-			slow_timer = Timer.new()
-			add_child(slow_timer)
-			slow_timer.timeout.connect(_on_slow_timeout)
-			slow_timer.one_shot = false  # Permite renovação
-		
-		print("[ENEMY] ❄️ Slow aplicado: velocidade reduzida para %.0f%% por %.1fs" % [slow_percent * 100, duration])
-	else:
-		# Já estava com slow, apenas renova
-		pass
+	
+	# Cria timer se não existe
+	if not slow_timer:
+		slow_timer = Timer.new()
+		add_child(slow_timer)
+		slow_timer.timeout.connect(_on_slow_timeout)
+		slow_timer.one_shot = true  # Timer de uma vez
+	
+	# Atualiza o slow
+	var was_slowed = is_slowed
+	is_slowed = true
+	slow_multiplier = slow_percent  # Ex: 0.5 = mantém 50% da velocidade
 	
 	# Renova o timer (sempre que é atingido pelo raio)
 	slow_timer.start(duration)
+	
+	if not was_slowed:
+		print("[ENEMY %s] ❄️ Slow aplicado: velocidade %.0f%% (%.1f -> %.1f)" % [
+			name,
+			slow_percent * 100,
+			enemy_data.move_speed,
+			enemy_data.move_speed * slow_percent
+		])
 
 
 func remove_slow() -> void:
@@ -562,7 +569,7 @@ func remove_slow() -> void:
 		slow_multiplier = 1.0
 		if slow_timer:
 			slow_timer.stop()
-		print("[ENEMY] ✅ Slow removido")
+		print("[ENEMY %s] ✅ Slow removido - velocidade: %.1f" % [name, enemy_data.move_speed])
 
 
 func _on_slow_timeout() -> void:
@@ -572,4 +579,5 @@ func _on_slow_timeout() -> void:
 
 func get_current_speed() -> float:
 	"""Retorna a velocidade atual considerando slow"""
-	return enemy_data.move_speed * slow_multiplier
+	var final_speed = enemy_data.move_speed * slow_multiplier
+	return final_speed

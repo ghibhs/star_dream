@@ -1,6 +1,71 @@
-[gd_resource type="Resource" script_class="SpellData" load_steps=2 format=3 uid="uid://bwx8y5q3nf7pk"]
+[gd_resource type="Resource" script_class="SpellData" load_steps=12 format=3 uid="uid://bwx8y5q3nf7pk"]
 
 [ext_resource type="Script" uid="uid://c4e31tj8hxk5h" path="res://resources/classes/SpellData.gd" id="1_fireball"]
+[ext_resource type="Texture2D" uid="uid://dsb7alhofyoqt" path="res://art/fireball_64_sheet.png" id="1_mvy0l"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5v5vl"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2iwm2"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ragy3"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_giy0g"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tgobx"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pube5"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1pktv"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tax7r"]
+atlas = ExtResource("1_mvy0l")
+region = Rect2(448, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_kldfp"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5v5vl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2iwm2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ragy3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_giy0g")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tgobx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pube5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1pktv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tax7r")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [resource]
 script = ExtResource("1_fireball")
@@ -15,6 +80,7 @@ cooldown = 1.5
 damage = 30.0
 spell_range = 400.0
 projectile_speed = 500.0
+projectile_sprite_frames = SubResource("SpriteFrames_kldfp")
 projectile_animation = "default"
 projectile_scale = Vector2(1.5, 1.5)
 pierce = false
