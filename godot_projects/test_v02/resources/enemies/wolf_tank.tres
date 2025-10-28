@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=15 format=3 uid="uid://b5h4lal2pqr8m"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=12 format=3 uid="uid://b5h4lal2pqr8m"]
 
 [ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://resources/classes/EnemyData.gd" id="1_base"]
-[ext_resource type="Texture2D" uid="uid://ctrjmbrvsxuw2" path="res://art/tenor-t.png" id="2_qg5n3"]
+[ext_resource type="Texture2D" uid="uid://p8m8r62rn5l4" path="res://art/boss_spritesheet1.png" id="2_qg5n3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(35, 25)
@@ -32,18 +32,6 @@ region = Rect2(192, 0, 64, 64)
 atlas = ExtResource("2_qg5n3")
 region = Rect2(256, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_vg65j"]
-atlas = ExtResource("2_qg5n3")
-region = Rect2(320, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ccb5l"]
-atlas = ExtResource("2_qg5n3")
-region = Rect2(384, 0, 64, 64)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_iqsoa"]
-atlas = ExtResource("2_qg5n3")
-region = Rect2(448, 0, 64, 64)
-
 [sub_resource type="SpriteFrames" id="SpriteFrames_wolf"]
 animations = [{
 "frames": [{
@@ -61,15 +49,6 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_fvtmf")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_vg65j")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ccb5l")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_iqsoa")
 }],
 "loop": true,
 "name": &"walk",
@@ -80,7 +59,6 @@ animations = [{
 script = ExtResource("1_base")
 enemy_name = "Lobo Alfa"
 sprite_frames = SubResource("SpriteFrames_wolf")
-animation_name = "walk"
 sprite_scale = Vector2(1.5, 1.5)
 max_health = 120.0
 damage = 15.0
@@ -95,13 +73,7 @@ attack_hitbox_shape = SubResource("RectangleShape2D_attack")
 attack_hitbox_offset = Vector2(30, 0)
 attack_hitbox_duration = 0.2
 attack_hitbox_color = Color(0.8, 0, 0, 0.9)
-attack_warning_delay = 0.3
-applies_knockback = true
-knockback_force = 300.0
-knockback_duration = 0.2
-behavior = "Aggressive"
 attack_cooldown = 2.5
 experience_drop = 25
 coin_drop = 15
-death_animation = "death"
 hit_flash_duration = 0.15

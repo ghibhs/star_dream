@@ -15,7 +15,8 @@ var owner_player: Node2D = null
 var spell_data: Resource = null
 
 # Visual do raio
-var beam_line: Line2D
+var beam_sprite: AnimatedSprite2D  # Sprite animado do raio
+var beam_line: Line2D  # Fallback se não houver sprite
 var beam_particles: CPUParticles2D
 var hit_area: Area2D
 var collision_shape: CollisionShape2D
@@ -36,7 +37,14 @@ func _ready() -> void:
 	raycast.collision_mask = 1  # Layer de paredes/obstáculos
 	raycast.target_position = Vector2(max_range, 0)
 	
-	# Cria a linha visual do raio
+	# Cria sprite animado do raio (novo sistema)
+	beam_sprite = AnimatedSprite2D.new()
+	add_child(beam_sprite)
+	beam_sprite.visible = false
+	beam_sprite.centered = false  # Origem no canto esquerdo
+	beam_sprite.offset = Vector2(0, -beam_width / 2)  # Centraliza verticalmente
+	
+	# Cria a linha visual do raio (fallback se não houver SpriteFrames)
 	beam_line = Line2D.new()
 	add_child(beam_line)
 	beam_line.width = beam_width
@@ -45,6 +53,7 @@ func _ready() -> void:
 	beam_line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	beam_line.add_point(Vector2.ZERO)
 	beam_line.add_point(Vector2(max_range, 0))
+	beam_line.visible = false
 	
 	# Cria partículas no final do raio
 	beam_particles = CPUParticles2D.new()
@@ -95,10 +104,22 @@ func setup(spell: Resource, player: Node2D) -> void:
 		mana_cost_per_second = spell.mana_cost
 		slow_amount = spell.speed_modifier
 		
-		# Configura cor do raio baseado no spell
-		if beam_line:
-			beam_line.default_color = spell.spell_color
-		if beam_particles:
+		# Se o spell tem sprite_frames, usa sprite animado
+		if "sprite_frames" in spell and spell.sprite_frames:
+			beam_sprite.sprite_frames = spell.sprite_frames
+			if "animation_name" in spell and spell.animation_name != "":
+				beam_sprite.play(spell.animation_name)
+			else:
+				beam_sprite.play()
+			print("[ICE BEAM] 🎨 Usando AnimatedSprite2D com animação")
+		else:
+			# Fallback: usa Line2D com cor do spell
+			if "spell_color" in spell:
+				beam_line.default_color = spell.spell_color
+			print("[ICE BEAM] 🎨 Usando Line2D como fallback")
+		
+		# Configura cor das partículas
+		if "spell_color" in spell and beam_particles:
 			beam_particles.color = spell.spell_color
 	
 	# NÃO define posição ou rotação aqui
@@ -110,7 +131,14 @@ func setup(spell: Resource, player: Node2D) -> void:
 func activate() -> void:
 	"""Ativa o raio laser"""
 	is_active = true
-	beam_line.visible = true
+	
+	# Ativa sprite animado OU Line2D (dependendo do que está configurado)
+	if beam_sprite.sprite_frames:
+		beam_sprite.visible = true
+		beam_sprite.play()
+	else:
+		beam_line.visible = true
+	
 	beam_particles.emitting = true
 	print("[ICE BEAM] ⚡ Raio ativado!")
 
@@ -118,6 +146,8 @@ func activate() -> void:
 func deactivate() -> void:
 	"""Desativa o raio laser"""
 	is_active = false
+	beam_sprite.visible = false
+	beam_sprite.stop()
 	beam_line.visible = false
 	beam_particles.emitting = false
 	
@@ -159,11 +189,25 @@ func _process(delta: float) -> void:
 		end_point = beam_direction * max_range
 	
 	# Atualiza visual do raio
-	beam_line.set_point_position(1, end_point)
+	var beam_length = end_point.length()
+	
+	# Se usando sprite animado, ajusta escala para esticar até o fim
+	if beam_sprite.sprite_frames and beam_sprite.visible:
+		# Escala X = comprimento do raio / largura original do sprite
+		# Escala Y = largura desejada / altura original do sprite
+		var sprite_texture = beam_sprite.sprite_frames.get_frame_texture(beam_sprite.animation, beam_sprite.frame)
+		if sprite_texture:
+			var original_width = sprite_texture.get_width()
+			beam_sprite.scale.x = beam_length / original_width if original_width > 0 else 1.0
+	
+	# Se usando Line2D, atualiza ponto final
+	if beam_line.visible:
+		beam_line.set_point_position(1, end_point)
+	
+	# Atualiza partículas no fim do raio
 	beam_particles.position = end_point
 	
-	# Atualiza collision shape
-	var beam_length = end_point.length()
+	# Atualiza collision shape (usa beam_length já calculado)
 	if collision_shape and collision_shape.shape:
 		collision_shape.shape.size = Vector2(beam_length, beam_width)
 		collision_shape.position = Vector2(beam_length / 2, 0)

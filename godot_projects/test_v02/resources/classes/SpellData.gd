@@ -50,6 +50,10 @@ enum Element {
 @export var pierce: bool = false  # Atravessa inimigos
 @export var homing: bool = false  # Persegue inimigos
 
+@export_group("Beam/Ray (for continuous beam spells like Ice Beam)")
+@export var sprite_frames: SpriteFrames  # Sprite animado do raio
+@export var animation_name: String = "beam"  # Nome da animação no SpriteFrames
+
 @export_group("Area Effect (if AREA type)")
 @export var area_radius: float = 100.0
 @export var area_duration: float = 2.0  # Duração da área

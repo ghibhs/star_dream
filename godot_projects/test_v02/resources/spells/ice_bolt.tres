@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="SpellData" load_steps=12 format=3 uid="uid://c3m8iaq5nf8ql"]
+[gd_resource type="Resource" script_class="SpellData" load_steps=13 format=3 uid="uid://c3m8iaq5nf8ql"]
 
 [ext_resource type="Texture2D" uid="uid://brsg8gkvmyucd" path="res://art/thunderice_64_sheet.png" id="1_7gswn"]
 [ext_resource type="Script" uid="uid://c4e31tj8hxk5h" path="res://resources/classes/SpellData.gd" id="1_icebolt"]
+[ext_resource type="PackedScene" uid="uid://dbn5yh7x8r3qw" path="res://scenes/spells/ice_beam.tscn" id="3_vr54a"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vr54a"]
 atlas = ExtResource("1_7gswn")
@@ -72,32 +73,23 @@ script = ExtResource("1_icebolt")
 spell_id = "ice_bolt"
 spell_name = "Raio Gélido"
 description = "Raio laser contínuo de gelo que causa 25 de dano por segundo e reduz a velocidade do inimigo. Segure o botão para manter ativo!"
-spell_type = 0
 element = 2
-mana_cost = 10.0
 cast_time = 0.0
 cooldown = 2.0
 damage = 25.0
 spell_range = 500.0
 projectile_speed = 0.0
 projectile_sprite_frames = SubResource("SpriteFrames_fwes5")
-projectile_animation = "default"
 projectile_scale = Vector2(1.2, 1.2)
 pierce = true
-homing = false
 area_radius = 20.0
 area_duration = 0.0
 damage_over_time = true
 tick_interval = 0.1
 duration = 10.0
 speed_modifier = 0.5
-damage_modifier = 1.0
-defense_modifier = 1.0
 heal_amount = 0.0
-heal_over_time = false
 heal_duration = 0.0
-spell_color = Color(0.2, 0.7, 1, 1)
-can_be_interrupted = true
-requires_target = false
+trail_particle = ExtResource("3_vr54a")
+spell_color = Color(1, 1, 1, 0)
 max_targets = 10
-knockback_force = 0.0

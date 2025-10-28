@@ -302,6 +302,11 @@ var can_attack: bool = true
 
 var attack_area: Area2D
 
+# === COMPONENTES DE ATAQUE (Sistema Modular) ===
+var melee_component: Node2D  # MeleeAttackComponent
+var ranged_component: Node2D  # RangedAttackComponent
+var charge_component: Node2D  # ChargeAttackComponent
+
 # === SISTEMA DE CARREGAMENTO DO ARCO ===
 var is_charging: bool = false
 var charge_time: float = 0.0
@@ -350,6 +355,9 @@ func _ready() -> void:
 	
 	# Inicializa sistema de magias
 	setup_spell_system()
+	
+	# Inicializa componentes de ataque
+	setup_attack_components()
 	
 	# Inicializa inventário (se existir na cena)
 	inventory = get_node_or_null("Inventory")
@@ -704,102 +712,42 @@ func perform_attack() -> void:
 
 
 func melee_attack() -> void:
-	if not attack_area:
-		print("[PLAYER] ⚠️ Ataque melee cancelado: attack_area não existe")
+	"""Executa ataque melee usando componente modular"""
+	if not melee_component:
+		print("[PLAYER] ⚠️ MeleeAttackComponent não inicializado!")
 		return
 	
-	print("[PLAYER] 🗡️ Executando ataque melee...")
+	# Configura componente se necessário
+	if melee_component.has_method("setup"):
+		melee_component.setup(attack_area, current_weapon_sprite, current_weapon_data)
 	
-	# 🎯 A rotação já é feita pelo weapon_marker no _process
-	# Não rotacionar a attack_area separadamente para evitar dupla rotação
-	
-	# 🎬 ANIMAÇÃO: Toca animação de ataque na arma
-	if current_weapon_sprite and current_weapon_data:
-		if current_weapon_data.sprite_frames.has_animation("attack"):
-			current_weapon_sprite.play("attack")
-			print("[PLAYER]    ✅ Tocando animação: 'attack'")
-			
-			# Aguarda animação completar antes de ativar hitbox
-			await current_weapon_sprite.animation_finished
-			print("[PLAYER]    ✅ Animação 'attack' finalizada")
-		else:
-			print("[PLAYER]    ⚠️ Animação 'attack' não encontrada no SpriteFrames")
-	
-	# ⚔️ ATIVA hitbox (só depois da animação)
-	attack_area.monitoring = true
-	print("[PLAYER]    ✅ Hitbox de GOLPE ATIVADA!")
-	
-	# Lista de inimigos já atingidos (para garantir dano único)
-	var enemies_hit = []
-	
-	# ⚡ Duração da hitbox ativa
-	var attack_hit_duration = 0.15
-	if "attack_hitbox_duration" in current_weapon_data:
-		attack_hit_duration = current_weapon_data.attack_hitbox_duration
-		print("[PLAYER]    ⏱️ Duração do golpe: %.2fs (do .tres)" % attack_hit_duration)
+	# Executa ataque via componente
+	if melee_component.has_method("execute_attack"):
+		print("[PLAYER] �️ Delegando ataque para MeleeAttackComponent...")
+		melee_component.execute_attack()
 	else:
-		print("[PLAYER]    ⏱️ Duração do golpe: %.2fs (padrão)" % attack_hit_duration)
-	
-	# Verifica colisões durante a duração da hitbox
-	var timer = 0.0
-	while timer < attack_hit_duration:
-		await get_tree().process_frame
-		timer += get_process_delta_time()
-		
-		# ✅ Verifica se monitoring está ativo antes de pegar overlapping bodies
-		if not attack_area.monitoring:
-			break
-		
-		# Verifica inimigos colidindo
-		for body in attack_area.get_overlapping_bodies():
-			if body.is_in_group("enemies") and body not in enemies_hit:
-				enemies_hit.append(body)
-				# Aplica dano
-				if body.has_method("take_damage"):
-					var damage_amount = current_weapon_data.damage if current_weapon_data else 10.0
-					body.take_damage(damage_amount)
-					print("[PLAYER]    💥 Dano aplicado a ", body.name, ": ", damage_amount)
-	
-	# Desativa hitbox
-	attack_area.monitoring = false
-	print("[PLAYER]    ❌ Hitbox de GOLPE DESATIVADA!")
-	
-	# Volta para animação idle/default
-	if current_weapon_sprite and current_weapon_data:
-		# Verifica se existe a animação antes de tocar
-		if current_weapon_data.sprite_frames.has_animation(current_weapon_data.animation_name):
-			current_weapon_sprite.play(current_weapon_data.animation_name)
-			print("[PLAYER]    🔄 Voltando para animação: ", current_weapon_data.animation_name)
-		elif current_weapon_data.sprite_frames.has_animation("default"):
-			current_weapon_sprite.play("default")
-			print("[PLAYER]    🔄 Voltando para animação: default")
-		else:
-			current_weapon_sprite.stop()
-			print("[PLAYER]    ⏸️ Sprite parado (sem animação idle)")
+		push_error("[PLAYER] ❌ MeleeAttackComponent não tem método execute_attack()")
+
 
 
 func projectile_attack() -> void:
-	print("[PLAYER] 🏹 Disparando projétil...")
-	var scene := preload("res://scenes/projectiles/projectile.tscn")
-	if not scene or not projectile_spawn_marker:
-		print("[PLAYER] ⚠️ Projétil cancelado: scene ou spawn_marker inválido")
+	"""Dispara projétil usando componente modular"""
+	if not ranged_component:
+		print("[PLAYER] ⚠️ RangedAttackComponent não inicializado!")
 		return
+	
+	# Configura componente se necessário
+	if ranged_component.has_method("setup"):
+		ranged_component.setup(projectile_spawn_marker, current_weapon_data)
+	
+	# Executa ataque via componente
+	if ranged_component.has_method("execute_attack"):
+		var target_pos = get_global_mouse_position()
+		print("[PLAYER] 🏹 Delegando disparo para RangedAttackComponent...")
+		ranged_component.execute_attack(target_pos)
+	else:
+		push_error("[PLAYER] ❌ RangedAttackComponent não tem método execute_attack()")
 
-	var projectile := scene.instantiate()
-	projectile.global_position = projectile_spawn_marker.global_position
-	print("[PLAYER]    Spawn position: ", projectile_spawn_marker.global_position)
-
-	# Entra na árvore primeiro para garantir que _ready/@onready do projétil rodem
-	get_tree().current_scene.add_child(projectile)
-	print("[PLAYER]    Projétil adicionado à cena")
-
-	# Direção para o mouse
-	var dir: Vector2 = (get_global_mouse_position() - projectile.global_position).normalized()
-	print("[PLAYER]    Direção: ", dir)
-
-	# Passa os dados DEPOIS (deferred) — evita Nil no AnimatedSprite2D do projétil
-	projectile.call_deferred("setup_from_weapon_data", current_weapon_data, dir)
-	print("[PLAYER]    ✅ Projétil configurado e disparado")
 
 
 # ========================================
@@ -1549,6 +1497,40 @@ func setup_spell_system() -> void:
 	print("[PLAYER] ═══════════════════════════════════\n")
 
 
+func setup_attack_components() -> void:
+	"""Inicializa componentes de ataque modulares"""
+	print("\n[PLAYER] ⚔️ ═══ INICIALIZANDO COMPONENTES DE ATAQUE ═══")
+	
+	# Cria componente de ataque melee
+	var melee_script = load("res://scripts/components/melee_attack_component.gd")
+	if melee_script:
+		melee_component = Node2D.new()
+		melee_component.set_script(melee_script)
+		melee_component.name = "MeleeAttackComponent"
+		add_child(melee_component)
+		print("[PLAYER]    ✅ MeleeAttackComponent criado")
+	
+	# Cria componente de ataque ranged
+	var ranged_script = load("res://scripts/components/ranged_attack_component.gd")
+	if ranged_script:
+		ranged_component = Node2D.new()
+		ranged_component.set_script(ranged_script)
+		ranged_component.name = "RangedAttackComponent"
+		add_child(ranged_component)
+		print("[PLAYER]    ✅ RangedAttackComponent criado")
+	
+	# Cria componente de carregamento
+	var charge_script = load("res://scripts/components/charge_attack_component.gd")
+	if charge_script:
+		charge_component = Node2D.new()
+		charge_component.set_script(charge_script)
+		charge_component.name = "ChargeAttackComponent"
+		add_child(charge_component)
+		print("[PLAYER]    ✅ ChargeAttackComponent criado")
+	
+	print("[PLAYER] ═══════════════════════════════════════════\n")
+
+
 func load_available_spells() -> void:
 	"""Carrega as magias disponíveis dos recursos"""
 	available_spells.clear()
@@ -1679,48 +1661,39 @@ func cast_area_spell(spell: SpellData) -> void:
 
 
 func cast_buff_spell(spell: SpellData) -> void:
-	"""Lança uma magia de buff"""
-	print("[PLAYER]    ✨ Aplicando buff!")
+	"""Lança uma magia de buff usando cena especializada"""
+	print("[PLAYER]    ✨ Aplicando buff via cena especializada!")
 	print("[PLAYER]    Duração: %.1fs" % spell.duration)
 	print("[PLAYER]    Speed: %.2fx | Damage: %.2fx | Defense: %.2fx" % [spell.speed_modifier, spell.damage_modifier, spell.defense_modifier])
 	
-	# Salva os valores originais se ainda não estão salvos
-	if not has_meta("original_speed"):
-		set_meta("original_speed", speed)
-	if not has_meta("original_damage_multiplier"):
-		set_meta("original_damage_multiplier", 1.0)
+	# Carrega a cena do buff
+	var buff_scene = preload("res://scenes/spells/magic_buff.tscn")
+	var buff = buff_scene.instantiate()
 	
-	# Aplica os modificadores
-	speed *= spell.speed_modifier
-	var damage_multiplier = get_meta("original_damage_multiplier", 1.0) * spell.damage_modifier
-	set_meta("current_damage_multiplier", damage_multiplier)
+	# Adiciona ao mundo
+	get_parent().add_child(buff)
 	
-	print("[PLAYER]    Nova velocidade: %.1f" % speed)
+	# Configura o buff
+	buff.setup(spell, self)
 	
-	# Remove o buff após a duração
-	await get_tree().create_timer(spell.duration).timeout
-	
-	# Restaura valores originais
-	speed = get_meta("original_speed")
-	set_meta("current_damage_multiplier", get_meta("original_damage_multiplier"))
-	
-	print("[PLAYER]    ⏰ Buff expirou! Valores restaurados.")
+	print("[PLAYER]    ✅ Buff criado e aplicado!")
 
 
 func cast_heal_spell(spell: SpellData) -> void:
-	"""Lança uma magia de cura"""
-	var heal_amount = spell.heal_amount
-	var old_health = current_health
-	current_health = min(current_health + heal_amount, max_health)
-	var actual_heal = current_health - old_health
-	emit_signal("health_changed", current_health)
+	"""Lança uma magia de cura usando cena especializada"""
+	print("[PLAYER]    💚 Lançando cura via cena especializada!")
 	
-	print("[PLAYER]    💚 Cura aplicada: +%.1f HP" % actual_heal)
-	print("[PLAYER]    HP: %.1f/%.1f" % [current_health, max_health])
+	# Carrega a cena de cura
+	var heal_scene = preload("res://scenes/spells/magic_heal.tscn")
+	var heal = heal_scene.instantiate()
 	
-	# TODO: Adicionar efeito visual de cura
-	# if spell.cast_particle:
-	#     spawn_heal_effect()
+	# Adiciona ao mundo
+	get_parent().add_child(heal)
+	
+	# Configura a cura
+	heal.setup(spell, self)
+	
+	print("[PLAYER]    ✅ Cura criada e aplicada!")
 
 
 

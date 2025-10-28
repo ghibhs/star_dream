@@ -4,6 +4,9 @@ class_name MagicArea
 
 ## Área de efeito mágico configurável via SpellData
 
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var sprite_fallback: Sprite2D = $Sprite2D
+
 var spell_data: SpellData
 var damage: float
 var damage_over_time: bool = false
@@ -34,10 +37,29 @@ func setup(spell: SpellData, spawn_position: Vector2):
 	if collision_shape.shape is CircleShape2D:
 		collision_shape.shape.radius = spell.area_radius
 	
-	# Configura visual
-	var sprite = $Sprite2D
-	sprite.modulate = spell.spell_color
-	sprite.scale = Vector2.ONE * (spell.area_radius / 50.0)  # Escala baseada no raio
+	# Configura visual - prioriza AnimatedSprite2D
+	if "area_sprite_frames" in spell and spell.area_sprite_frames:
+		animated_sprite.sprite_frames = spell.area_sprite_frames
+		animated_sprite.visible = true
+		sprite_fallback.visible = false
+		
+		# Toca animação
+		if "area_animation" in spell and spell.area_animation != "":
+			animated_sprite.play(spell.area_animation)
+		else:
+			animated_sprite.play()
+		
+		# Escala baseada no raio
+		animated_sprite.scale = Vector2.ONE * (spell.area_radius / 50.0)
+		
+		print("[MAGIC_AREA] 🎨 Usando AnimatedSprite2D com animação")
+	else:
+		# Fallback para Sprite2D estático
+		animated_sprite.visible = false
+		sprite_fallback.visible = true
+		sprite_fallback.modulate = spell.spell_color
+		sprite_fallback.scale = Vector2.ONE * (spell.area_radius / 50.0)
+		print("[MAGIC_AREA] 🎨 Usando Sprite2D como fallback")
 	
 	# TODO: Adicionar partículas
 	# if spell.cast_particle:
