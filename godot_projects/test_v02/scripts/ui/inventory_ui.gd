@@ -36,14 +36,47 @@ func get_selected_slot_index() -> int:
 
 ## Helper: Seleciona um slot específico na navegação (usado para clicks)
 func _select_slot_in_navigation(slot_index: int) -> void:
+	remove_all_highlights()
 	for i in range(navigable_elements.size()):
 		if navigable_elements[i].type == "slot" and navigable_elements[i].index == slot_index:
 			current_nav_index = i
+			highlight_current_element()
+			return
+
+
+## Helper: Seleciona um equipamento na navegação (usado para clicks)
+func _select_equipment_in_navigation(equip_type: ItemData.EquipmentSlot) -> void:
+	remove_all_highlights()
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "equipment" and navigable_elements[i].equip_type == equip_type:
+			current_nav_index = i
+			highlight_current_element()
+			return
+
+
+## Helper: Seleciona um filtro na navegação (usado para clicks)
+func _select_filter_in_navigation(filter_type: int) -> void:
+	remove_all_highlights()
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "filter" and navigable_elements[i].filter_type == filter_type:
+			current_nav_index = i
+			highlight_current_element()
+			return
+
+
+## Helper: Seleciona um botão na navegação (usado para clicks)
+func _select_button_in_navigation(button_name: String) -> void:
+	remove_all_highlights()
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "button" and navigable_elements[i].name == button_name:
+			current_nav_index = i
+			highlight_current_element()
 			return
 
 # Nós da UI
 var panel: Panel
 var grid_container: GridContainer
+var slots_scroll_container: ScrollContainer  # Referência ao ScrollContainer dos slots
 var equipment_panel: Panel
 var close_button: Button
 var split_button: Button
@@ -131,30 +164,7 @@ func _input(event: InputEvent) -> void:
 func build_navigable_list() -> void:
 	navigable_elements.clear()
 	
-	# 1. Adiciona todos os slots do inventário
-	for i in range(slot_uis.size()):
-		navigable_elements.append({
-			"type": "slot",
-			"index": i,
-			"object": slot_uis[i]
-		})
-	
-	# 2. Adiciona botões de ação (use, split, drop)
-	var action_buttons = [
-		{"button": use_button, "name": "use"},
-		{"button": split_button, "name": "split"},
-		{"button": drop_button, "name": "drop"}
-	]
-	
-	for btn_data in action_buttons:
-		if btn_data.button and not btn_data.button.disabled:
-			navigable_elements.append({
-				"type": "button",
-				"name": btn_data.name,
-				"object": btn_data.button
-			})
-	
-	# 3. Adiciona filtros
+	# 1. Adiciona FILTROS primeiro (topo)
 	for i in range(filter_buttons_order.size()):
 		var filter_type = filter_buttons_order[i]
 		if filter_buttons.has(filter_type):
@@ -164,16 +174,65 @@ func build_navigable_list() -> void:
 				"object": filter_buttons[filter_type]
 			})
 	
+	# 2. Adiciona todos os SLOTS do inventário (meio)
+	for i in range(slot_uis.size()):
+		navigable_elements.append({
+			"type": "slot",
+			"index": i,
+			"object": slot_uis[i]
+		})
+	
+	# 3. Adiciona EQUIPAMENTOS (lateral direita - mesma altura dos slots)
+	# Ordem: Cabeça, Peito, Pernas, Botas, Luvas, Anel, Amuleto, Armas
+	var equipment_order = [
+		ItemData.EquipmentSlot.HEAD,
+		ItemData.EquipmentSlot.CHEST,
+		ItemData.EquipmentSlot.LEGS,
+		ItemData.EquipmentSlot.BOOTS,
+		ItemData.EquipmentSlot.GLOVES,
+		ItemData.EquipmentSlot.RING,
+		ItemData.EquipmentSlot.AMULET,
+		ItemData.EquipmentSlot.WEAPON_PRIMARY,
+		ItemData.EquipmentSlot.WEAPON_SECONDARY
+	]
+	
+	for equip_type in equipment_order:
+		if equipment_slot_uis.has(equip_type):
+			navigable_elements.append({
+				"type": "equipment",
+				"equip_type": equip_type,
+				"object": equipment_slot_uis[equip_type]
+			})
+	
+	# 4. Adiciona BOTÕES de ação no final (baixo)
+	var action_buttons = [
+		{"button": use_button, "name": "use"},
+		{"button": split_button, "name": "split"},
+		{"button": drop_button, "name": "drop"}
+	]
+	
+	var buttons_added = 0
+	for btn_data in action_buttons:
+		if btn_data.button:
+			navigable_elements.append({
+				"type": "button",
+				"name": btn_data.name,
+				"object": btn_data.button
+			})
+			buttons_added += 1
+	
 	print("[INVENTORY UI] 🗺️ Lista de navegação construída: %d elementos" % navigable_elements.size())
-	print("[INVENTORY UI]    - Slots: %d" % slot_uis.size())
-	print("[INVENTORY UI]    - Botões: %d" % action_buttons.size())
 	print("[INVENTORY UI]    - Filtros: %d" % filter_buttons_order.size())
+	print("[INVENTORY UI]    - Slots: %d" % slot_uis.size())
+	print("[INVENTORY UI]    - Equipamentos: %d" % equipment_slot_uis.size())
+	print("[INVENTORY UI]    - Botões: %d" % buttons_added)
 
 
-## Navegação unificada - sistema de CAMADAS VERTICAIS
-## Camadas: Filtros (topo) → Slots (meio) → Botões (baixo)
+## Navegação unificada - sistema de CAMADAS VERTICAIS + Equipamentos laterais
+## Camadas: Filtros (topo) → Slots (meio - com equipamentos na lateral) → Botões (baixo)
 ## Setas horizontais (←→): navegam DENTRO da camada atual
 ## Setas verticais (↑↓): mudam de camada (só sai dos slots pelas bordas)
+## Equipamentos: Acessíveis da última coluna dos slots com → (e vice-versa com ←)
 func navigate_unified(direction: int, is_vertical: bool) -> void:
 	if navigable_elements.is_empty():
 		build_navigable_list()
@@ -199,18 +258,27 @@ func navigate_unified(direction: int, is_vertical: bool) -> void:
 				# Está nos SLOTS (meio) - navegação em GRID
 				var slot_index = current_elem.index
 				var current_col = slot_index % grid_columns
+				var current_row = int(slot_index / grid_columns)
 				var new_slot_index = slot_index + (direction * grid_columns)
 				
 				# Verifica se vai sair do grid
 				if new_slot_index >= 0 and new_slot_index < slot_uis.size():
 					# Ainda dentro dos slots - navega normalmente
+					var new_row = int(new_slot_index / grid_columns)
+					print("[INVENTORY UI] 🧭 Navegação vertical: slot %d (linha %d) → slot %d (linha %d)" % [slot_index, current_row, new_slot_index, new_row])
 					_select_slot_by_index(new_slot_index)
 				else:
 					# Saiu do grid - muda de camada
 					if direction > 0:  # ↓ Para baixo: vai para BOTÕES
+						print("[INVENTORY UI] 🧭 Navegação vertical: slot %d → BOTÕES (saiu do grid)" % slot_index)
 						_go_to_first_button()
 					else:  # ↑ Para cima: vai para FILTROS (mesma coluna se possível)
+						print("[INVENTORY UI] 🧭 Navegação vertical: slot %d → FILTROS (saiu do grid)" % slot_index)
 						_go_to_filter_at_column(current_col)
+			
+			"equipment":
+				# Está nos EQUIPAMENTOS (lateral) - navegação vertical dentro dos equipamentos
+				_navigate_within_layer("equipment", direction)
 			
 			"button":
 				# Está nos BOTÕES (baixo)
@@ -231,13 +299,30 @@ func navigate_unified(direction: int, is_vertical: bool) -> void:
 				var slot_index = current_elem.index
 				var current_row = slot_index / grid_columns
 				var current_col = slot_index % grid_columns
-				var new_col = (current_col + direction) % grid_columns
-				if new_col < 0:
-					new_col = grid_columns + new_col
 				
-				var new_slot_index = (current_row * grid_columns) + new_col
-				if new_slot_index < slot_uis.size():
-					_select_slot_by_index(new_slot_index)
+				# Se está na última coluna e aperta →, vai para EQUIPAMENTOS
+				if direction > 0 and current_col == grid_columns - 1:
+					_go_to_first_equipment()
+				# Se está na primeira coluna e aperta ←, faz wrap para última
+				elif direction < 0 and current_col == 0:
+					var new_col = grid_columns - 1
+					var new_slot_index = (current_row * grid_columns) + new_col
+					if new_slot_index < slot_uis.size():
+						_select_slot_by_index(new_slot_index)
+				# Navegação normal dentro do grid
+				else:
+					var new_col = current_col + direction
+					var new_slot_index = (current_row * grid_columns) + new_col
+					if new_slot_index < slot_uis.size():
+						_select_slot_by_index(new_slot_index)
+			
+			"equipment":
+				# Se está em equipamento e aperta ←, volta para slots (última coluna)
+				if direction < 0:
+					_go_to_last_column_slots()
+				# Se aperta → dentro dos equipamentos, faz wrap vertical
+				else:
+					_navigate_within_layer("equipment", direction)
 			
 			"button":
 				# Navega entre botões horizontalmente
@@ -325,6 +410,30 @@ func _select_slot_by_index(slot_index: int) -> void:
 			return
 
 
+## Helper: Vai para o primeiro equipamento
+func _go_to_first_equipment() -> void:
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "equipment":
+			current_nav_index = i
+			print("[INVENTORY UI] 🎯 Indo para equipamentos")
+			return
+
+
+## Helper: Vai para a última coluna dos slots (volta dos equipamentos)
+func _go_to_last_column_slots() -> void:
+	var last_col = grid_columns - 1
+	# Tenta encontrar um slot na última coluna (qualquer linha)
+	for i in range(navigable_elements.size()):
+		if navigable_elements[i].type == "slot":
+			var slot_idx = navigable_elements[i].index
+			if slot_idx % grid_columns == last_col:
+				current_nav_index = i
+				print("[INVENTORY UI] 🎯 Voltando para slots (última coluna)")
+				return
+	# Fallback: vai para o último slot
+	_select_slot_by_index(slot_uis.size() - 1)
+
+
 ## Ativa o elemento atualmente selecionado
 func activate_current_element() -> void:
 	if current_nav_index < 0 or current_nav_index >= navigable_elements.size():
@@ -354,6 +463,12 @@ func activate_current_element() -> void:
 			# Ativa filtro
 			print("[INVENTORY UI] ✅ Ativando filtro: %s" % elem.filter_type)
 			_on_filter_changed(elem.filter_type)
+		
+		"equipment":
+			# Seleciona ou usa o equipamento
+			print("[INVENTORY UI] ✅ Interagindo com equipamento: %s" % elem.equip_type)
+			# Aqui você pode adicionar lógica específica para equipamentos
+			# Por exemplo: desequipar, trocar com item do inventário, etc.
 
 
 ## Destaca o elemento atual
@@ -366,15 +481,119 @@ func highlight_current_element() -> void:
 	match elem.type:
 		"slot":
 			elem.object.set_highlighted(true)
+			_ensure_slot_visible(elem.index)  # Garante que o slot está visível
 			print("[INVENTORY UI] 🎯 Slot %d selecionado" % elem.index)
 		
 		"button":
-			elem.object.modulate = Color(1.5, 1.5, 0.5)
+			# Botões usam borda amarela customizada
+			var style = StyleBoxFlat.new()
+			style.bg_color = Color(0.2, 0.2, 0.2, 1.0)
+			style.border_color = Color(1.0, 1.0, 0.0, 1.0)  # Amarelo
+			style.border_width_left = 2
+			style.border_width_right = 2
+			style.border_width_top = 2
+			style.border_width_bottom = 2
+			style.corner_radius_top_left = 4
+			style.corner_radius_top_right = 4
+			style.corner_radius_bottom_left = 4
+			style.corner_radius_bottom_right = 4
+			elem.object.add_theme_stylebox_override("normal", style)
+			elem.object.add_theme_stylebox_override("hover", style)
+			elem.object.add_theme_stylebox_override("pressed", style)
+			elem.object.add_theme_stylebox_override("disabled", style)
 			print("[INVENTORY UI] 🎯 Botão '%s' selecionado" % elem.name)
 		
 		"filter":
+			# Filtros usam modulate (são botões normais)
 			elem.object.modulate = Color(1.5, 1.5, 0.5)
 			print("[INVENTORY UI] 🎯 Filtro '%s' selecionado" % elem.filter_type)
+		
+		"equipment":
+			# Equipamentos usam borda amarela como os slots
+			if elem.object.has_method("set_highlighted"):
+				elem.object.set_highlighted(true)
+			else:
+				# Fallback: usa modulate se não tiver o método
+				elem.object.modulate = Color(1.5, 1.5, 0.5)
+			print("[INVENTORY UI] 🎯 Equipamento '%s' selecionado" % elem.equip_type)
+
+
+## Garante que um slot está visível na área de scroll
+func _ensure_slot_visible(slot_index: int) -> void:
+	if not slots_scroll_container or slot_index >= slot_uis.size():
+		return
+	
+	var slot_ui = slot_uis[slot_index]
+	if not slot_ui:
+		return
+	
+	# Chama depois que o layout for atualizado
+	_do_scroll_to_slot.call_deferred(slot_index)
+
+
+## Realiza o scroll para o slot (chamado via deferred)
+func _do_scroll_to_slot(slot_index: int) -> void:
+	if not slots_scroll_container or slot_index >= slot_uis.size():
+		print("[INVENTORY UI] ⚠️ Scroll cancelado: scroll_container=%s, slot_index=%d/%d" % [slots_scroll_container != null, slot_index, slot_uis.size()])
+		return
+	
+	var slot_ui = slot_uis[slot_index]
+	if not slot_ui:
+		print("[INVENTORY UI] ⚠️ Scroll cancelado: slot_ui NULL para index %d" % slot_index)
+		return
+	
+	# Calcula a posição do slot no grid (linha e coluna)
+	var row: int = int(float(slot_index) / float(grid_columns))
+	var col: int = slot_index % grid_columns
+	
+	# Separações e dimensões
+	var v_sep = grid_container.get_theme_constant("v_separation")
+	var h_sep = grid_container.get_theme_constant("h_separation")
+	var slot_height = slot_ui.slot_size.y + v_sep
+	var slot_width = slot_ui.slot_size.x + h_sep
+	
+	# Posições X e Y do slot
+	var slot_x = col * slot_width
+	var slot_y = row * slot_height
+	
+	# Dimensões e scroll atual (vertical e horizontal)
+	var scroll_height = slots_scroll_container.size.y
+	var scroll_width = slots_scroll_container.size.x
+	var current_scroll_v = slots_scroll_container.scroll_vertical
+	var current_scroll_h = slots_scroll_container.scroll_horizontal
+	var max_scroll_v = slots_scroll_container.get_v_scroll_bar().max_value
+	var max_scroll_h = slots_scroll_container.get_h_scroll_bar().max_value
+	
+	print("[INVENTORY UI] 📜 Scroll check:")
+	print("   Slot %d (linha %d, coluna %d)" % [slot_index, row, col])
+	print("   Slot pos: X=%.1f Y=%.1f | Size: %.1fx%.1f" % [slot_x, slot_y, slot_width, slot_height])
+	print("   Scroll V: %.1f/%.1f | H: %.1f/%.1f" % [current_scroll_v, max_scroll_v, current_scroll_h, max_scroll_h])
+	print("   Visible area: %.1fx%.1f" % [scroll_width, scroll_height])
+	
+	# Margem para scroll mais agressivo
+	var margin = 50.0
+	
+	# ═══ SCROLL VERTICAL ═══
+	if slot_y < current_scroll_v + margin:
+		var new_scroll = max(0, slot_y - margin)
+		slots_scroll_container.scroll_vertical = new_scroll
+		print("   ⬆️ SCROLL VERTICAL: %.1f (slot acima)" % new_scroll)
+	elif slot_y + slot_height > current_scroll_v + scroll_height - margin:
+		var new_scroll = slot_y + slot_height - scroll_height + margin
+		new_scroll = min(new_scroll, max_scroll_v)
+		slots_scroll_container.scroll_vertical = new_scroll
+		print("   ⬇️ SCROLL VERTICAL: %.1f (slot abaixo)" % new_scroll)
+	
+	# ═══ SCROLL HORIZONTAL ═══
+	if slot_x < current_scroll_h + margin:
+		var new_scroll = max(0, slot_x - margin)
+		slots_scroll_container.scroll_horizontal = new_scroll
+		print("   ⬅️ SCROLL HORIZONTAL: %.1f (slot à esquerda)" % new_scroll)
+	elif slot_x + slot_width > current_scroll_h + scroll_width - margin:
+		var new_scroll = slot_x + slot_width - scroll_width + margin
+		new_scroll = min(new_scroll, max_scroll_h)
+		slots_scroll_container.scroll_horizontal = new_scroll
+		print("   ➡️ SCROLL HORIZONTAL: %.1f (slot à direita)" % new_scroll)
 
 
 ## Remove todos os highlights
@@ -383,13 +602,29 @@ func remove_all_highlights() -> void:
 	for slot_ui in slot_uis:
 		slot_ui.set_highlighted(false)
 	
-	# Remove de botões
+	# Remove de equipamentos
+	for equip_ui in equipment_slot_uis.values():
+		if equip_ui and equip_ui.has_method("set_highlighted"):
+			equip_ui.set_highlighted(false)
+		elif equip_ui:
+			equip_ui.modulate = Color.WHITE
+	
+	# Remove de botões (remove overrides de stylebox)
 	if use_button:
-		use_button.modulate = Color.WHITE
+		use_button.remove_theme_stylebox_override("normal")
+		use_button.remove_theme_stylebox_override("hover")
+		use_button.remove_theme_stylebox_override("pressed")
+		use_button.remove_theme_stylebox_override("disabled")
 	if split_button:
-		split_button.modulate = Color.WHITE
+		split_button.remove_theme_stylebox_override("normal")
+		split_button.remove_theme_stylebox_override("hover")
+		split_button.remove_theme_stylebox_override("pressed")
+		split_button.remove_theme_stylebox_override("disabled")
 	if drop_button:
-		drop_button.modulate = Color.WHITE
+		drop_button.remove_theme_stylebox_override("normal")
+		drop_button.remove_theme_stylebox_override("hover")
+		drop_button.remove_theme_stylebox_override("pressed")
+		drop_button.remove_theme_stylebox_override("disabled")
 	
 	# Remove de filtros
 	for btn in filter_buttons.values():
@@ -612,17 +847,17 @@ func create_ui() -> void:
 	slots_vbox.add_child(slots_label)
 	
 	# ScrollContainer para os slots
-	var scroll = ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.mouse_filter = Control.MOUSE_FILTER_PASS  # Passa eventos para os filhos
-	slots_vbox.add_child(scroll)
+	slots_scroll_container = ScrollContainer.new()
+	slots_scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	slots_scroll_container.mouse_filter = Control.MOUSE_FILTER_PASS  # Passa eventos para os filhos
+	slots_vbox.add_child(slots_scroll_container)
 	
 	grid_container = GridContainer.new()
 	grid_container.columns = grid_columns
 	grid_container.add_theme_constant_override("h_separation", slot_spacing)
 	grid_container.add_theme_constant_override("v_separation", slot_spacing)
 	grid_container.mouse_filter = Control.MOUSE_FILTER_PASS  # Passa eventos para os filhos
-	scroll.add_child(grid_container)
+	slots_scroll_container.add_child(grid_container)
 	
 	# Botões de ação
 	var actions_hbox = HBoxContainer.new()
@@ -679,6 +914,8 @@ func create_equipment_slots(parent: VBoxContainer) -> void:
 		ItemData.EquipmentSlot.LEGS,
 		ItemData.EquipmentSlot.BOOTS,
 		ItemData.EquipmentSlot.GLOVES,
+		ItemData.EquipmentSlot.RING,
+		ItemData.EquipmentSlot.AMULET,
 		ItemData.EquipmentSlot.WEAPON_PRIMARY,
 		ItemData.EquipmentSlot.WEAPON_SECONDARY,
 	]
@@ -824,10 +1061,9 @@ func _on_slot_clicked(slot_index: int, mouse_button: int) -> void:
 				print("[INVENTORY UI] ✅ Equipando item do slot %d" % slot_index)
 				inventory.equip_item(slot_index)
 		
-		# Atualiza navegação para este slot
+		# Atualiza navegação para este slot (já aplica highlight)
 		_select_slot_in_navigation(slot_index)
 		update_action_buttons()
-		highlight_current_element()
 
 
 
@@ -968,6 +1204,8 @@ func _on_equipment_slot_clicked(_slot_index: int, mouse_button: int, equip_type:
 		return
 	
 	if mouse_button == MOUSE_BUTTON_LEFT:
+		# Atualiza navegação para este equipamento (já aplica highlight)
+		_select_equipment_in_navigation(equip_type)
 		inventory.unequip_item(equip_type)
 
 
@@ -1001,6 +1239,9 @@ func _on_equipment_changed(_slot_type: ItemData.EquipmentSlot) -> void:
 ## Callback para mudança de filtro
 func _on_filter_changed(filter_type: int) -> void:
 	print("\n[INVENTORY UI] 🔍 Mudando filtro para: ", filter_type)
+	
+	# Atualiza navegação para este filtro (já aplica highlight)
+	_select_filter_in_navigation(filter_type)
 	
 	# Desativa outros botões
 	for btn_type in filter_buttons:
@@ -1045,6 +1286,9 @@ func apply_filter() -> void:
 func _on_use_button_pressed() -> void:
 	print("\n[INVENTORY UI] 🔘 Botão 'Usar' pressionado")
 	
+	# Atualiza navegação para este botão (já aplica highlight)
+	_select_button_in_navigation("use")
+	
 	var selected_slot_index = get_selected_slot_index()
 	if selected_slot_index == -1:
 		print("[INVENTORY UI] ❌ Nenhum slot selecionado")
@@ -1065,6 +1309,9 @@ func _on_use_button_pressed() -> void:
 
 ## Callback para botão "Dividir"
 func _on_split_button_pressed() -> void:
+	# Atualiza navegação para este botão (já aplica highlight)
+	_select_button_in_navigation("split")
+	
 	var selected_slot_index = get_selected_slot_index()
 	if selected_slot_index == -1 or not inventory:
 		return
@@ -1088,6 +1335,9 @@ func _on_split_button_pressed() -> void:
 
 ## Callback para botão "Dropar"
 func _on_drop_button_pressed() -> void:
+	# Atualiza navegação para este botão (já aplica highlight)
+	_select_button_in_navigation("drop")
+	
 	var selected_slot_index = get_selected_slot_index()
 	if selected_slot_index == -1 or not inventory:
 		return
