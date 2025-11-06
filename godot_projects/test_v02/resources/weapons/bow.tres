@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://2pfdr2jhcrqv" path="res://art/flecha.png" id="1_jpofd"]
 [ext_resource type="Script" uid="uid://bs5wps23xnbhp" path="res://resources/classes/WeaponData.gd" id="1_kx51b"]
-[ext_resource type="Texture2D" uid="uid://dw5v78b8evqbs" path="res://art/arco1.png" id="2_jpofd"]
+[ext_resource type="Texture2D" uid="uid://bbnv6nonlnvmw" path="res://art/arco1.png" id="2_jpofd"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_kx51b"]
 

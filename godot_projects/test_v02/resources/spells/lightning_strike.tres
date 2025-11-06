@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="SpellData" load_steps=2 format=3 uid="uid://lightning_strike_spell"]
+
+[ext_resource type="Script" path="res://resources/classes/SpellData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+spell_id = "lightning_strike"
+spell_name = "Raio Divino"
+description = "Relâmpago que cai do céu no inimigo mais próximo, causando dano e stun"
+spell_type = 2
+element = 3
+mana_cost = 25.0
+cast_time = 0.2
+cooldown = 3.0
+damage = 50.0
+spell_range = 400.0
+projectile_speed = 400.0
+pierce = false
+homing = false
+beam_width = 20.0
+beam_duration = 3.0
+damage_per_second = 25.0
+mana_per_second = 10.0
+spawn_delay = 0.7
+warning_duration = 0.4
+animation_name = "default"
+projectile_scale = Vector2(1, 1)
+apply_status_effect = true
+status_effect_type = "stun"
+status_effect_duration = 1.5
+status_effect_power = 1.0
+spell_color = Color(1, 1, 0, 1)
+knockback_force = 200.0

@@ -1,0 +1,86 @@
+[gd_resource type="Resource" script_class="SpellData" load_steps=12 format=3 uid="uid://6bewitv6nk5g"]
+
+[ext_resource type="Script" uid="uid://c4e31tj8hxk5h" path="res://resources/classes/SpellData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://brsg8gkvmyucd" path="res://art/thunderice_64_sheet.png" id="2_r8bkq"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i6det"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iv46d"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wkecy"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_34k42"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h7w56"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5g3ne"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4iyjr"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2c72q"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(448, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_r51gb"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i6det")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iv46d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wkecy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_34k42")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h7w56")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5g3ne")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4iyjr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2c72q")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[resource]
+script = ExtResource("1")
+spell_id = "ice_beam"
+spell_name = "Raio Gélido"
+description = "Raio contínuo de gelo que causa dano e reduz velocidade dos inimigos"
+spell_type = 1
+element = 2
+mana_cost = 0.0
+cast_time = 0.0
+cooldown = 2.0
+damage = 0.0
+spell_range = 500.0
+beam_duration = 5.0
+mana_per_second = 12.0
+sprite_frames = SubResource("SpriteFrames_r51gb")
+apply_status_effect = true
+spell_color = Color(0.2, 0.7, 1, 0.8)

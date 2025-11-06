@@ -158,13 +158,11 @@ func get_spell_color(spell: SpellData) -> Color:
 	"""Retorna uma cor baseada no tipo de magia"""
 	match spell.spell_type:
 		SpellData.SpellType.PROJECTILE:
-			return Color(1.0, 0.5, 0.0, 1.0)  # Laranja
-		SpellData.SpellType.AREA:
-			return Color(0.5, 0.5, 1.0, 1.0)  # Azul
-		SpellData.SpellType.BUFF:
-			return Color(0.0, 1.0, 0.5, 1.0)  # Verde
-		SpellData.SpellType.HEAL:
-			return Color(0.0, 1.0, 0.0, 1.0)  # Verde claro
+			return Color(1.0, 0.5, 0.0, 1.0)  # Laranja - Fireball
+		SpellData.SpellType.BEAM:
+			return Color(0.2, 0.7, 1.0, 1.0)  # Azul claro - Ice Beam
+		SpellData.SpellType.TARGETED:
+			return Color(1.0, 1.0, 0.0, 1.0)  # Amarelo - Lightning Strike
 		_:
 			return Color(0.7, 0.7, 0.7, 1.0)  # Cinza
 

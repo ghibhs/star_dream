@@ -1535,27 +1535,22 @@ func load_available_spells() -> void:
 	"""Carrega as magias disponíveis dos recursos"""
 	available_spells.clear()
 	
-	# Carrega as magias de exemplo
+	# Carrega os 3 novos tipos de magias
 	var fireball = load("res://resources/spells/fireball.tres")
-	var ice_bolt = load("res://resources/spells/ice_bolt.tres")
-	var heal = load("res://resources/spells/heal.tres")
-	var speed_boost = load("res://resources/spells/speed_boost.tres")
+	var ice_beam = load("res://resources/spells/ice_beam.tres")
+	var lightning_strike = load("res://resources/spells/lightning_strike.tres")
 	
 	if fireball:
 		available_spells.append(fireball)
-		print("[PLAYER]    🔥 Fireball carregada")
+		print("[PLAYER]    🔥 Fireball carregada (PROJECTILE)")
 	
-	if ice_bolt:
-		available_spells.append(ice_bolt)
-		print("[PLAYER]    ❄️ Ice Bolt carregada")
+	if ice_beam:
+		available_spells.append(ice_beam)
+		print("[PLAYER]    ❄️ Ice Beam carregada (BEAM)")
 	
-	if heal:
-		available_spells.append(heal)
-		print("[PLAYER]    💚 Heal carregada")
-	
-	if speed_boost:
-		available_spells.append(speed_boost)
-		print("[PLAYER]    ⚡ Speed Boost carregada")
+	if lightning_strike:
+		available_spells.append(lightning_strike)
+		print("[PLAYER]    ⚡ Lightning Strike carregada (TARGETED)")
 	
 	print("[PLAYER] 📚 Total de magias carregadas: %d" % available_spells.size())
 
@@ -1568,9 +1563,9 @@ func cast_current_spell() -> void:
 	
 	var spell = available_spells[current_spell_index]
 	
-	# Ice Bolt é especial: raio contínuo (não verifica cooldown inicial)
-	if spell.spell_id == "ice_bolt":
-		cast_ice_beam(spell)
+	# BEAM é especial: raio contínuo (não verifica cooldown inicial)
+	if spell.spell_type == SpellData.SpellType.BEAM:
+		cast_beam_spell(spell)
 		return
 	
 	# Verifica se a magia está em cooldown
@@ -1603,14 +1598,10 @@ func cast_current_spell() -> void:
 	
 	# Lança a magia baseado no tipo
 	match spell.spell_type:
-		0:  # PROJECTILE
+		SpellData.SpellType.PROJECTILE:
 			cast_projectile_spell(spell)
-		1:  # AREA
-			cast_area_spell(spell)
-		2:  # BUFF
-			cast_buff_spell(spell)
-		4:  # HEAL
-			cast_heal_spell(spell)
+		SpellData.SpellType.TARGETED:
+			cast_targeted_spell(spell)
 	
 	print("[PLAYER] ═══════════════════════════════════\n")
 
@@ -1621,89 +1612,95 @@ func cast_projectile_spell(spell: SpellData) -> void:
 	print("[PLAYER]    Dano: %.1f" % spell.damage)
 	print("[PLAYER]    Velocidade: %.1f" % spell.projectile_speed)
 	
-	# Carrega a cena do projétil mágico
-	var projectile_scene = preload("res://scenes/projectiles/magic_projectile.tscn")
+	# Carrega a cena do projétil
+	var projectile_scene = preload("res://scenes/spells/spell_projectile.tscn")
 	var projectile = projectile_scene.instantiate()
 	
 	# Adiciona ao mundo
 	get_parent().add_child(projectile)
 	
-	# Pega a direção do mouse
-	var mouse_pos = get_global_mouse_position()
-	var spell_direction = (mouse_pos - global_position).normalized()
+	# Posiciona no player
+	projectile.global_position = global_position
 	
 	# Configura o projétil
-	projectile.setup(spell, spell_direction, global_position)
+	projectile.setup(spell, self)
+	
+	# Se for homing, encontra o alvo mais próximo
+	if spell.homing:
+		projectile.find_nearest_enemy()
 	
 	print("[PLAYER]    ✅ Projétil criado e lançado!")
 
 
-func cast_area_spell(spell: SpellData) -> void:
-	"""Lança uma magia de área"""
-	print("[PLAYER]    💥 Lançando magia de área!")
+func cast_targeted_spell(spell: SpellData) -> void:
+	"""Lança uma magia targeted (spawna no inimigo)"""
+	print("[PLAYER]    ⚡ Lançando magia targeted!")
 	print("[PLAYER]    Dano: %.1f" % spell.damage)
-	print("[PLAYER]    Raio: %.1f" % spell.area_radius)
+	print("[PLAYER]    Delay: %.1fs" % spell.spawn_delay)
 	
-	# Carrega a cena da área mágica
-	var area_scene = preload("res://scenes/spells/magic_area.tscn")
-	var area = area_scene.instantiate()
+	# Carrega a cena targeted
+	var targeted_scene = preload("res://scenes/spells/spell_targeted.tscn")
+	var targeted = targeted_scene.instantiate()
 	
-	# Adiciona ao mundo
-	get_parent().add_child(area)
+	# Encontra o inimigo mais próximo
+	var target = targeted.find_target()
 	
-	# Posiciona na posição do mouse ou do jogador
-	var spawn_pos = get_global_mouse_position() if spell.requires_target else global_position
-	
-	# Configura a área
-	area.setup(spell, spawn_pos)
-	
-	print("[PLAYER]    ✅ Área mágica criada!")
-
-
-func cast_buff_spell(spell: SpellData) -> void:
-	"""Lança uma magia de buff usando cena especializada"""
-	print("[PLAYER]    ✨ Aplicando buff via cena especializada!")
-	print("[PLAYER]    Duração: %.1fs" % spell.duration)
-	print("[PLAYER]    Speed: %.2fx | Damage: %.2fx | Defense: %.2fx" % [spell.speed_modifier, spell.damage_modifier, spell.defense_modifier])
-	
-	# Carrega a cena do buff
-	var buff_scene = preload("res://scenes/spells/magic_buff.tscn")
-	var buff = buff_scene.instantiate()
+	if not target:
+		print("[PLAYER]    ⚠️ Nenhum inimigo encontrado no alcance!")
+		targeted.queue_free()
+		return
 	
 	# Adiciona ao mundo
-	get_parent().add_child(buff)
+	get_parent().add_child(targeted)
 	
-	# Configura o buff
-	buff.setup(spell, self)
+	# Configura a magia targeted
+	targeted.setup(spell, target, self)
 	
-	print("[PLAYER]    ✅ Buff criado e aplicado!")
+	print("[PLAYER]    ✅ Magia targeted criada no inimigo: %s" % target.name)
 
 
-func cast_heal_spell(spell: SpellData) -> void:
-	"""Lança uma magia de cura usando cena especializada"""
-	print("[PLAYER]    💚 Lançando cura via cena especializada!")
+func cast_beam_spell(spell: SpellData) -> void:
+	"""Lança um raio contínuo"""
+	# Se já está lançando, ignora
+	if is_casting_beam and active_beam:
+		return
 	
-	# Carrega a cena de cura
-	var heal_scene = preload("res://scenes/spells/magic_heal.tscn")
-	var heal = heal_scene.instantiate()
+	# Verifica mana mínima para iniciar
+	if current_mana < 5.0:
+		print("[PLAYER] ❌ Mana insuficiente para iniciar beam!")
+		return
+	
+	print("\n[PLAYER] ⚡ ═══ ATIVANDO RAIO CONTÍNUO ═══")
+	print("[PLAYER]    DPS: %.1f" % spell.damage_per_second)
+	print("[PLAYER]    Custo: %.1f mana/s" % spell.mana_per_second)
+	print("[PLAYER]    Duração máx: %.1fs" % spell.beam_duration)
+	
+	# Carrega a cena do beam
+	var beam_scene = preload("res://scenes/spells/spell_beam.tscn")
+	active_beam = beam_scene.instantiate()
 	
 	# Adiciona ao mundo
-	get_parent().add_child(heal)
+	get_parent().add_child(active_beam)
 	
-	# Configura a cura
-	heal.setup(spell, self)
+	# Define posição global do player
+	active_beam.global_position = global_position
 	
-	print("[PLAYER]    ✅ Cura criada e aplicada!")
+	# Configura o raio
+	active_beam.setup(spell, self)
+	
+	is_casting_beam = true
+	print("[PLAYER]    ✅ Raio ativo! Segue o mouse automaticamente!")
+	print("[PLAYER]    🎯 Segure o botão para manter!")
+	print("[PLAYER] ═══════════════════════════════════\n")
 
 
 
 func get_spell_type_name(type: int) -> String:
 	"""Retorna o nome do tipo de magia"""
 	match type:
-		0: return "PROJECTILE"
-		1: return "AREA"
-		2: return "BUFF"
-		3: return "HEAL"
+		SpellData.SpellType.PROJECTILE: return "PROJECTILE"
+		SpellData.SpellType.BEAM: return "BEAM"
+		SpellData.SpellType.TARGETED: return "TARGETED"
 		_: return "UNKNOWN"
 
 
@@ -1764,48 +1761,13 @@ func get_spell_cooldown_remaining(spell_id: String) -> float:
 # SISTEMA DE RAIO CONTÍNUO (ICE BEAM)
 # -----------------------------
 
-func cast_ice_beam(spell: SpellData) -> void:
-	"""Lança o raio contínuo de gelo"""
-	# Se já está lançando, ignora
-	if is_casting_beam and active_beam:
-		return
-	
-	# Verifica mana mínima para iniciar (custo inicial)
-	if current_mana < 5.0:  # Requer pelo menos 5 de mana para iniciar
-		print("[PLAYER] ❌ Mana insuficiente para iniciar Ice Beam!")
-		return
-	
-	print("\n[PLAYER] 🧊 ═══ ATIVANDO RAIO GÉLIDO ═══")
-	
-	# Carrega a cena do raio
-	var beam_scene = preload("res://scenes/spells/ice_beam.tscn")
-	active_beam = beam_scene.instantiate()
-	
-	# Adiciona ao mundo (não como filho)
-	get_parent().add_child(active_beam)
-	
-	# Define posição global do player
-	active_beam.global_position = global_position
-	
-	# Configura o raio (rotação será feita no _process do ice_beam)
-	active_beam.setup(spell, self)
-	
-	is_casting_beam = true
-	print("[PLAYER]    ⚡ Raio ativo! Segue o mouse automaticamente!")
-	print("[PLAYER]    🎯 Segure o botão para manter!")
-	print("[PLAYER] ═══════════════════════════════════\n")
 
-
-func update_beam_direction() -> void:
-	"""Atualiza a direção do raio para seguir o mouse"""
-	if not active_beam or not is_instance_valid(active_beam):
-		is_casting_beam = false
 func stop_beam() -> void:
 	"""Para o raio contínuo"""
 	if not is_casting_beam:
 		return
 	
-	print("[PLAYER] 🛑 Parando raio gélido...")
+	print("[PLAYER] 🛑 Parando raio contínuo...")
 	
 	if active_beam and is_instance_valid(active_beam):
 		active_beam.deactivate()
@@ -1815,7 +1777,7 @@ func stop_beam() -> void:
 	
 	# Inicia cooldown após soltar
 	var spell = available_spells[current_spell_index]
-	if spell.spell_id == "ice_bolt":
+	if spell.spell_type == SpellData.SpellType.BEAM:
 		start_spell_cooldown(spell.spell_id, spell.cooldown)
 
 
@@ -1828,4 +1790,3 @@ func consume_mana_continuous(amount: float) -> bool:
 	else:
 		# Mana acabou
 		return false
-

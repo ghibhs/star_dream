@@ -4,14 +4,9 @@ extends Resource
 
 ## Tipos de magia
 enum SpellType {
-	PROJECTILE,    # Bola de fogo, raio de gelo, etc
-	AREA,          # Explosão, chuva de meteoros, etc
-	BUFF,          # Aumenta status temporariamente
-	DEBUFF,        # Enfraquece inimigos
-	HEAL,          # Cura o jogador
-	SUMMON,        # Invoca criaturas
-	TELEPORT,      # Teleporte
-	SHIELD         # Escudo mágico
+	PROJECTILE,    # Projétil que viaja (bola de fogo, flecha mágica)
+	BEAM,          # Raio contínuo (raio laser, raio de gelo)
+	TARGETED       # Spawna no alvo (relâmpago, meteoro)
 }
 
 ## Elemento da magia
@@ -41,35 +36,31 @@ enum Element {
 @export var damage: float = 20.0
 @export var spell_range: float = 300.0  # Alcance da magia
 
-@export_group("Projectile (if PROJECTILE type)")
+@export_group("Projectile Properties")
 @export var projectile_speed: float = 400.0
-@export var projectile_sprite_frames: SpriteFrames
-@export var projectile_animation: String = "default"
-@export var projectile_collision: Shape2D
-@export var projectile_scale: Vector2 = Vector2.ONE
 @export var pierce: bool = false  # Atravessa inimigos
 @export var homing: bool = false  # Persegue inimigos
 
-@export_group("Beam/Ray (for continuous beam spells like Ice Beam)")
-@export var sprite_frames: SpriteFrames  # Sprite animado do raio
-@export var animation_name: String = "beam"  # Nome da animação no SpriteFrames
+@export_group("Beam Properties")
+@export var beam_width: float = 20.0
+@export var beam_duration: float = 3.0  # Duração máxima do raio
+@export var damage_per_second: float = 25.0  # Dano por segundo
+@export var mana_per_second: float = 10.0  # Custo de mana por segundo
 
-@export_group("Area Effect (if AREA type)")
-@export var area_radius: float = 100.0
-@export var area_duration: float = 2.0  # Duração da área
-@export var damage_over_time: bool = false
-@export var tick_interval: float = 0.5  # Intervalo entre danos
+@export_group("Targeted Properties")
+@export var spawn_delay: float = 0.5  # Delay antes de spawnar no alvo
+@export var warning_duration: float = 0.3  # Duração do aviso visual
 
-@export_group("Buff/Debuff (if BUFF/DEBUFF type)")
-@export var duration: float = 5.0  # Duração do efeito
-@export var speed_modifier: float = 1.0  # Multiplicador de velocidade
-@export var damage_modifier: float = 1.0  # Multiplicador de dano
-@export var defense_modifier: float = 1.0  # Multiplicador de defesa
+@export_group("Visual Settings")
+@export var sprite_frames: SpriteFrames  # Sprite animado da magia
+@export var animation_name: String = "default"
+@export var projectile_scale: Vector2 = Vector2.ONE
 
-@export_group("Heal (if HEAL type)")
-@export var heal_amount: float = 50.0
-@export var heal_over_time: bool = false
-@export var heal_duration: float = 5.0
+@export_group("Status Effects")
+@export var apply_status_effect: bool = false
+@export var status_effect_type: String = "slow"  # slow, stun, burn, freeze
+@export var status_effect_duration: float = 2.0
+@export var status_effect_power: float = 0.5  # 0.5 = 50% slow, etc
 
 @export_group("Visual Effects")
 @export var cast_particle: PackedScene  # Partículas ao conjurar

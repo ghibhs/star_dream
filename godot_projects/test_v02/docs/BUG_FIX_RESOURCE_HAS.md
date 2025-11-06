@@ -165,12 +165,12 @@ if valor != null:
 - [x] charge_attack_component.gd - 3 ocorrências corrigidas
 
 **Scripts de Feitiços:**
-- [x] magic_area.gd - 2 ocorrências corrigidas
-- [x] magic_buff.gd - 3 ocorrências corrigidas
-- [x] magic_heal.gd - 4 ocorrências corrigidas
-- [x] ice_beam.gd - 4 ocorrências corrigidas
+- [x] magic_area.gd - 2 ocorrências corrigidas (SpellData)
+- [x] magic_buff.gd - 3 ocorrências corrigidas (SpellData) + 5 ocorrências corrigidas (Node)
+- [x] magic_heal.gd - 4 ocorrências corrigidas (SpellData) + 4 ocorrências corrigidas (Node)
+- [x] ice_beam.gd - 4 ocorrências corrigidas (SpellData)
 
-**Total:** 21 ocorrências corrigidas
+**Total:** 29 ocorrências corrigidas
 - [x] 0 erros de compilação
 - [x] Pronto para testar
 
