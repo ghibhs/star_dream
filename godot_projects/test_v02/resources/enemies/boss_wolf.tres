@@ -1,0 +1,140 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=18 format=3 uid="uid://b5h4lal2pqr8m"]
+
+[ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://resources/classes/EnemyData.gd" id="1_base"]
+[ext_resource type="Texture2D" uid="uid://p8m8r62rn5l4" path="res://art/boss_spritesheet1.png" id="2_qg5n3"]
+[ext_resource type="Texture2D" uid="uid://djcopuglv0cas" path="res://art/boss_spritesheet_atack.png" id="2_w3aem"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
+size = Vector2(200, 80)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_collision"]
+radius = 24.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 28.0
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qb16m"]
+atlas = ExtResource("2_w3aem")
+region = Rect2(0, 0, 85, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8eah1"]
+atlas = ExtResource("2_w3aem")
+region = Rect2(85, 0, 85, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wgiv2"]
+atlas = ExtResource("2_w3aem")
+region = Rect2(170, 0, 85, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g57hp"]
+atlas = ExtResource("2_w3aem")
+region = Rect2(255, 0, 85, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ssdks"]
+atlas = ExtResource("2_w3aem")
+region = Rect2(340, 0, 85, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t2cxe"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6o1y0"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tif40"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vtans"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fvtmf"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wolf"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qb16m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8eah1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wgiv2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g57hp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ssdks")
+}],
+"loop": true,
+"name": &"attack",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t2cxe")
+}],
+"loop": false,
+"name": &"death",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t2cxe")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t2cxe")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6o1y0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tif40")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vtans")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fvtmf")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 6.0
+}]
+
+[resource]
+script = ExtResource("1_base")
+enemy_name = "Lobo Boss"
+sprite_frames = SubResource("SpriteFrames_wolf")
+sprite_scale = Vector2(2, 2)
+max_health = 500.0
+damage = 35.0
+defense = 15.0
+move_speed = 75.0
+chase_range = 500.0
+attack_range = 180.0
+push_force = 10.0
+collision_shape = SubResource("CircleShape2D_collision")
+hitbox_shape = SubResource("CircleShape2D_hitbox")
+attack_animation_name = "attack"
+attack_hitbox_shape = SubResource("RectangleShape2D_attack")
+attack_hitbox_offset = Vector2(110, 0)
+attack_hitbox_duration = 0.3
+attack_hitbox_color = Color(1, 0.1, 0, 0.85)
+attack_warning_delay = 1.5
+knockback_force = 500.0
+knockback_duration = 0.35
+attack_cooldown = 1.0
+experience_drop = 500
+coin_drop = 100
+hit_flash_duration = 0.15

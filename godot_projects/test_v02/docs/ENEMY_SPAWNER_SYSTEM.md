@@ -34,12 +34,13 @@ Três tipos de lobos com características únicas:
 - Alcance: 250
 - **Estilo**: Balanceado
 
-#### 3. **Lobo Alfa** (wolf_tank.tres)
-- HP: 120
-- Dano: 15
-- Velocidade: 60
-- Alcance: 300
-- **Estilo**: Tanque resistente
+#### 3. **Lobo Boss** (boss_wolf.tres)
+- HP: 500
+- Dano: 35
+- Velocidade: 75
+- Alcance: 500
+- **Estilo**: Boss - Sistema de ataque em 3 fases
+- **Recompensas**: 500 exp, 100 moedas
 
 ## 🎮 Configuração
 
@@ -192,7 +193,7 @@ scenes/game/
 EnemyData/
   ├── wolf_fast.tres            # Lobo veloz
   ├── wolf_normal.tres          # Lobo cinza
-  └── wolf_tank.tres            # Lobo alfa
+  └── boss_wolf.tres            # Lobo Boss
 
 data_gd/
   └── EnemyData.gd              # Resource base

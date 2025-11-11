@@ -92,10 +92,10 @@ func _on_body_entered(body: Node2D) -> void:
 	
 	print("[IMPACT_AREA]    💥 Atingiu inimigo: %s" % body.name)
 	
-	# Aplica dano
+	# Aplica dano usando call_deferred para evitar erro de state change durante query
 	if body.has_method("take_damage"):
-		body.take_damage(damage, false)
 		affected_enemies.append(body)
+		body.call_deferred("take_damage", damage, false)
 		print("[IMPACT_AREA]    ⚔️ Dano aplicado: %.1f" % damage)
 
 

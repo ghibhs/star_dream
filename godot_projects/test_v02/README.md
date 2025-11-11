@@ -131,7 +131,7 @@ test_v02/
 │   ├── 📁 enemies/             # Recursos de inimigos específicos
 │   │   ├── wolf_fast.tres      # Lobo veloz
 │   │   ├── wolf_normal.tres    # Lobo normal
-│   │   ├── wolf_tank.tres      # Lobo tanque
+│   │   ├── boss_wolf.tres      # Lobo Boss
 │   │   ├── goblin_basic.tres   # Goblin básico
 │   │   └── golem_tank.tres     # Golem tanque
 │   └── 📁 weapons/             # Recursos de armas específicas

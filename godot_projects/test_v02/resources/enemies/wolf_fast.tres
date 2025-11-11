@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyData" load_steps=12 format=3 uid="uid://b83hlcfidew6m"]
 
 [ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://resources/classes/EnemyData.gd" id="1_x8s3z"]
-[ext_resource type="Texture2D" uid="uid://035ktywctnl8" path="res://art/lobao-Sheet.png" id="2_cu5q2"]
+[ext_resource type="Texture2D" uid="uid://bh6te2jfce0rv" path="res://art/lobao-Sheet.png" id="2_cu5q2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dntnr"]
 

@@ -24,11 +24,13 @@ extends Resource
 
 # === HITBOX DE ATAQUE (Golpe) ===
 @export_group("Attack Hitbox")
+@export var attack_animation_name: String = "attack"  # Nome da animação de ataque
 @export var attack_hitbox_shape: Shape2D  # Forma do golpe (RectangleShape2D recomendado)
 @export var attack_hitbox_offset: Vector2 = Vector2(25, 0)  # Distância à frente do inimigo
 @export var attack_hitbox_duration: float = 0.15  # Duração do golpe em segundos
 @export var attack_hitbox_color: Color = Color(1, 0, 0, 0.9)  # Cor de debug (vermelho padrão)
 @export var attack_warning_delay: float = 0.3  # Tempo de aviso antes do ataque (para dar tempo de esquiva)
+@export var attack_area_visible: bool = false  # Se true, área de ataque fica sempre visível
 
 # === KNOCKBACK (EMPURRÃO AO ATACAR) ===
 @export_group("Knockback")

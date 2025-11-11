@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyData" load_steps=12 format=3 uid="uid://cqw8v7h2mnl5a"]
 
 [ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://resources/classes/EnemyData.gd" id="1_base"]
-[ext_resource type="Texture2D" uid="uid://ctb2odg1hrldn" path="res://art/lobao2-Sheet-export.png" id="2_a33fh"]
+[ext_resource type="Texture2D" uid="uid://b270d2ep3mlr7" path="res://art/lobao2-Sheet-export.png" id="2_a33fh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(30, 20)
