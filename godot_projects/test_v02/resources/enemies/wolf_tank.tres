@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=11 format=3 uid="uid://b5h4lal2pqr8m"]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=12 format=3 uid="uid://b5h4lal2pqr8m"]
 
 [ext_resource type="Script" uid="uid://tawj7k0e15mp" path="res://resources/classes/EnemyData.gd" id="1_base"]
-[ext_resource type="Texture2D" uid="uid://u3v1bo6op8st" path="res://art/Sprite-0004.png" id="2_sprite"]
+[ext_resource type="Texture2D" uid="uid://p8m8r62rn5l4" path="res://art/boss_spritesheet1.png" id="2_qg5n3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(35, 25)
@@ -12,36 +12,43 @@ radius = 18.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
 radius = 22.0
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_1"]
-atlas = ExtResource("2_sprite")
-region = Rect2(0, 0, 50, 50)
+[sub_resource type="AtlasTexture" id="AtlasTexture_t2cxe"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(0, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_2"]
-atlas = ExtResource("2_sprite")
-region = Rect2(50, 0, 50, 50)
+[sub_resource type="AtlasTexture" id="AtlasTexture_6o1y0"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(64, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_3"]
-atlas = ExtResource("2_sprite")
-region = Rect2(100, 0, 50, 50)
+[sub_resource type="AtlasTexture" id="AtlasTexture_tif40"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(128, 0, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_4"]
-atlas = ExtResource("2_sprite")
-region = Rect2(150, 0, 50, 50)
+[sub_resource type="AtlasTexture" id="AtlasTexture_vtans"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fvtmf"]
+atlas = ExtResource("2_qg5n3")
+region = Rect2(256, 0, 64, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_wolf"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_1")
+"texture": SubResource("AtlasTexture_t2cxe")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_2")
+"texture": SubResource("AtlasTexture_6o1y0")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_3")
+"texture": SubResource("AtlasTexture_tif40")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_4")
+"texture": SubResource("AtlasTexture_vtans")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fvtmf")
 }],
 "loop": true,
 "name": &"walk",
@@ -52,7 +59,6 @@ animations = [{
 script = ExtResource("1_base")
 enemy_name = "Lobo Alfa"
 sprite_frames = SubResource("SpriteFrames_wolf")
-animation_name = "walk"
 sprite_scale = Vector2(1.5, 1.5)
 max_health = 120.0
 damage = 15.0
@@ -67,10 +73,7 @@ attack_hitbox_shape = SubResource("RectangleShape2D_attack")
 attack_hitbox_offset = Vector2(30, 0)
 attack_hitbox_duration = 0.2
 attack_hitbox_color = Color(0.8, 0, 0, 0.9)
-attack_warning_delay = 0.3
-behavior = "Aggressive"
 attack_cooldown = 2.5
 experience_drop = 25
 coin_drop = 15
-death_animation = "death"
 hit_flash_duration = 0.15

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/classes/ItemData.gd" id="1_1"]
+[ext_resource type="Texture2D" path="res://art/Sprite-0004.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_1")
+item_id = "iron_helmet"
+item_name = "Capacete de Ferro"
+description = "Um capacete resistente feito de ferro. Aumenta a defesa."
+icon = ExtResource("2_icon")
+item_type = 1
+sprite_frames = null
+animation_name = "default"
+collision_shape = null
+is_stackable = false
+max_stack_size = 1
+is_equippable = true
+equipment_slot = 1
+weapon_data = null
+value = 150
+weight = 3.0
+sound_effect = null
+hit_effect = null
+bonus_health = 0.0
+bonus_defense = 10.0
+bonus_speed = 0.0
+bonus_damage = 0.0

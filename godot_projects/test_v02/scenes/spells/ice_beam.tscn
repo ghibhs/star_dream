@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbn5yh7x8r3qw"]
+
+[ext_resource type="Script" uid="uid://bw2ocl6ogvb8x" path="res://scripts/spells/ice_beam.gd" id="1_ice_beam"]
+
+[node name="IceBeam" type="Node2D"]
+script = ExtResource("1_ice_beam")
+
+[node name="BeamDuration" type="Timer" parent="."]
+wait_time = 5.0
+one_shot = true

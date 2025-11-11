@@ -44,10 +44,11 @@ func find_player() -> void:
 
 func _process(_delta: float) -> void:
 	"""Atualiza HUD a cada frame"""
-	if player and not player.is_dead:
-		update_health()
-		update_weapon_info()
-		update_stats()
+	if player:
+		update_health()  # ← Sempre atualiza saúde, mesmo se morto
+		if not player.is_dead:
+			update_weapon_info()
+			update_stats()
 
 
 func update_all_stats() -> void:
@@ -65,7 +66,7 @@ func update_health() -> void:
 	if not player or not health_bar or not health_label:
 		return
 	
-	var current_hp = player.current_health
+	var current_hp = max(0.0, player.current_health)  # ← Garante que não mostre valores negativos
 	var max_hp = player.max_health
 	
 	# Atualiza barra

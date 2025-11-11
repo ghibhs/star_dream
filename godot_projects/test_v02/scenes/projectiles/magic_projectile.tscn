@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://cqx5nar8nk3pm"]
+
+[ext_resource type="Script" path="res://scripts/projectiles/magic_projectile.gd" id="1_magic"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_magic"]
+radius = 8.0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_magic"]
+
+[node name="MagicProjectile" type="Area2D"]
+collision_layer = 32
+collision_mask = 5
+script = ExtResource("1_magic")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_magic")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_magic")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]

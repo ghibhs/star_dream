@@ -225,8 +225,8 @@ func process_chase(_delta: float) -> void:
 	# Calcula direção para o alvo
 	var direction = (target.global_position - global_position).normalized()
 	
-	# Move em direção ao alvo
-	velocity = direction * enemy_data.move_speed
+	# Move em direção ao alvo (usando velocidade com slow aplicado)
+	velocity = direction * get_current_speed()
 	
 	# Flip horizontal baseado na direção
 	if direction.x < 0:
@@ -257,7 +257,7 @@ func process_attack() -> void:
 	
 	# 🏃 CONTINUA SE MOVENDO em direção ao player
 	var direction = (target.global_position - global_position).normalized()
-	velocity = direction * enemy_data.move_speed
+	velocity = direction * get_current_speed()
 	
 	# Flip horizontal baseado na direção
 	if direction.x < 0:
@@ -351,18 +351,23 @@ func perform_attack() -> void:
 
 
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, apply_stun: bool = true) -> void:
 	if is_dead:
 		print("[ENEMY] ⚠️ Dano ignorado: inimigo já está morto")
 		return
 	
 	# Aplica defesa
 	var damage_taken = max(amount - enemy_data.defense, 1.0)
+	var previous_health = current_health
 	current_health -= damage_taken
 	
 	print("[ENEMY] 💔 %s RECEBEU DANO!" % enemy_data.enemy_name)
 	print("[ENEMY]    Dano bruto: %.1f | Defesa: %.1f | Dano real: %.1f" % [amount, enemy_data.defense, damage_taken])
-	print("[ENEMY]    HP atual: %.1f/%.1f (%.1f%%)" % [current_health, enemy_data.max_health, (current_health/enemy_data.max_health)*100])
+	print("[ENEMY]    HP: %.1f → %.1f (%.1f%%)" % [previous_health, current_health, (current_health/enemy_data.max_health)*100])
+	
+	# ✅ SEMPRE aplica o flash vermelho primeiro (mesmo em morte) - MAS SÓ SE apply_stun = true
+	if apply_stun:
+		apply_hit_flash()
 	
 	# Se for agressivo e não tiver alvo, procura o player
 	if enemy_data.behavior == "Aggressive" and not target:
@@ -377,17 +382,21 @@ func take_damage(amount: float) -> void:
 			if target.get_class() != "CharacterBody2D":
 				print("[ENEMY]    ⚠️ ALERTA: Alvo não é CharacterBody2D!")
 	
-	# Visual de dano (flash branco)
-	apply_hit_flash()
-	
-	# Muda para estado HURT
-	print("[ENEMY] Estado: ", State.keys()[current_state], " → HURT")
-	current_state = State.HURT
-	
-	# Verifica morte
+	# ⚠️ Depois verifica morte
 	if current_health <= 0:
-		print("[ENEMY] ☠️ HP chegou a 0, iniciando morte...")
+		print("[ENEMY] ══════════════════════════════════════")
+		print("[ENEMY] ⚠️⚠️⚠️  VIDA ZEROU!  ⚠️⚠️⚠️")
+		print("[ENEMY] HP FINAL: %.1f / %.1f" % [current_health, enemy_data.max_health])
+		print("[ENEMY] ══════════════════════════════════════")
+		print("[ENEMY] ☠️ Aguardando flash antes de morrer...")
+		await get_tree().create_timer(0.1).timeout  # Aguarda o flash
 		die()
+		return
+	
+	# Se não morreu E apply_stun = true, muda para estado HURT
+	if apply_stun:
+		print("[ENEMY] Estado: ", State.keys()[current_state], " → HURT")
+		current_state = State.HURT
 
 
 func apply_hit_flash() -> void:
@@ -407,8 +416,14 @@ func die() -> void:
 	is_dead = true
 	current_state = State.DEAD
 	
-	print("[ENEMY] ☠️☠️☠️ %s MORREU! ☠️☠️☠️" % enemy_data.enemy_name)
+	print("")
+	print("[ENEMY] ══════════════════════════════════════")
+	print("[ENEMY] ☠️☠️☠️  %s MORREU!  ☠️☠️☠️" % enemy_data.enemy_name)
+	print("[ENEMY] ══════════════════════════════════════")
+	print("[ENEMY]    HP Final: %.1f / %.1f" % [current_health, enemy_data.max_health])
 	print("[ENEMY]    Exp drop: %d | Coins drop: %d" % [enemy_data.experience_drop, enemy_data.coin_drop])
+	print("[ENEMY] ══════════════════════════════════════")
+	print("")
 	
 	# Contabiliza inimigo derrotado
 	if has_node("/root/GameStats"):
@@ -482,10 +497,19 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		print("[ENEMY]    💥 Player detectado na hitbox ATIVA!")
 		
-		# Aplica dano
+		# Aplica dano com knockback configurável do EnemyData
 		if body.has_method("take_damage"):
-			body.take_damage(enemy_data.damage)
-			print("[ENEMY]    ✅ Dano %.1f aplicado ao player!" % enemy_data.damage)
+			# Usa configurações do .tres
+			var applies_kb = enemy_data.applies_knockback if "applies_knockback" in enemy_data else true
+			var kb_force = enemy_data.knockback_force if "knockback_force" in enemy_data else 300.0
+			var kb_duration = enemy_data.knockback_duration if "knockback_duration" in enemy_data else 0.2
+			
+			body.take_damage(enemy_data.damage, global_position, kb_force, kb_duration, applies_kb)
+			
+			if applies_kb:
+				print("[ENEMY]    ✅ Dano %.1f aplicado (knockback: %.1f força, %.2fs duração)!" % [enemy_data.damage, kb_force, kb_duration])
+			else:
+				print("[ENEMY]    ✅ Dano %.1f aplicado (sem knockback)!" % enemy_data.damage)
 		else:
 			print("[ENEMY]    ❌ Player não tem método take_damage!")
 	else:
@@ -500,3 +524,60 @@ func _on_attack_timer_timeout() -> void:
 	if sprite and enemy_data.animation_name != "":
 		sprite.play(enemy_data.animation_name)
 		print("[ENEMY]    Voltando para animação: ", enemy_data.animation_name)
+
+
+# -----------------------------
+# SISTEMA DE SLOW (REDUÇÃO DE VELOCIDADE)
+# -----------------------------
+
+var is_slowed: bool = false
+var slow_multiplier: float = 1.0
+var slow_timer: Timer = null
+
+func apply_slow(slow_percent: float, duration: float) -> void:
+	"""Aplica redução de velocidade ao inimigo"""
+	# slow_percent: 0.5 = mantém 50% da velocidade (reduz 50%)
+	
+	# Cria timer se não existe
+	if not slow_timer:
+		slow_timer = Timer.new()
+		add_child(slow_timer)
+		slow_timer.timeout.connect(_on_slow_timeout)
+		slow_timer.one_shot = true  # Timer de uma vez
+	
+	# Atualiza o slow
+	var was_slowed = is_slowed
+	is_slowed = true
+	slow_multiplier = slow_percent  # Ex: 0.5 = mantém 50% da velocidade
+	
+	# Renova o timer (sempre que é atingido pelo raio)
+	slow_timer.start(duration)
+	
+	if not was_slowed:
+		print("[ENEMY %s] ❄️ Slow aplicado: velocidade %.0f%% (%.1f -> %.1f)" % [
+			name,
+			slow_percent * 100,
+			enemy_data.move_speed,
+			enemy_data.move_speed * slow_percent
+		])
+
+
+func remove_slow() -> void:
+	"""Remove o efeito de slow"""
+	if is_slowed:
+		is_slowed = false
+		slow_multiplier = 1.0
+		if slow_timer:
+			slow_timer.stop()
+		print("[ENEMY %s] ✅ Slow removido - velocidade: %.1f" % [name, enemy_data.move_speed])
+
+
+func _on_slow_timeout() -> void:
+	"""Callback quando o slow expira"""
+	remove_slow()
+
+
+func get_current_speed() -> float:
+	"""Retorna a velocidade atual considerando slow"""
+	var final_speed = enemy_data.move_speed * slow_multiplier
+	return final_speed

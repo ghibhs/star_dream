@@ -1,4 +1,115 @@
-# 📁 Estrutura do Projeto - Star Dream
+# 🎮 Star Dream - Projeto de Jogo Godot
+
+> **Projeto Acadêmico** - Sistema de combate RPG com inimigos, magias e inventário
+
+## 👥 Equipe do Projeto
+> **IMPORTANTE**: Substitua os nomes abaixo pelos nomes reais da equipe antes de entregar!
+
+- **[Nome Completo 1]** - Desenvolvedor Principal / Programação
+- **[Nome Completo 2]** - Desenvolvedor / Sistema de Combate
+- **[Nome Completo 3]** - Game Design / Arte
+- **[Nome Completo 4]** - Tester / Documentação
+
+---
+
+## 🚀 Como Baixar e Rodar o Projeto
+
+### 📋 Pré-requisitos
+
+1. **Godot Engine 4.5+** (Dev4 ou superior)
+   - Download: https://godotengine.org/download
+   - **Importante**: Use a versão **4.5 ou superior** (o projeto foi desenvolvido em 4.5.dev4)
+
+2. **Git** (para clonar o repositório)
+   - Download: https://git-scm.com/downloads
+
+### 📥 Passo a Passo para Instalação
+
+#### Opção 1: Clonar via Git (Recomendado)
+
+```bash
+# 1. Abra o terminal/prompt de comando
+
+# 2. Navegue até a pasta onde deseja salvar o projeto
+cd C:\Users\SeuUsuario\Documents
+
+# 3. Clone o repositório
+git clone https://github.com/ghibhs/star_dream.git
+
+# 4. Entre na pasta do projeto
+cd star_dream/godot_projects/test_v02
+```
+
+#### Opção 2: Download Direto (ZIP)
+
+```bash
+# 1. Acesse: https://github.com/ghibhs/star_dream
+
+# 2. Clique no botão verde "Code"
+
+# 3. Selecione "Download ZIP"
+
+# 4. Extraia o arquivo ZIP em uma pasta de sua escolha
+
+# 5. Navegue até: star_dream-main/godot_projects/test_v02
+```
+
+### ▶️ Como Executar
+
+1. **Abra o Godot Engine**
+
+2. **Importe o Projeto**:
+   - Clique em "Import"
+   - Navegue até a pasta `star_dream/godot_projects/test_v02`
+   - Selecione o arquivo `project.godot`
+   - Clique em "Import & Edit"
+
+3. **Execute o Jogo**:
+   - Pressione **F5** ou clique no botão ▶️ no canto superior direito
+   - Ou: Menu → Project → Run Project
+
+### 🎮 Controles do Jogo
+
+#### Movimento
+- **W/A/S/D** ou **Setas**: Movimentação
+- **SHIFT**: Dash
+- **Mouse**: Rotação do personagem
+
+#### Combate
+- **Botão Esquerdo (Click)**: Ataque corpo a corpo
+- **Botão Direito (Click)**: Lançar magia
+- **Botão Direito (Hold)**: Manter Ice Bolt ativo
+- **Q/E**: Trocar magia equipada
+
+#### Interface
+- **1-9**: Usar item da hotbar
+- **TAB**: Abrir/Fechar inventário
+- **ESC**: Pausar jogo
+
+### 🐛 Solução de Problemas
+
+#### "Versão do Godot incompatível"
+- **Solução**: Baixe o Godot 4.5+ (dev4 ou superior)
+- Link: https://godotengine.org/download/preview
+
+#### "Recursos não encontrados"
+- **Solução**: Verifique se você está abrindo a pasta `test_v02` (não a raiz do repositório)
+- Caminho correto: `star_dream/godot_projects/test_v02/project.godot`
+
+#### "Erros de importação"
+- **Solução**: 
+  1. Feche o Godot
+  2. Delete a pasta `.godot` dentro de `test_v02`
+  3. Abra o projeto novamente
+  4. Aguarde a reimportação dos assets
+
+#### "Branch errada no Git"
+- **Solução**: O projeto está no branch `thirdversion`
+```bash
+git checkout thirdversion
+```
+
+---
 
 ## 📂 Organização de Pastas
 
@@ -252,3 +363,72 @@ test_v02/
 **Data**: 20 de Outubro de 2025
 
 **📖 Leia o relatório completo:** `docs/REFACTORING_REPORT.md`
+
+---
+
+## 🌐 Deploy e Documentação
+
+### 📦 Deploy Web (Godot 4.x)
+
+O jogo foi desenvolvido em Godot 4.5, que possui suporte experimental para Web (HTML5). Para gerar o build web:
+
+1. **No Godot**: Menu → Project → Export
+2. Selecione **Web** como plataforma
+3. Configure os templates de exportação (se necessário)
+4. Exporte para uma pasta `build/web`
+
+**Opções de Hospedagem Gratuita:**
+- **Itch.io**: https://itch.io (recomendado para jogos Godot)
+- **GitHub Pages**: https://pages.github.com
+- **Vercel**: https://vercel.com (requer configuração adicional)
+- **Netlify**: https://netlify.com
+
+> ⚠️ **Nota**: Godot 4.x web ainda é experimental. Para melhor compatibilidade, considere build desktop.
+
+### 📚 Documentação Completa
+
+- **GAME_FEATURES.md**: Documentação completa de todas as funcionalidades
+- **docs/REFACTORING_REPORT.md**: Relatório de refatoração do código
+- **docs/ENEMY_SYSTEM_README.md**: Sistema de inimigos detalhado
+- **docs/COLLISION_SETUP.md**: Sistema de colisão
+- **docs/SISTEMA_EMPURRAO.md**: Mecânica de empurrão
+
+### 📊 Relatório Final
+
+**Aprendizados:**
+- Arquitetura de jogos com Godot Engine
+- Sistema de estados (State Machine) para IA de inimigos
+- Gerenciamento de recursos com Resources (.tres)
+- Sistema de camadas de colisão para diferentes interações
+- Refatoração de código para melhor manutenibilidade
+
+**Melhorias Implementadas:**
+- ✅ Sistema de magias com cooldown
+- ✅ Ice Beam como raio laser contínuo com slow
+- ✅ Sistema de stun opcional no dano
+- ✅ Organização completa de assets e scripts
+- ✅ Documentação abrangente de todos os sistemas
+- ✅ Sistema de componentes reutilizáveis
+
+**Próximos Passos:**
+- [ ] Sistema de experiência e level up
+- [ ] Mais tipos de inimigos e bosses
+- [ ] Sistema de quests
+- [ ] Save/Load game
+- [ ] Efeitos sonoros e música
+- [ ] Partículas e efeitos visuais melhorados
+- [ ] Sistema de crafting
+- [ ] Multiplayer co-op (futuro distante)
+
+---
+
+## 📞 Contato e Suporte
+
+**Repositório GitHub**: https://github.com/ghibhs/star_dream  
+**Branch do Projeto**: `thirdversion`
+
+Para dúvidas ou sugestões, abra uma issue no GitHub ou entre em contato com a equipe.
+
+---
+
+**Desenvolvido com ❤️ usando Godot Engine 4.5**
