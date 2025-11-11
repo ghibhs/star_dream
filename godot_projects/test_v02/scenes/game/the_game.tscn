@@ -41,6 +41,7 @@ tile_map_data = PackedByteArray("AAD6//v/AAAAAAAAAAD6//z/AAAAAAAAAAD6//3/AAAAAAA
 tile_set = SubResource("TileSet_rwqnc")
 
 [node name="Area2D" type="Area2D" parent="TileMapLayer"]
+visible = false
 light_mask = 3
 visibility_layer = 15
 position = Vector2(-271, 289)
