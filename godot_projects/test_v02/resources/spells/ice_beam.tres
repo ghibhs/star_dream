@@ -3,41 +3,44 @@
 [ext_resource type="Script" uid="uid://c4e31tj8hxk5h" path="res://resources/classes/SpellData.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://brsg8gkvmyucd" path="res://art/thunderice_64_sheet.png" id="2_r8bkq"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_r8bkq"]
+atlas = ExtResource("2_r8bkq")
+region = Rect2(3, 0, 59, 64)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_i6det"]
 atlas = ExtResource("2_r8bkq")
-region = Rect2(0, 0, 64, 64)
+region = Rect2(67, 0, 59, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_iv46d"]
 atlas = ExtResource("2_r8bkq")
-region = Rect2(64, 0, 64, 64)
+region = Rect2(131, 0, 59, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wkecy"]
 atlas = ExtResource("2_r8bkq")
-region = Rect2(128, 0, 64, 64)
+region = Rect2(195, 0, 59, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_34k42"]
 atlas = ExtResource("2_r8bkq")
-region = Rect2(192, 0, 64, 64)
+region = Rect2(259, 0, 59, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_h7w56"]
 atlas = ExtResource("2_r8bkq")
-region = Rect2(256, 0, 64, 64)
+region = Rect2(323, 0, 59, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_5g3ne"]
 atlas = ExtResource("2_r8bkq")
-region = Rect2(320, 0, 64, 64)
+region = Rect2(387, 0, 59, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4iyjr"]
 atlas = ExtResource("2_r8bkq")
-region = Rect2(384, 0, 64, 64)
+region = Rect2(451, 0, 59, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_2c72q"]
-atlas = ExtResource("2_r8bkq")
-region = Rect2(448, 0, 64, 64)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_r51gb"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_2c72q"]
 animations = [{
 "frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_r8bkq")
+}, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_i6det")
 }, {
@@ -58,9 +61,6 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_4iyjr")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_2c72q")
 }],
 "loop": true,
 "name": &"default",
@@ -79,8 +79,30 @@ cast_time = 0.0
 cooldown = 2.0
 damage = 0.0
 spell_range = 500.0
+projectile_speed = 400.0
+pierce = false
+homing = false
+beam_width = 20.0
 beam_duration = 5.0
+damage_per_second = 25.0
 mana_per_second = 12.0
-sprite_frames = SubResource("SpriteFrames_r51gb")
+beam_stops_at_enemy = true
+spawn_delay = 0.5
+warning_duration = 0.3
+sprite_frames = SubResource("SpriteFrames_2c72q")
+animation_name = "default"
+projectile_scale = Vector2(1, 1)
 apply_status_effect = true
+status_effect_type = "slow"
+status_effect_duration = 2.0
+status_effect_power = 0.5
 spell_color = Color(0.2, 0.7, 1, 0.8)
+create_impact_area = true
+impact_area_animation = "default"
+impact_area_radius = 60.0
+impact_area_damage = 15.0
+impact_area_duration = 1.0
+can_be_interrupted = true
+requires_target = false
+max_targets = 1
+knockback_force = 0.0

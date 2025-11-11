@@ -4,11 +4,15 @@ extends CanvasLayer
 @onready var stats_label: Label = $CenterContainer/VBoxContainer/StatsLabel
 @onready var restart_button: Button = $CenterContainer/VBoxContainer/RestartButton
 @onready var menu_button: Button = $CenterContainer/VBoxContainer/MenuButton
+@onready var options_button: Button = $CenterContainer/VBoxContainer/OptionsButton
 @onready var quit_button: Button = $CenterContainer/VBoxContainer/QuitButton
 
 # ===== ESTATÍSTICAS =====
 var enemies_defeated: int = 0
 var survival_time: float = 0.0
+
+# ===== MÚSICA =====
+var menu_music: AudioStreamPlayer = null
 
 
 func _ready() -> void:
@@ -17,6 +21,9 @@ func _ready() -> void:
 	# ⚠️ CRÍTICO: Permite que esta UI funcione mesmo quando o jogo está pausado
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("[GAME_OVER]    ✅ Process mode configurado para ALWAYS")
+	
+	# Configura e toca música do menu de morte
+	setup_menu_music()
 	
 	# Pausa o jogo
 	get_tree().paused = true
@@ -103,6 +110,42 @@ func _on_menu_button_pressed() -> void:
 		push_error("Menu principal não encontrado: " + menu_scene_path)
 		print("[GAME_OVER]    ❌ ERRO: Menu não encontrado!")
 
+
+func setup_menu_music() -> void:
+	"""Configura e toca a música do menu de game over"""
+	menu_music = AudioStreamPlayer.new()
+	add_child(menu_music)
+	menu_music.process_mode = Node.PROCESS_MODE_ALWAYS  # Toca mesmo com jogo pausado
+	
+	# Carrega a música do menu
+	var music_path = "res://Music/menu.mp3"
+	if ResourceLoader.exists(music_path):
+		menu_music.stream = load(music_path)
+		menu_music.volume_db = -5.0  # Volume um pouco mais baixo
+		menu_music.autoplay = false
+		menu_music.bus = "Music"  # Usa o bus de música (se existir)
+		menu_music.play()
+		print("[GAME_OVER] 🎵 Música do menu de morte iniciada")
+	else:
+		print("[GAME_OVER] ⚠️ Música do menu não encontrada: ", music_path)
+
+
+
+func _on_options_button_pressed() -> void:
+	print("[GAME_OVER] ⚙️ Botão OPÇÕES pressionado")
+	open_options_menu()
+
+
+func open_options_menu() -> void:
+	print("[GAME_OVER] Abrindo menu de opções...")
+	var options_scene_path = "res://scenes/ui/options_menu.tscn"
+	
+	if ResourceLoader.exists(options_scene_path):
+		get_tree().change_scene_to_file(options_scene_path)
+		print("[GAME_OVER]    ✅ Menu de opções aberto")
+	else:
+		push_error("Menu de opções não encontrado: " + options_scene_path)
+		print("[GAME_OVER]    ❌ ERRO: Menu de opções não encontrado!")
 
 
 func _on_quit_button_pressed() -> void:

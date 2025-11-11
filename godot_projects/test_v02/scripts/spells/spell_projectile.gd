@@ -95,13 +95,17 @@ func _on_body_entered(body: Node2D) -> void:
 	
 	print("[PROJECTILE] 💥 Atingiu: %s" % body.name)
 	
-	# Aplica dano
+	# Aplica dano direto do projétil
 	if body.has_method("take_damage"):
 		body.take_damage(damage, false)
 	
 	# Aplica status effect se tiver
 	if spell_data and spell_data.apply_status_effect:
 		apply_status_effect(body)
+	
+	# Cria área de impacto se configurado
+	if spell_data and spell_data.create_impact_area:
+		create_impact_area_effect()
 	
 	# Registra hit para pierce
 	if pierce:
@@ -132,6 +136,33 @@ func apply_status_effect(enemy: Node2D) -> void:
 					spell_data.status_effect_power,
 					spell_data.status_effect_duration
 				])
+
+
+func create_impact_area_effect() -> void:
+	"""Cria área de impacto quando o projétil acerta"""
+	# Carrega o script da área de impacto
+	var impact_area_script = preload("res://scripts/spells/spell_impact_area.gd")
+	var impact_area = Area2D.new()
+	impact_area.set_script(impact_area_script)
+	
+	# Posiciona no local do impacto
+	impact_area.global_position = global_position
+	
+	# Adiciona ao mesmo parent do projétil (normalmente o mundo)
+	if get_parent():
+		get_parent().add_child(impact_area)
+	
+	# Configura a área
+	if impact_area.has_method("setup"):
+		impact_area.setup(
+			spell_data.impact_area_damage,
+			spell_data.impact_area_radius,
+			spell_data.impact_area_duration,
+			spell_data.impact_area_sprite_frames,
+			spell_data.impact_area_animation
+		)
+	
+	print("[PROJECTILE]    💥 Área de impacto criada no local: %v" % global_position)
 
 
 func find_nearest_enemy() -> void:

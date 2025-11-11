@@ -5,12 +5,18 @@ extends CanvasLayer
 @onready var options_button: Button = $CenterContainer/VBoxContainer/OptionsButton
 @onready var quit_button: Button = $CenterContainer/VBoxContainer/QuitButton
 
+# ===== MÚSICA =====
+var menu_music: AudioStreamPlayer = null
+
 var buttons: Array[Button] = []
 var current_index: int = 0
 
 
 func _ready() -> void:
 	print("[MAIN_MENU] Menu principal inicializado")
+	
+	# Configura e toca música do menu
+	setup_menu_music()
 	
 	# Desabilita focus padrão dos botões (WASD não navega)
 	start_button.focus_mode = Control.FOCUS_NONE
@@ -68,8 +74,19 @@ func _on_start_button_pressed() -> void:
 
 func _on_options_button_pressed() -> void:
 	print("[MAIN_MENU] ⚙️ Botão OPÇÕES pressionado")
-	# TODO: Implementar tela de opções
-	print("[MAIN_MENU]    Tela de opções ainda não implementada")
+	open_options_menu()
+
+
+func open_options_menu() -> void:
+	print("[MAIN_MENU] Abrindo menu de opções...")
+	var options_scene_path = "res://scenes/ui/options_menu.tscn"
+	
+	if ResourceLoader.exists(options_scene_path):
+		get_tree().change_scene_to_file(options_scene_path)
+		print("[MAIN_MENU]    ✅ Menu de opções aberto")
+	else:
+		push_error("Menu de opções não encontrado: " + options_scene_path)
+		print("[MAIN_MENU]    ❌ ERRO: Menu de opções não encontrado!")
 
 
 func _on_quit_button_pressed() -> void:
@@ -97,3 +114,21 @@ func quit_game() -> void:
 	print("[MAIN_MENU] Fechando o jogo...")
 	get_tree().quit()
 	print("[MAIN_MENU]    ✅ Jogo encerrado")
+
+
+func setup_menu_music() -> void:
+	"""Configura e toca a música do menu"""
+	menu_music = AudioStreamPlayer.new()
+	add_child(menu_music)
+	
+	# Carrega a música do menu
+	var music_path = "res://Music/menu.mp3"
+	if ResourceLoader.exists(music_path):
+		menu_music.stream = load(music_path)
+		menu_music.volume_db = -5.0  # Volume um pouco mais baixo
+		menu_music.autoplay = false
+		menu_music.bus = "Music"  # Usa o bus de música (se existir)
+		menu_music.play()
+		print("[MAIN_MENU] 🎵 Música do menu iniciada")
+	else:
+		print("[MAIN_MENU] ⚠️ Música do menu não encontrada: ", music_path)

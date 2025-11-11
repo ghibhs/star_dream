@@ -11,6 +11,11 @@ extends CharacterBody2D
 @onready var attack_timer: Timer = $AttackTimer
 @onready var hit_flash_timer: Timer = $HitFlashTimer
 
+# Barra de vida
+var health_bar_background: ColorRect
+var health_bar_foreground: ColorRect
+var health_bar_container: Control
+
 # ===== ESTADO =====
 var current_health: float
 var target: Node2D = null
@@ -184,6 +189,9 @@ func setup_enemy() -> void:
 		hit_flash_timer.timeout.connect(_on_hit_flash_timeout)
 		print("[ENEMY]    HitFlashTimer configurado (duração: %.2fs)" % enemy_data.hit_flash_duration)
 	
+	# Cria barra de vida
+	create_health_bar()
+	
 	print("[ENEMY] ✅ Configuração completa! Estado inicial: IDLE")
 
 
@@ -351,7 +359,7 @@ func perform_attack() -> void:
 
 
 
-func take_damage(amount: float, apply_stun: bool = true) -> void:
+func take_damage(amount: float, should_stun_on_hit: bool = true) -> void:
 	if is_dead:
 		print("[ENEMY] ⚠️ Dano ignorado: inimigo já está morto")
 		return
@@ -365,8 +373,11 @@ func take_damage(amount: float, apply_stun: bool = true) -> void:
 	print("[ENEMY]    Dano bruto: %.1f | Defesa: %.1f | Dano real: %.1f" % [amount, enemy_data.defense, damage_taken])
 	print("[ENEMY]    HP: %.1f → %.1f (%.1f%%)" % [previous_health, current_health, (current_health/enemy_data.max_health)*100])
 	
-	# ✅ SEMPRE aplica o flash vermelho primeiro (mesmo em morte) - MAS SÓ SE apply_stun = true
-	if apply_stun:
+	# Atualiza barra de vida
+	update_health_bar()
+	
+	# ✅ SEMPRE aplica o flash vermelho primeiro (mesmo em morte) - MAS SÓ SE should_stun_on_hit = true
+	if should_stun_on_hit:
 		apply_hit_flash()
 	
 	# Se for agressivo e não tiver alvo, procura o player
@@ -393,8 +404,8 @@ func take_damage(amount: float, apply_stun: bool = true) -> void:
 		die()
 		return
 	
-	# Se não morreu E apply_stun = true, muda para estado HURT
-	if apply_stun:
+	# Se não morreu E should_stun_on_hit = true, muda para estado HURT
+	if should_stun_on_hit:
 		print("[ENEMY] Estado: ", State.keys()[current_state], " → HURT")
 		current_state = State.HURT
 
@@ -447,6 +458,51 @@ func die() -> void:
 func drop_rewards() -> void:
 	# TODO: Implementar sistema de drop (exp, moedas, itens)
 	print("[ENEMY] 💰 Dropando recompensas: %d exp e %d moedas" % [enemy_data.experience_drop, enemy_data.coin_drop])
+
+
+func create_health_bar() -> void:
+	"""Cria barra de vida acima do inimigo"""
+	# Container para a barra
+	health_bar_container = Control.new()
+	add_child(health_bar_container)
+	health_bar_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Posiciona acima do sprite
+	health_bar_container.position = Vector2(-25, -40)  # Ajustar conforme tamanho do sprite
+	health_bar_container.size = Vector2(50, 6)
+	
+	# Background (vermelho escuro)
+	health_bar_background = ColorRect.new()
+	health_bar_container.add_child(health_bar_background)
+	health_bar_background.color = Color(0.2, 0, 0, 0.8)  # Vermelho escuro
+	health_bar_background.size = Vector2(50, 6)
+	health_bar_background.position = Vector2.ZERO
+	
+	# Foreground (verde - vida atual)
+	health_bar_foreground = ColorRect.new()
+	health_bar_container.add_child(health_bar_foreground)
+	health_bar_foreground.color = Color(0, 0.8, 0, 1)  # Verde
+	health_bar_foreground.size = Vector2(50, 6)
+	health_bar_foreground.position = Vector2.ZERO
+	
+	print("[ENEMY]    ❤️ Barra de vida criada")
+
+
+func update_health_bar() -> void:
+	"""Atualiza a barra de vida"""
+	if not health_bar_foreground or not enemy_data:
+		return
+	
+	var health_percent = current_health / enemy_data.max_health
+	health_bar_foreground.size.x = 50 * health_percent
+	
+	# Muda cor baseado na vida
+	if health_percent > 0.6:
+		health_bar_foreground.color = Color(0, 0.8, 0, 1)  # Verde
+	elif health_percent > 0.3:
+		health_bar_foreground.color = Color(1, 0.8, 0, 1)  # Amarelo
+	else:
+		health_bar_foreground.color = Color(1, 0, 0, 1)  # Vermelho
 
 
 # ===== SIGNALS DE DETECÇÃO =====
@@ -575,6 +631,58 @@ func remove_slow() -> void:
 func _on_slow_timeout() -> void:
 	"""Callback quando o slow expira"""
 	remove_slow()
+
+
+# SISTEMA DE STUN (PARALISIA)
+# -----------------------------
+
+var is_stunned: bool = false
+var stun_timer: Timer = null
+var previous_state: State
+
+func apply_stun(duration: float) -> void:
+	"""Aplica stun (paralisia) ao inimigo"""
+	# Cria timer se não existe
+	if not stun_timer:
+		stun_timer = Timer.new()
+		add_child(stun_timer)
+		stun_timer.timeout.connect(_on_stun_timeout)
+		stun_timer.one_shot = true
+	
+	if not is_stunned:
+		# Guarda o estado atual antes de atordoar
+		previous_state = current_state
+		print("[ENEMY %s] ⚡ STUNNED! Estado: %s → HURT" % [name, State.keys()[current_state]])
+		
+		# Força estado HURT (paralizado)
+		current_state = State.HURT
+		is_stunned = true
+		velocity = Vector2.ZERO
+	
+	# Renova o timer
+	stun_timer.start(duration)
+	print("[ENEMY %s] ⚡ Stun por %.1fs" % [name, duration])
+
+
+func remove_stun() -> void:
+	"""Remove o efeito de stun"""
+	if is_stunned:
+		is_stunned = false
+		if stun_timer:
+			stun_timer.stop()
+		
+		# Volta ao estado anterior (geralmente CHASE)
+		if previous_state != State.HURT and previous_state != State.DEAD:
+			current_state = previous_state
+			print("[ENEMY %s] ✅ Stun removido - voltando ao estado %s" % [name, State.keys()[current_state]])
+		else:
+			current_state = State.IDLE
+			print("[ENEMY %s] ✅ Stun removido - retornando ao IDLE" % name)
+
+
+func _on_stun_timeout() -> void:
+	"""Callback quando o stun expira"""
+	remove_stun()
 
 
 func get_current_speed() -> float:

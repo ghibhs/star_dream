@@ -17,9 +17,11 @@ var beam_width: float = 20.0
 var beam_duration: float = 3.0
 
 # Visuais
-var beam_sprite: AnimatedSprite2D
+var beam_sprite_container: Node2D  # Container para sprites repetidos
+var beam_sprites: Array = []  # Array de sprites ao longo do raio
 var beam_line: Line2D
 var impact_particles: CPUParticles2D
+var sprite_segment_size: float = 32.0  # Tamanho de cada segmento de sprite
 
 # Sistema
 var raycast: RayCast2D
@@ -28,6 +30,11 @@ var collision_shape: CollisionShape2D
 var enemies_in_beam: Array = []
 var damage_timer: float = 0.0
 var duration_timer: float = 0.0
+
+# Sistema de parada ao atingir inimigo
+var beam_stopped_at_enemy: bool = false
+var enemy_hit_position: Vector2 = Vector2.ZERO
+var impact_area_on_enemy: Node2D = null  # Área de impacto persistente
 
 
 func _ready() -> void:
@@ -38,12 +45,12 @@ func _ready() -> void:
 	raycast.collision_mask = 1  # Paredes
 	raycast.target_position = Vector2(max_range, 0)
 	
-	# Sprite animado
-	beam_sprite = AnimatedSprite2D.new()
-	add_child(beam_sprite)
-	beam_sprite.visible = false
-	beam_sprite.centered = false
-	beam_sprite.offset = Vector2(0, -beam_width / 2)
+	# Container para sprites repetidos
+	beam_sprite_container = Node2D.new()
+	add_child(beam_sprite_container)
+	
+	# Array de sprites (será preenchido dinamicamente)
+	beam_sprites = []
 	
 	# Fallback Line2D
 	beam_line = Line2D.new()
@@ -74,7 +81,7 @@ func _ready() -> void:
 	hit_area = Area2D.new()
 	add_child(hit_area)
 	hit_area.collision_layer = 0
-	hit_area.collision_mask = 4  # Inimigos
+	hit_area.collision_mask = 4  # Inimigos (layer 3, bit 4)
 	hit_area.body_entered.connect(_on_enemy_entered)
 	hit_area.body_exited.connect(_on_enemy_exited)
 	
@@ -86,6 +93,7 @@ func _ready() -> void:
 	collision_shape.position = Vector2(max_range / 2, 0)
 	
 	print("[BEAM] ⚡ Raio contínuo criado")
+	print("[BEAM]    Collision mask: %d (detecta layer 3 - inimigos)" % hit_area.collision_mask)
 
 
 func setup(spell: SpellData, player: Node2D) -> void:
@@ -100,20 +108,44 @@ func setup(spell: SpellData, player: Node2D) -> void:
 		beam_width = spell.beam_width
 		beam_duration = spell.beam_duration
 		
-		# Configura sprite
+		# Configura sprite - cria sprites repetidos
 		if spell.sprite_frames:
-			beam_sprite.sprite_frames = spell.sprite_frames
-			if spell.animation_name != "":
-				beam_sprite.play(spell.animation_name)
-			else:
-				beam_sprite.play()
-			beam_sprite.visible = true
-			print("[BEAM] 🎨 Usando sprite animado")
+			# Detecta tamanho do sprite automaticamente
+			var test_texture = spell.sprite_frames.get_frame_texture(spell.animation_name if spell.animation_name != "" else "default", 0)
+			if test_texture:
+				sprite_segment_size = test_texture.get_width()
+				print("[BEAM] 🎨 Tamanho do sprite detectado: %.0fpx" % sprite_segment_size)
+			
+			# Calcula quantos sprites precisamos
+			var segments_needed = ceil(max_range / sprite_segment_size) + 1
+			print("[BEAM] 🎨 Criando %d segmentos de sprite" % segments_needed)
+			
+			# Cria sprites ao longo do raio
+			for i in range(segments_needed):
+				var sprite = AnimatedSprite2D.new()
+				beam_sprite_container.add_child(sprite)
+				sprite.sprite_frames = spell.sprite_frames
+				
+				# Centraliza o sprite vertical e horizontalmente
+				sprite.centered = true
+				# Posiciona ao longo do raio (X), centralizado automaticamente (Y)
+				sprite.position = Vector2(i * sprite_segment_size + sprite_segment_size / 2.0, 0)
+				
+				if spell.animation_name != "":
+					sprite.play(spell.animation_name)
+				else:
+					sprite.play()
+				
+				# Offset aleatório para variação visual
+				sprite.frame = i % sprite.sprite_frames.get_frame_count(sprite.animation)
+				beam_sprites.append(sprite)
+			
+			print("[BEAM] 🎨 Usando %d sprites repetidos" % beam_sprites.size())
 		else:
 			beam_line.visible = true
 			if "spell_color" in spell:
 				beam_line.default_color = spell.spell_color
-			print("[BEAM] 🎨 Usando Line2D")
+			print("[BEAM] 🎨 Usando Line2D (fallback)")
 		
 		# Atualiza raycast
 		raycast.target_position = Vector2(max_range, 0)
@@ -127,12 +159,20 @@ func activate() -> void:
 	is_active = true
 	impact_particles.emitting = true
 	print("[BEAM] 🔥 Raio ATIVADO!")
+	print("[BEAM]    DPS: %.1f" % damage_per_second)
+	print("[BEAM]    Largura: %.1f" % beam_width)
+	print("[BEAM]    Alcance: %.1f" % max_range)
 
 
 func deactivate() -> void:
 	"""Desativa o raio"""
 	is_active = false
-	beam_sprite.visible = false
+	
+	# Esconde todos os sprites
+	for sprite in beam_sprites:
+		if is_instance_valid(sprite):
+			sprite.visible = false
+	
 	beam_line.visible = false
 	impact_particles.emitting = false
 	
@@ -142,6 +182,13 @@ func deactivate() -> void:
 			remove_status_effect(enemy)
 	
 	enemies_in_beam.clear()
+	
+	# Remove área de impacto persistente
+	if impact_area_on_enemy and is_instance_valid(impact_area_on_enemy):
+		impact_area_on_enemy.queue_free()
+		impact_area_on_enemy = null
+		print("[BEAM]    🗑️ Área de impacto removida")
+	
 	print("[BEAM] 🛑 Raio DESATIVADO!")
 	queue_free()
 
@@ -171,19 +218,36 @@ func _process(delta: float) -> void:
 	
 	# Calcula ponto final
 	var end_point: Vector2
-	if raycast.is_colliding():
+	
+	# Se parou no inimigo, limita o raio até lá
+	if beam_stopped_at_enemy:
+		var local_hit_pos = to_local(enemy_hit_position)
+		end_point = local_hit_pos
+	elif raycast.is_colliding():
 		end_point = raycast.get_collision_point() - global_position
 	else:
 		end_point = Vector2(max_range, 0)
 	
 	var beam_length = end_point.length()
 	
-	# Atualiza visual do sprite
-	if beam_sprite.visible and beam_sprite.sprite_frames:
-		var texture = beam_sprite.sprite_frames.get_frame_texture(beam_sprite.animation, beam_sprite.frame)
-		if texture:
-			beam_sprite.scale.x = beam_length / texture.get_width()
-			beam_sprite.scale.y = 1.0
+	# Atualiza visual dos sprites - mostra apenas os necessários
+	if beam_sprites.size() > 0:
+		var segments_visible = ceil(beam_length / sprite_segment_size)
+		
+		for i in range(beam_sprites.size()):
+			var sprite = beam_sprites[i]
+			if i < segments_visible:
+				sprite.visible = true
+				
+				# Último sprite pode precisar ser cortado
+				if i == segments_visible - 1:
+					var remaining = beam_length - (i * sprite_segment_size)
+					var scale_x = remaining / sprite_segment_size
+					sprite.scale.x = clamp(scale_x, 0.1, 1.0)
+				else:
+					sprite.scale.x = 1.0
+			else:
+				sprite.visible = false
 	
 	# Atualiza Line2D
 	if beam_line.visible:
@@ -196,6 +260,21 @@ func _process(delta: float) -> void:
 	if collision_shape and collision_shape.shape:
 		collision_shape.shape.size = Vector2(beam_length, beam_width)
 		collision_shape.position = Vector2(beam_length / 2, 0)
+	
+	# Atualiza posição da área de impacto para seguir o inimigo
+	if beam_stopped_at_enemy and impact_area_on_enemy and is_instance_valid(impact_area_on_enemy):
+		# Verifica se ainda há inimigos no raio
+		if enemies_in_beam.size() > 0 and is_instance_valid(enemies_in_beam[0]):
+			var target_enemy = enemies_in_beam[0]
+			impact_area_on_enemy.global_position = target_enemy.global_position
+			enemy_hit_position = target_enemy.global_position
+		else:
+			# Sem inimigos válidos, remove a área e libera o raio
+			impact_area_on_enemy.queue_free()
+			impact_area_on_enemy = null
+			beam_stopped_at_enemy = false
+			print("[BEAM]    🗑️ Área removida (sem alvos válidos)")
+			print("[BEAM]    🔄 Raio liberado")
 	
 	# Aplica dano
 	damage_timer += delta
@@ -215,12 +294,16 @@ func apply_damage() -> void:
 	"""Aplica dano aos inimigos no raio"""
 	var damage_tick = damage_per_second * 0.1
 	
+	if enemies_in_beam.size() > 0:
+		print("[BEAM] 💥 Aplicando dano a %d inimigos (%.1f dano cada)" % [enemies_in_beam.size(), damage_tick])
+	
 	for enemy in enemies_in_beam:
 		if not is_instance_valid(enemy):
 			continue
 		
 		if enemy.has_method("take_damage"):
 			enemy.take_damage(damage_tick, false)
+			print("[BEAM]    ⚔️ Dano aplicado a %s" % enemy.name)
 		
 		# Aplica/renova status effect
 		if spell_data and spell_data.apply_status_effect:
@@ -257,6 +340,16 @@ func _on_enemy_entered(body: Node2D) -> void:
 	if body.is_in_group("enemies") and not enemies_in_beam.has(body):
 		enemies_in_beam.append(body)
 		print("[BEAM] 🎯 Inimigo entrou: %s" % body.name)
+		
+		# Se o raio deve parar ao atingir inimigo (apenas o primeiro)
+		if spell_data and spell_data.beam_stops_at_enemy and not beam_stopped_at_enemy:
+			beam_stopped_at_enemy = true
+			enemy_hit_position = body.global_position
+			print("[BEAM] 🛑 Raio parou no inimigo: %s" % body.name)
+			
+			# Cria área de impacto no inimigo (persiste enquanto raio ativo)
+			if spell_data.create_impact_area:
+				create_impact_on_enemy(body)
 
 
 func _on_enemy_exited(body: Node2D) -> void:
@@ -267,4 +360,50 @@ func _on_enemy_exited(body: Node2D) -> void:
 		if spell_data.apply_status_effect:
 			remove_status_effect(body)
 		
+		# Se era o inimigo que parou o raio, remove a área e reseta o estado
+		if beam_stopped_at_enemy and enemies_in_beam.size() == 0:
+			if impact_area_on_enemy and is_instance_valid(impact_area_on_enemy):
+				impact_area_on_enemy.queue_free()
+				impact_area_on_enemy = null
+				print("[BEAM]    🗑️ Área de impacto removida (inimigo saiu)")
+			beam_stopped_at_enemy = false
+			print("[BEAM]    🔄 Raio liberado (sem alvos)")
+		
 		print("[BEAM] 🚪 Inimigo saiu: %s" % body.name)
+
+
+func create_impact_on_enemy(enemy: Node2D) -> void:
+	"""Cria área de impacto quando raio atinge inimigo"""
+	if not spell_data or not spell_data.create_impact_area:
+		return
+	
+	# Se já existe uma área, não cria outra
+	if impact_area_on_enemy and is_instance_valid(impact_area_on_enemy):
+		return
+	
+	# Carrega o script da área de impacto
+	var impact_area_script = preload("res://scripts/spells/spell_impact_area.gd")
+	var impact_area = Area2D.new()
+	impact_area.set_script(impact_area_script)
+	
+	# Posiciona no inimigo
+	impact_area.global_position = enemy.global_position
+	
+	# Adiciona ao mundo
+	if get_parent():
+		get_parent().add_child(impact_area)
+	
+	# Configura a área com duração LONGA (vai ser destruída quando o beam desativar)
+	if impact_area.has_method("setup"):
+		impact_area.setup(
+			spell_data.impact_area_damage,
+			spell_data.impact_area_radius,
+			999.0,  # Duração muito longa - vai ser removida manualmente
+			spell_data.impact_area_sprite_frames,
+			spell_data.impact_area_animation
+		)
+	
+	# Salva referência
+	impact_area_on_enemy = impact_area
+	
+	print("[BEAM]    💥 Área de impacto criada no inimigo: %s" % enemy.name)

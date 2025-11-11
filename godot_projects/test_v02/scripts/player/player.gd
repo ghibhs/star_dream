@@ -1638,25 +1638,49 @@ func cast_targeted_spell(spell: SpellData) -> void:
 	print("[PLAYER]    Dano: %.1f" % spell.damage)
 	print("[PLAYER]    Delay: %.1fs" % spell.spawn_delay)
 	
+	# Pega posição do mouse
+	var mouse_pos = get_global_mouse_position()
+	
+	# Encontra o inimigo mais próximo DO MOUSE (mas dentro do range do player)
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	var nearest_enemy = null
+	var nearest_distance_to_mouse = 999999.0
+	
+	for enemy in enemies:
+		if not is_instance_valid(enemy):
+			continue
+		
+		# Primeiro verifica se está no alcance do PLAYER
+		var dist_from_player = global_position.distance_to(enemy.global_position)
+		if dist_from_player > spell.spell_range:
+			continue  # Ignora inimigos fora do alcance
+		
+		# Agora verifica qual está mais próximo do MOUSE
+		var distance_from_mouse = mouse_pos.distance_to(enemy.global_position)
+		if distance_from_mouse < nearest_distance_to_mouse:
+			nearest_distance_to_mouse = distance_from_mouse
+			nearest_enemy = enemy
+	
+	if not nearest_enemy:
+		print("[PLAYER]    ⚠️ Nenhum inimigo encontrado no alcance de %.1f!" % spell.spell_range)
+		return
+	
 	# Carrega a cena targeted
 	var targeted_scene = preload("res://scenes/spells/spell_targeted.tscn")
 	var targeted = targeted_scene.instantiate()
-	
-	# Encontra o inimigo mais próximo
-	var target = targeted.find_target()
-	
-	if not target:
-		print("[PLAYER]    ⚠️ Nenhum inimigo encontrado no alcance!")
-		targeted.queue_free()
-		return
 	
 	# Adiciona ao mundo
 	get_parent().add_child(targeted)
 	
 	# Configura a magia targeted
-	targeted.setup(spell, target, self)
+	targeted.setup(spell, nearest_enemy, self)
 	
-	print("[PLAYER]    ✅ Magia targeted criada no inimigo: %s" % target.name)
+	var distance_from_player = global_position.distance_to(nearest_enemy.global_position)
+	print("[PLAYER]    ✅ Magia targeted criada no inimigo: %s (do player: %.1fpx, do mouse: %.1fpx)" % [
+		nearest_enemy.name, 
+		distance_from_player, 
+		nearest_distance_to_mouse
+	])
 
 
 func cast_beam_spell(spell: SpellData) -> void:

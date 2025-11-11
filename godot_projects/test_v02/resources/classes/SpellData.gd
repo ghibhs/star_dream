@@ -46,6 +46,7 @@ enum Element {
 @export var beam_duration: float = 3.0  # Duração máxima do raio
 @export var damage_per_second: float = 25.0  # Dano por segundo
 @export var mana_per_second: float = 10.0  # Custo de mana por segundo
+@export var beam_stops_at_enemy: bool = false  # Raio para ao atingir inimigo
 
 @export_group("Targeted Properties")
 @export var spawn_delay: float = 0.5  # Delay antes de spawnar no alvo
@@ -72,6 +73,14 @@ enum Element {
 @export var cast_sound: AudioStream
 @export var impact_sound: AudioStream
 @export var loop_sound: AudioStream  # Som contínuo (para áreas)
+
+@export_group("Impact Area Effect")
+@export var create_impact_area: bool = false  # Cria área de colisão ao acertar
+@export var impact_area_sprite_frames: SpriteFrames  # Sprite da área de impacto
+@export var impact_area_animation: String = "default"  # Animação da área
+@export var impact_area_radius: float = 50.0  # Raio da área de efeito
+@export var impact_area_damage: float = 10.0  # Dano da área (além do dano do projétil)
+@export var impact_area_duration: float = 0.5  # Duração da área em segundos
 
 @export_group("Advanced")
 @export var can_be_interrupted: bool = true  # Pode ser interrompido durante conjuração

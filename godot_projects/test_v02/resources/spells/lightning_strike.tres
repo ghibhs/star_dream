@@ -1,6 +1,71 @@
-[gd_resource type="Resource" script_class="SpellData" load_steps=2 format=3 uid="uid://lightning_strike_spell"]
+[gd_resource type="Resource" script_class="SpellData" load_steps=12 format=3 uid="uid://4l0awm1onl2f"]
 
-[ext_resource type="Script" path="res://resources/classes/SpellData.gd" id="1"]
+[ext_resource type="Script" uid="uid://c4e31tj8hxk5h" path="res://resources/classes/SpellData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://6q2f5wjse31n" path="res://art/thunder_64_sheet.png" id="2_ness5"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ness5"]
+atlas = ExtResource("2_ness5")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fnbsi"]
+atlas = ExtResource("2_ness5")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k6cdj"]
+atlas = ExtResource("2_ness5")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ad8qi"]
+atlas = ExtResource("2_ness5")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jrnv0"]
+atlas = ExtResource("2_ness5")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dmwl0"]
+atlas = ExtResource("2_ness5")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c34lr"]
+atlas = ExtResource("2_ness5")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kt7x7"]
+atlas = ExtResource("2_ness5")
+region = Rect2(448, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_puctg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ness5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fnbsi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k6cdj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ad8qi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jrnv0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dmwl0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c34lr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kt7x7")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [resource]
 script = ExtResource("1")
@@ -23,6 +88,7 @@ damage_per_second = 25.0
 mana_per_second = 10.0
 spawn_delay = 0.7
 warning_duration = 0.4
+sprite_frames = SubResource("SpriteFrames_puctg")
 animation_name = "default"
 projectile_scale = Vector2(1, 1)
 apply_status_effect = true
@@ -30,4 +96,12 @@ status_effect_type = "stun"
 status_effect_duration = 1.5
 status_effect_power = 1.0
 spell_color = Color(1, 1, 0, 1)
+create_impact_area = true
+impact_area_animation = "default"
+impact_area_radius = 70.0
+impact_area_damage = 25.0
+impact_area_duration = 0.5
+can_be_interrupted = true
+requires_target = false
+max_targets = 1
 knockback_force = 200.0

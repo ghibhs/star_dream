@@ -58,6 +58,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "MENU PRINCIPAL"
 
+[node name="OptionsButton" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "OPÇÕES"
+
 [node name="SpacerBottom" type="Control" parent="CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
@@ -70,4 +76,5 @@ text = "SAIR DO JOGO"
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/RestartButton" to="." method="_on_restart_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/MenuButton" to="." method="_on_menu_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/OptionsButton" to="." method="_on_options_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/QuitButton" to="." method="_on_quit_button_pressed"]

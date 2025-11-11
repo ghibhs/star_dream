@@ -49,6 +49,22 @@ func _ready() -> void:
 
 func setup(spell: SpellData, target: Node2D, player: Node2D) -> void:
 	"""Configura a magia targeted"""
+	print("\n[TARGETED] ═══ SETUP INICIADO ═══")
+	if spell:
+		print("[TARGETED]    Spell: %s" % spell.spell_name)
+	else:
+		print("[TARGETED]    Spell: null")
+	
+	if target:
+		print("[TARGETED]    Target: %s" % target.name)
+	else:
+		print("[TARGETED]    Target: null")
+	
+	if player:
+		print("[TARGETED]    Player: %s" % player.name)
+	else:
+		print("[TARGETED]    Player: null")
+	
 	spell_data = spell
 	target_enemy = target
 	owner_player = player
@@ -60,11 +76,16 @@ func setup(spell: SpellData, target: Node2D, player: Node2D) -> void:
 	
 	# Posiciona no alvo
 	global_position = target_enemy.global_position
+	print("[TARGETED]    Posição: %s" % global_position)
 	
 	if spell:
 		damage = spell.damage
 		spawn_delay = spell.spawn_delay
 		warning_duration = spell.warning_duration
+		
+		print("[TARGETED]    Dano: %.1f" % damage)
+		print("[TARGETED]    Spawn Delay: %.1fs" % spawn_delay)
+		print("[TARGETED]    Warning: %.1fs" % warning_duration)
 		
 		# Configura sprite do ataque
 		if spell.sprite_frames:
@@ -74,13 +95,17 @@ func setup(spell: SpellData, target: Node2D, player: Node2D) -> void:
 			if spell.animation_name != "":
 				attack_sprite.animation = spell.animation_name
 			
-			print("[TARGETED] 🎨 Sprite configurado")
+			print("[TARGETED]    🎨 Sprite configurado: %s" % spell.animation_name)
+		else:
+			print("[TARGETED]    ⚠️ SEM SPRITE! sprite_frames está null")
 		
 		# Configura cor do aviso
 		if "spell_color" in spell:
 			warning_sprite.modulate = Color(spell.spell_color.r, spell.spell_color.g, spell.spell_color.b, 0.5)
+			print("[TARGETED]    🎨 Cor do aviso: %s" % spell.spell_color)
 	
-	print("[TARGETED] ⚡ Configurado - Dano: %.1f, Delay: %.1fs" % [damage, spawn_delay])
+	print("[TARGETED] ✅ Setup completo! Aguardando spawn...")
+	print("[TARGETED] ═══════════════════════════\n")
 
 
 func _process(delta: float) -> void:
@@ -132,14 +157,24 @@ func spawn_attack() -> void:
 		if spell_data and spell_data.apply_status_effect:
 			apply_status_effect(target_enemy)
 	
+	# Cria área de impacto se configurado
+	if spell_data and spell_data.create_impact_area:
+		create_impact_area_effect()
+	
 	# Aguarda animação terminar
-	if attack_sprite.sprite_frames:
-		var animation_length = attack_sprite.sprite_frames.get_animation_length(attack_sprite.animation)
-		await get_tree().create_timer(animation_length).timeout
+	if attack_sprite.sprite_frames and attack_sprite.sprite_frames.has_animation(attack_sprite.animation):
+		# Calcula duração: (número de frames / FPS)
+		var frame_count = attack_sprite.sprite_frames.get_frame_count(attack_sprite.animation)
+		var fps = attack_sprite.sprite_frames.get_animation_speed(attack_sprite.animation)
+		var animation_duration = frame_count / fps if fps > 0 else 0.5
+		print("[TARGETED]    ⏱️ Aguardando animação: %.2fs (%d frames @ %d fps)" % [animation_duration, frame_count, fps])
+		await get_tree().create_timer(animation_duration).timeout
 	else:
+		print("[TARGETED]    ⏱️ Sem animação, aguardando 0.5s")
 		await get_tree().create_timer(0.5).timeout
 	
 	# Remove da cena
+	print("[TARGETED]    🗑️ Removendo spell targeted")
 	queue_free()
 
 
@@ -167,6 +202,33 @@ func apply_status_effect(enemy: Node2D) -> void:
 					spell_data.status_effect_power,
 					spell_data.status_effect_duration
 				])
+
+
+func create_impact_area_effect() -> void:
+	"""Cria área de impacto no local do relâmpago"""
+	# Carrega o script da área de impacto
+	var impact_area_script = preload("res://scripts/spells/spell_impact_area.gd")
+	var impact_area = Area2D.new()
+	impact_area.set_script(impact_area_script)
+	
+	# Posiciona no local do impacto
+	impact_area.global_position = global_position
+	
+	# Adiciona ao mesmo parent (mundo)
+	if get_parent():
+		get_parent().add_child(impact_area)
+	
+	# Configura a área
+	if impact_area.has_method("setup"):
+		impact_area.setup(
+			spell_data.impact_area_damage,
+			spell_data.impact_area_radius,
+			spell_data.impact_area_duration,
+			spell_data.impact_area_sprite_frames,
+			spell_data.impact_area_animation
+		)
+	
+	print("[TARGETED]    💥 Área de impacto criada no local: %v" % global_position)
 
 
 func find_target() -> Node2D:

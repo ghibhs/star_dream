@@ -1,7 +1,58 @@
-[gd_resource type="Resource" script_class="SpellData" load_steps=12 format=3 uid="uid://bwx8y5q3nf7pk"]
+[gd_resource type="Resource" script_class="SpellData" load_steps=20 format=3 uid="uid://bwx8y5q3nf7pk"]
 
 [ext_resource type="Script" uid="uid://c4e31tj8hxk5h" path="res://resources/classes/SpellData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bnli6q1rhlvqf" path="res://art/explosion-export.png" id="1_5v5vl"]
 [ext_resource type="Texture2D" uid="uid://dsb7alhofyoqt" path="res://art/fireball_64_sheet.png" id="1_mvy0l"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tax7r"]
+atlas = ExtResource("1_5v5vl")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kldfp"]
+atlas = ExtResource("1_5v5vl")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dsgb7"]
+atlas = ExtResource("1_5v5vl")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d56ya"]
+atlas = ExtResource("1_5v5vl")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ecki1"]
+atlas = ExtResource("1_5v5vl")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_faony"]
+atlas = ExtResource("1_5v5vl")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mvy0l"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tax7r")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kldfp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dsgb7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d56ya")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ecki1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_faony")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_mvy0l"]
 atlas = ExtResource("1_mvy0l")
@@ -72,16 +123,37 @@ script = ExtResource("1")
 spell_id = "fireball"
 spell_name = "Bola de Fogo"
 description = "Projétil de fogo que causa dano e aplica queimadura"
+spell_type = 0
+element = 1
 mana_cost = 15.0
 cast_time = 0.3
 cooldown = 1.5
 damage = 30.0
 spell_range = 600.0
 projectile_speed = 500.0
+pierce = false
+homing = false
+beam_width = 20.0
+beam_duration = 3.0
+damage_per_second = 25.0
+mana_per_second = 10.0
+spawn_delay = 0.5
+warning_duration = 0.3
 sprite_frames = SubResource("SpriteFrames_tax7r")
+animation_name = "default"
+projectile_scale = Vector2(1, 1)
 apply_status_effect = true
 status_effect_type = "burn"
 status_effect_duration = 3.0
 status_effect_power = 5.0
 spell_color = Color(1, 0.4, 0, 1)
+create_impact_area = true
+impact_area_sprite_frames = SubResource("SpriteFrames_mvy0l")
+impact_area_animation = "default"
+impact_area_radius = 80.0
+impact_area_damage = 20.0
+impact_area_duration = 0.6
+can_be_interrupted = true
+requires_target = false
+max_targets = 1
 knockback_force = 100.0
